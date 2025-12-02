@@ -1,3 +1,9 @@
+import React, { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Phone, Mail, Facebook, Menu } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -5,19 +11,16 @@ import {
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
-import React, { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Phone, Mail, Facebook, Menu } from "lucide-react";
 
 const BRAND = { dark: "#1f160f", lime: "#b6e300" };
 const BUSINESS = {
   phone: "(215) 531-0907",
   email: "Neighborhoodkrew@gmail.com",
   facebook: "https://www.facebook.com/TheNeighborhoodKrew",
-  const stripePromise = loadStripe(
+};
+
+// ⬇️ This must be OUTSIDE the BUSINESS object, like this:
+const stripePromise = loadStripe(
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string
 );
 
