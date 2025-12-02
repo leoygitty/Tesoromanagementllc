@@ -14,14 +14,55 @@ function shouldOpenExit(){ try{ if(sessionStorage.getItem(EXIT_SEEN_SESSION)==='
 function markExitSeen(){ try{ sessionStorage.setItem(EXIT_SEEN_SESSION,'1'); }catch{} }
 function dismissExit(days:number){ try{ localStorage.setItem(EXIT_DISMISS_KEY,String(Date.now()+days*24*60*60*1000)); }catch{} }
 async function subscribeAndSendPromo(email:string){ const r=await fetch('/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})}).catch(()=>null); if(!r) return {ok:false}; const data=await r.json().catch(()=>({})); return data; }
-
 export default function App(){
   const [exitOpen,setExitOpen]=useState(false);
   const [exitEmail,setExitEmail]=useState('');
+  const [depositLoading, setDepositLoading] = useState(false);
+  const [depositError, setDepositError] = useState<string | null>(null);
+  const [depositForm, setDepositForm] = useState({
+    email: "",
+    service: "Residential & Apartment Move",
+    date: "",
+    timeWindow: "Morning (8am–12pm)",
+  });
+
   useEffect(()=>{ const onOut=(e:MouseEvent)=>{ if(e.clientY<=0 && shouldOpenExit()){ setExitOpen(true); markExitSeen(); } }; addEventListener('mouseout',onOut); return ()=>removeEventListener('mouseout',onOut); },[]);
   const closeExit=()=>{ setExitOpen(false); dismissExit(7); };
 
+  const handleDepositChange = (field: keyof typeof depositForm, value: string) => {
+    setDepositForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const submitDeposit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDepositLoading(true);
+    setDepositError(null);
+    try {
+      const res = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(depositForm),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "Unable to start checkout");
+      }
+      window.location.href = data.url; // Go to Stripe Checkout
+    } catch (err: any) {
+      console.error(err);
+      setDepositError(err.message || "Something went wrong starting checkout.");
+    } finally {
+      setDepositLoading(false);
+    }
+  };
+
   const QuoteBtn = ({label}:{label:string}) => (
+    <Button style={{backgroundColor:BRAND.lime,color:'#111'}} className="mt-3 w-full"
+      onClick={()=>document.getElementById('contact')?.scrollIntoView({behavior:'smooth'})}>
+      Get a Quote for {label}
+    </Button>
+  );
+
     <Button style={{backgroundColor:BRAND.lime,color:'#111'}} className="mt-3 w-full"
       onClick={()=>document.getElementById('contact')?.scrollIntoView({behavior:'smooth'})}>
       Get a Quote for {label}
@@ -93,7 +134,90 @@ export default function App(){
         <Card><CardHeader><CardTitle>Packing / Labor Only</CardTitle></CardHeader><CardContent><div className="text-3xl font-extrabold">$75/hr</div><p className="text-sm text-gray-600 mt-2">Per mover • 2-hour minimum</p></CardContent></Card>
       </div>
     </div></section>
+    {/* Pricing */}
+    <section id="pricing" className="py-12 md:py-16 bg-gray-50"><div className="max-w-6xl mx-auto px-4">
+      <h2 className="text-2xl font-bold mb-6">Simple Pricing</h2>
+      <div className="grid md:grid-cols-3 gap-6">
+        {/* existing pricing cards... */}
+      </div>
+    </div></section>
 
+    {/* Reserve Date with Deposit */}
+    <section className="py-12 md:py-16 bg-white">
+      <div className="max-w-6xl mx-auto px-4">
+        <h2 className="text-2xl font-bold mb-3">Reserve Your Move Date with a Deposit</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          In a time crunch? Secure your preferred move date with a $100 deposit.
+          We’ll call to finalize your full quote and apply this deposit to your invoice.
+        </p>
+
+        <Card className="max-w-xl">
+          <CardContent className="pt-6">
+            <form onSubmit={submitDeposit} className="space-y-3">
+              <Input
+                type="email"
+                required
+                placeholder="Your email"
+                value={depositForm.email}
+                onChange={(e)=>handleDepositChange("email", (e.target as HTMLInputElement).value)}
+              />
+              <select
+                className="border rounded-md px-3 py-2 w-full text-sm"
+                value={depositForm.service}
+                onChange={(e)=>handleDepositChange("service", e.target.value)}
+              >
+                <option>Residential & Apartment Move</option>
+                <option>Commercial & Freight</option>
+                <option>Junk Removal</option>
+                <option>Packing Only</option>
+                <option>Labor Only (No Truck)</option>
+              </select>
+              <div className="flex flex-col md:flex-row gap-3">
+                <Input
+                  type="date"
+                  required
+                  value={depositForm.date}
+                  onChange={(e)=>handleDepositChange("date", (e.target as HTMLInputElement).value)}
+                />
+                <select
+                  className="border rounded-md px-3 py-2 w-full text-sm"
+                  value={depositForm.timeWindow}
+                  onChange={(e)=>handleDepositChange("timeWindow", e.target.value)}
+                >
+                  <option>Morning (8am–12pm)</option>
+                  <option>Midday (12pm–4pm)</option>
+                  <option>Evening (4pm–8pm)</option>
+                  <option>Flexible / Call to confirm</option>
+                </select>
+              </div>
+
+              {depositError && (
+                <p className="text-sm text-red-600">{depositError}</p>
+              )}
+
+              <Button
+                type="submit"
+                style={{backgroundColor:BRAND.lime,color:'#111'}}
+                className="w-full rounded-2xl"
+                disabled={depositLoading}
+              >
+                {depositLoading ? "Starting secure checkout..." : "Pay $100 Deposit & Reserve Date"}
+              </Button>
+
+              <p className="text-[11px] text-gray-500 mt-2">
+                Deposit is applied toward your final move total. You can adjust the exact policy with the owner
+                (e.g. refundable up to 72 hours before the move).
+              </p>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </section>
+
+    {/* Reviews */}
+    <section id="reviews" className="py-12 md:py-16">
+      {/* ...existing reviews code... */}
+    </section>
     {/* Reviews */}
     <section id="reviews" className="py-12 md:py-16">
       <div className="max-w-6xl mx-auto px-4">
