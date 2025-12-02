@@ -120,6 +120,7 @@ const REVIEWS: Review[] = [
   },
 ];
 
+// Stripe deposit form
 type DepositFormLocal = {
   email: string;
   service: string;
@@ -286,6 +287,99 @@ function DepositCheckoutForm() {
   );
 }
 
+// Quiz / wizard types + helpers
+type MoveSize = "studio_1br" | "2br" | "3br" | "4br" | "5plus";
+type QuoteStep = 1 | 2 | 3;
+
+type QuoteWizardState = {
+  moveType: "Local" | "Long-distance";
+  size: MoveSize | "";
+  sqft: string;
+  fromZip: string;
+  toZip: string;
+  distance: "under25" | "25-75" | "75-150" | "150+";
+  stairs: "None" | "Some" | "A lot";
+  hasElevator: "yes" | "no" | "unknown";
+  specialItems: string;
+  name: string;
+  email: string;
+  phone: string;
+  moveDate: string;
+  photos: File[];
+};
+
+function computeEstimate(state: QuoteWizardState) {
+  let low = 2000;
+  let high = 3500;
+
+  switch (state.size) {
+    case "2br":
+      low = 3000;
+      high = 5000;
+      break;
+    case "3br":
+      low = 4500;
+      high = 7000;
+      break;
+    case "4br":
+      low = 6500;
+      high = 10000;
+      break;
+    case "5plus":
+      low = 9000;
+      high = 12000;
+      break;
+    default:
+      break;
+  }
+
+  // Sqft nudge
+  const sqft = parseInt(state.sqft || "0", 10);
+  if (!isNaN(sqft) && sqft > 0) {
+    if (sqft > 2500) {
+      low *= 1.1;
+      high *= 1.15;
+    } else if (sqft < 900) {
+      low *= 0.9;
+      high *= 0.9;
+    }
+  }
+
+  // Distance
+  if (state.moveType === "Long-distance" || state.distance === "150+") {
+    low *= 1.2;
+    high *= 1.25;
+  } else if (state.distance === "75-150") {
+    low *= 1.1;
+    high *= 1.15;
+  }
+
+  // Stairs
+  if (state.stairs === "Some") {
+    low *= 1.05;
+    high *= 1.08;
+  } else if (state.stairs === "A lot") {
+    low *= 1.1;
+    high *= 1.15;
+  }
+
+  // Special items
+  if (state.specialItems.trim().length > 0) {
+    low *= 1.03;
+    high *= 1.06;
+  }
+
+  // Clamp between 2k–12k
+  low = Math.max(2000, Math.min(low, 12000));
+  high = Math.max(low + 500, Math.min(high, 12000));
+
+  // Round to nearest $50
+  low = Math.round(low / 50) * 50;
+  high = Math.round(high / 50) * 50;
+
+  return { low, high };
+}
+
 function QuoteButton({ label }: { label: string }) {
   return (
     <Button
@@ -309,6 +403,527 @@ function StarRow() {
     >
       ★★★★★
     </div>
+  );
+}
+
+// Multi-step quote / quiz wizard
+function QuoteWizard() {
+  const [step, setStep] = useState<QuoteStep>(1);
+  const [state, setState] = useState<QuoteWizardState>({
+    moveType: "Local",
+    size: "",
+    sqft: "",
+    fromZip: "",
+    toZip: "",
+    distance: "under25",
+    stairs: "None",
+    hasElevator: "unknown",
+    specialItems: "",
+    name: "",
+    email: "",
+    phone: "",
+    moveDate: "",
+    photos: [],
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [estimate, setEstimate] = useState<{ low: number; high: number } | null>(
+    null
+  );
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const totalSteps = 3;
+  const progress = (step / totalSteps) * 100;
+
+  const updateField = (field: keyof QuoteWizardState, value: any) => {
+    setState((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const nextStep = () => {
+    setError(null);
+    if (step === 1) {
+      if (!state.size) {
+        setError("Please choose your home size.");
+        return;
+      }
+      if (!state.sqft) {
+        setError("Please estimate your square footage.");
+        return;
+      }
+    }
+    if (step === 2) {
+      if (!state.fromZip || !state.toZip) {
+        setError("Please enter both starting and destination ZIP codes.");
+        return;
+      }
+    }
+    setStep((s) => (s < totalSteps ? ((s + 1) as QuoteStep) : s));
+  };
+
+  const prevStep = () => {
+    setError(null);
+    setStep((s) => (s > 1 ? ((s - 1) as QuoteStep) : s));
+  };
+
+  const handlePhotosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    updateField("photos", files);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitted(false);
+
+    if (!state.name || !state.email) {
+      setError("Please enter your name and email so we can follow up.");
+      return;
+    }
+
+    const est = computeEstimate(state);
+    setEstimate(est);
+
+    setSubmitting(true);
+    try {
+      const fd = new FormData();
+      fd.append("name", state.name);
+      fd.append("email", state.email);
+      fd.append("phone", state.phone);
+      fd.append("service", "Residential Move – Quiz Funnel");
+
+      const detailsLines = [
+        `Move type: ${state.moveType}`,
+        `Home size: ${
+          state.size === "studio_1br"
+            ? "Studio / 1 Bedroom"
+            : state.size === "2br"
+            ? "2 Bedroom"
+            : state.size === "3br"
+            ? "3 Bedroom"
+            : state.size === "4br"
+            ? "4 Bedroom"
+            : state.size === "5plus"
+            ? "5+ Bedroom"
+            : "Not specified"
+        }`,
+        `Approx. square footage: ${state.sqft || "N/A"}`,
+        `From ZIP: ${state.fromZip || "N/A"}`,
+        `To ZIP: ${state.toZip || "N/A"}`,
+        `Approx. distance: ${
+          state.distance === "under25"
+            ? "Under 25 miles"
+            : state.distance === "25-75"
+            ? "25–75 miles"
+            : state.distance === "75-150"
+            ? "75–150 miles"
+            : "150+ miles / Long-distance"
+        }`,
+        `Stairs: ${state.stairs}`,
+        `Elevator: ${
+          state.hasElevator === "yes"
+            ? "Yes"
+            : state.hasElevator === "no"
+            ? "No"
+            : "Not sure"
+        }`,
+        `Special items: ${
+          state.specialItems.trim() || "No special items specified"
+        }`,
+        `Preferred move date: ${state.moveDate || "Not specified"}`,
+        "",
+        `ROUGH ESTIMATE (non-binding): $${est.low.toLocaleString()} – $${est.high.toLocaleString()}`,
+        "This is a rough ballpark only. Final pricing will be provided after speaking with the crew and confirming details.",
+      ];
+
+      fd.append("details", detailsLines.join("\n"));
+
+      state.photos.forEach((file) => {
+        fd.append("photos", file, file.name);
+      });
+
+      const res = await fetch("/api/quote", {
+        method: "POST",
+        body: fd,
+      });
+
+      if (res.ok) {
+        setSubmitted(true);
+      } else {
+        setError(
+          "We generated your estimate, but there was an issue sending details. If you don’t hear from us soon, please call or email directly."
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      setError(
+        "There was an issue submitting your request. Please also feel free to call or email us directly."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="mb-4">
+          <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+            <span>
+              Step {step} of {totalSteps}
+            </span>
+            <span>
+              {step === 1
+                ? "About your home"
+                : step === 2
+                ? "Distance & access"
+                : "Contact & estimate"}
+            </span>
+          </div>
+          <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${progress}%`,
+                backgroundColor: BRAND.lime,
+              }}
+            />
+          </div>
+        </div>
+
+        {error && (
+          <p className="mb-3 text-xs text-red-600 bg-red-50 border border-red-100 rounded-md px-3 py-2">
+            {error}
+          </p>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {step === 1 && (
+            <>
+              <p className="text-sm text-gray-700">
+                Let&apos;s start with the basics.{" "}
+                <span className="font-semibold">
+                  What kind of home are we moving?
+                </span>
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {[
+                  { label: "Studio / 1 BR", value: "studio_1br" as MoveSize },
+                  { label: "2 Bedroom", value: "2br" as MoveSize },
+                  { label: "3 Bedroom", value: "3br" as MoveSize },
+                  { label: "4 Bedroom", value: "4br" as MoveSize },
+                  { label: "5+ Bedroom", value: "5plus" as MoveSize },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => updateField("size", opt.value)}
+                    className={`rounded-lg border px-2 py-2 text-left ${
+                      state.size === opt.value
+                        ? "border-black bg-black text-white"
+                        : "border-gray-200 hover:border-gray-400"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <div className="grid gap-3 text-sm">
+                <label className="text-xs text-gray-700">
+                  Is this a local move or long-distance?
+                  <div className="mt-1 inline-flex rounded-full bg-gray-100 p-1 text-xs">
+                    {["Local", "Long-distance"].map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() =>
+                          updateField(
+                            "moveType",
+                            type as QuoteWizardState["moveType"]
+                          )
+                        }
+                        className={`px-3 py-1 rounded-full ${
+                          state.moveType === type
+                            ? "bg-black text-white"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                </label>
+                <label className="text-xs text-gray-700">
+                  Roughly how many square feet is your home?
+                  <Input
+                    className="mt-1"
+                    type="number"
+                    min={300}
+                    max={10000}
+                    placeholder="e.g. 1,800"
+                    value={state.sqft}
+                    onChange={(e) =>
+                      updateField("sqft", (e.target as HTMLInputElement).value)
+                    }
+                  />
+                </label>
+              </div>
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <p className="text-sm text-gray-700">
+                Now let&apos;s get a feel for the{" "}
+                <span className="font-semibold">
+                  distance and how easy it is to move things in/out.
+                </span>
+              </p>
+              <div className="grid gap-3 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-xs text-gray-700">
+                    From ZIP
+                    <Input
+                      className="mt-1"
+                      maxLength={10}
+                      placeholder="19103"
+                      value={state.fromZip}
+                      onChange={(e) =>
+                        updateField(
+                          "fromZip",
+                          (e.target as HTMLInputElement).value
+                        )
+                      }
+                    />
+                  </label>
+                  <label className="text-xs text-gray-700">
+                    To ZIP
+                    <Input
+                      className="mt-1"
+                      maxLength={10}
+                      placeholder="08540"
+                      value={state.toZip}
+                      onChange={(e) =>
+                        updateField(
+                          "toZip",
+                          (e.target as HTMLInputElement).value
+                        )
+                      }
+                    />
+                  </label>
+                </div>
+                <label className="text-xs text-gray-700">
+                  About how far is the move?
+                  <select
+                    className="mt-1 border rounded-md px-3 py-2 w-full text-xs"
+                    value={state.distance}
+                    onChange={(e) =>
+                      updateField(
+                        "distance",
+                        e.target.value as QuoteWizardState["distance"]
+                      )
+                    }
+                  >
+                    <option value="under25">Under 25 miles</option>
+                    <option value="25-75">25–75 miles</option>
+                    <option value="75-150">75–150 miles</option>
+                    <option value="150+">150+ miles</option>
+                  </select>
+                </label>
+                <label className="text-xs text-gray-700">
+                  How many stairs are we working with?
+                  <select
+                    className="mt-1 border rounded-md px-3 py-2 w-full text-xs"
+                    value={state.stairs}
+                    onChange={(e) =>
+                      updateField(
+                        "stairs",
+                        e.target.value as QuoteWizardState["stairs"]
+                      )
+                    }
+                  >
+                    <option>None</option>
+                    <option>Some</option>
+                    <option>A lot</option>
+                  </select>
+                </label>
+                <label className="text-xs text-gray-700">
+                  Elevator access?
+                  <select
+                    className="mt-1 border rounded-md px-3 py-2 w-full text-xs"
+                    value={state.hasElevator}
+                    onChange={(e) =>
+                      updateField(
+                        "hasElevator",
+                        e.target.value as QuoteWizardState["hasElevator"]
+                      )
+                    }
+                  >
+                    <option value="unknown">Not sure / N/A</option>
+                    <option value="yes">Yes, elevator available</option>
+                    <option value="no">No elevator</option>
+                  </select>
+                </label>
+                <label className="text-xs text-gray-700">
+                  Any heavy or specialty items we should know about?
+                  <Textarea
+                    className="mt-1"
+                    rows={3}
+                    placeholder="Piano, safe, gym equipment, delicate antiques, etc."
+                    value={state.specialItems}
+                    onChange={(e) =>
+                      updateField(
+                        "specialItems",
+                        (e.target as HTMLTextAreaElement).value
+                      )
+                    }
+                  />
+                </label>
+              </div>
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+              <p className="text-sm text-gray-700">
+                Last step.{" "}
+                <span className="font-semibold">
+                  Where can we send your ballpark estimate and follow up?
+                </span>
+              </p>
+              <div className="grid gap-3 text-sm">
+                <Input
+                  name="name"
+                  placeholder="Full name"
+                  value={state.name}
+                  onChange={(e) =>
+                    updateField("name", (e.target as HTMLInputElement).value)
+                  }
+                  required
+                />
+                <Input
+                  name="email"
+                  type="email"
+                  placeholder="Email"
+                  value={state.email}
+                  onChange={(e) =>
+                    updateField("email", (e.target as HTMLInputElement).value)
+                  }
+                  required
+                />
+                <Input
+                  name="phone"
+                  placeholder="Phone (optional but helpful)"
+                  value={state.phone}
+                  onChange={(e) =>
+                    updateField("phone", (e.target as HTMLInputElement).value)
+                  }
+                />
+                <label className="text-xs text-gray-700">
+                  Preferred move date (if known)
+                  <Input
+                    className="mt-1"
+                    type="date"
+                    value={state.moveDate}
+                    onChange={(e) =>
+                      updateField(
+                        "moveDate",
+                        (e.target as HTMLInputElement).value
+                      )
+                    }
+                  />
+                </label>
+                <label className="text-xs text-gray-700">
+                  Optional photos (help us get closer with your estimate):
+                  <input
+                    type="file"
+                    name="photos"
+                    accept="image/*"
+                    multiple
+                    className="mt-1 block w-full text-xs text-gray-700"
+                    onChange={handlePhotosChange}
+                  />
+                  <span className="mt-1 block text-[11px] text-gray-500">
+                    Add pictures of stairs, driveways, tight spaces, or the
+                    items you’re most concerned about.
+                  </span>
+                </label>
+              </div>
+
+              {estimate && (
+                <div className="mt-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-700">
+                  <div className="font-semibold text-gray-900 mb-1">
+                    Your rough ballpark estimate:
+                  </div>
+                  <div className="text-lg font-bold text-gray-900">
+                    ${estimate.low.toLocaleString()} – $
+                    {estimate.high.toLocaleString()}
+                  </div>
+                  <p className="mt-1">
+                    This is a{" "}
+                    <span className="font-semibold">non-binding range</span>{" "}
+                    based on the details you shared. Final pricing will be
+                    confirmed after speaking with our team and locking in your
+                    move plan.
+                  </p>
+                  <p className="mt-1">
+                    For the most accurate quote, call{" "}
+                    <a
+                      href="tel:+12155310907"
+                      className="underline font-medium"
+                    >
+                      {BUSINESS.phone}
+                    </a>{" "}
+                    or reply to the follow-up email we send.
+                  </p>
+                </div>
+              )}
+
+              {submitted && (
+                <p className="mt-2 text-[11px] text-green-600">
+                  We’ve received your details and rough estimate. The crew will
+                  review and follow up to firm up pricing and availability.
+                </p>
+              )}
+            </>
+          )}
+
+          {/* Navigation buttons */}
+          <div className="flex items-center justify-between pt-2">
+            {step > 1 ? (
+              <button
+                type="button"
+                onClick={prevStep}
+                className="text-xs text-gray-600 hover:text-gray-900"
+              >
+                ← Back
+              </button>
+            ) : (
+              <span />
+            )}
+
+            {step < totalSteps ? (
+              <Button
+                type="button"
+                style={{ backgroundColor: "#111", color: "#fff" }}
+                size="sm"
+                onClick={nextStep}
+              >
+                Next
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                size="sm"
+                style={{ backgroundColor: BRAND.lime, color: "#111" }}
+                disabled={submitting}
+              >
+                {submitting ? "Calculating & Sending..." : "See My Estimate"}
+              </Button>
+            )}
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -598,90 +1213,20 @@ export default function App() {
         </div>
       </section>
 
-      {/* Quote / Contact – with file upload */}
+      {/* Quote / Contact – WIZARD + promo */}
       <section id="contact" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8">
           <div>
-            <h2 className="text-2xl font-bold mb-3">Get Your Quote</h2>
+            <h2 className="text-2xl font-bold mb-2">
+              Instant Ballpark Estimate
+            </h2>
             <p className="text-sm text-gray-600 mb-4">
-              Tell us about your move, in-home project, or junk removal job and
-              we’ll follow up with a clear, custom quote. You can also attach
-              photos so we can give a more accurate estimate.
+              Answer a few quick questions and we&apos;ll show you a{" "}
+              <span className="font-semibold">rough price range</span> for your
+              residential move. Then we&apos;ll follow up to lock in an official
+              quote.
             </p>
-            <form
-              onSubmit={async (e: React.FormEvent<HTMLFormElement>) => {
-                e.preventDefault();
-                const formEl = e.currentTarget;
-                const formData = new FormData(formEl);
-                try {
-                  const res = await fetch("/api/quote", {
-                    method: "POST",
-                    body: formData,
-                  });
-                  if (res.ok) {
-                    alert(
-                      "Thanks! We received your details and any photos. We’ll get back to you shortly."
-                    );
-                  } else {
-                    alert(
-                      "We received your request, but there was an issue submitting details. If you don’t hear from us, please call or email directly."
-                    );
-                  }
-                } catch (err) {
-                  console.error(err);
-                  alert(
-                    "There was an issue submitting your request. Please also feel free to call or email us directly."
-                  );
-                }
-                formEl.reset();
-              }}
-              className="space-y-3"
-            >
-              <Input name="name" placeholder="Full name" required />
-              <Input
-                name="email"
-                type="email"
-                placeholder="Email"
-                required
-              />
-              <Input name="phone" placeholder="Phone" />
-              <select
-                name="service"
-                className="border rounded-md px-3 py-2 w-full"
-                required
-              >
-                <option value="">Choose service</option>
-                <option>Residential & Apartment Move</option>
-                <option>Commercial & Freight</option>
-                <option>In-Home Move (appliance / furniture)</option>
-                <option>Junk Removal</option>
-                <option>Packing Only</option>
-                <option>Labor Only (No Truck)</option>
-              </select>
-              <Textarea
-                name="details"
-                placeholder="Move details (where from, where to, stairs, dates, etc.)"
-              />
-              <div className="text-xs text-gray-600">
-                <label className="block">
-                  Optional photos (up to several images):
-                  <input
-                    type="file"
-                    name="photos"
-                    accept="image/*"
-                    multiple
-                    className="mt-1 block w-full text-xs text-gray-700"
-                  />
-                </label>
-                <p className="mt-1">
-                  Attach pictures of stairs, driveways, tight spaces, or items
-                  you’re most worried about.
-                </p>
-              </div>
-              <Button style={{ backgroundColor: "#b6e300", color: "#111" }}>
-                Request Quote
-              </Button>
-            </form>
+            <QuoteWizard />
           </div>
           <div>
             <h3 className="font-semibold mb-2">
