@@ -200,3 +200,47 @@ export default function App(){
     {exitOpen && (<div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"><div className="bg-white rounded-2xl max-w-md w-full p-6"><h3 className="text-xl font-bold">Wait — take $25 off?</h3><p className="text-sm text-gray-600 mt-2">Join our list and we’ll email you a one-time promo code instantly.</p><form onSubmit={async(e)=>{e.preventDefault(); const email=exitEmail; const res=await subscribeAndSendPromo(email); closeExit(); if(res?.code) alert(`Promo code sent to ${email}. Backup: ${res.code}`); else alert(res?.ok?'Promo sent — check your email.':'We saved your email. Connect email to auto-send.');}} className="mt-4 flex gap-2"><Input type="email" placeholder="you@email.com" value={exitEmail} onChange={(e)=>setExitEmail((e.target as any).value)} required/><Button style={{backgroundColor:'#b6e300',color:'#111'}}>Send</Button></form><div className="mt-3 flex justify-end gap-3"><Button variant="ghost" onClick={()=>{ closeExit(); }}>No thanks</Button></div></div></div>)}
   </div>);
 }
+// Inside App component, near your hooks:
+const [depositLoading, setDepositLoading] = useState(false);
+const [depositError, setDepositError] = useState<string | null>(null);
+const [depositForm, setDepositForm] = useState({
+  email: "",
+  service: "Residential & Apartment Move",
+  date: "",
+  timeWindow: "Morning (8am–12pm)",
+});
+
+const handleDepositChange = (
+  field: keyof typeof depositForm,
+  value: string
+) => {
+  setDepositForm((prev) => ({ ...prev, [field]: value }));
+};
+
+const submitDeposit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setDepositLoading(true);
+  setDepositError(null);
+
+  try {
+    const res = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(depositForm),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.url) {
+      throw new Error(data.error || "Unable to start checkout");
+    }
+
+    // Redirect to Stripe Checkout
+    window.location.href = data.url;
+  } catch (err: any) {
+    console.error(err);
+    setDepositError(err.message || "Something went wrong starting checkout.");
+  } finally {
+    setDepositLoading(false);
+  }
+};
