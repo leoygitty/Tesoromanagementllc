@@ -146,62 +146,98 @@ function DepositCheckoutForm() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(false);
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError(null);
+  setSubmitted(false);
 
-    if (!stripe || !elements) {
-      setError("Payment system is still loading. Please try again in a moment.");
-      return;
+  if (!state.name || !state.email) {
+    setError("Please enter your name and email so we can follow up.");
+    return;
+  }
+
+  const est = computeEstimate(state);
+  setEstimate(est);
+
+  setSubmitting(true);
+  try {
+    const detailsLines = [
+      `Move type: ${state.moveType}`,
+      `Home size: ${
+        state.size === "studio_1br"
+          ? "Studio / 1 Bedroom"
+          : state.size === "2br"
+          ? "2 Bedroom"
+          : state.size === "3br"
+          ? "3 Bedroom"
+          : state.size === "4br"
+          ? "4 Bedroom"
+          : state.size === "5plus"
+          ? "5+ Bedroom"
+          : "Not specified"
+      }`,
+      `Approx. square footage: ${state.sqft || "N/A"}`,
+      `From ZIP: ${state.fromZip || "N/A"}`,
+      `To ZIP: ${state.toZip || "N/A"}`,
+      `Approx. distance: ${
+        state.distance === "under25"
+          ? "Under 25 miles"
+          : state.distance === "25-75"
+          ? "25–75 miles"
+          : state.distance === "75-150"
+          ? "75–150 miles"
+          : "150+ miles / Long-distance"
+      }`,
+      `Stairs: ${state.stairs}`,
+      `Elevator: ${
+        state.hasElevator === "yes"
+          ? "Yes"
+          : state.hasElevator === "no"
+          ? "No"
+          : "Not sure"
+      }`,
+      `Special items: ${
+        state.specialItems.trim() || "No special items specified"
+      }`,
+      `Preferred move date: ${state.moveDate || "Not specified"}`,
+      "",
+      `ROUGH ESTIMATE (non-binding): $${est.low.toLocaleString()} – $${est.high.toLocaleString()}`,
+      "This is a rough ballpark only. Final pricing will be provided after speaking with the crew and confirming details.",
+      "",
+      `Photo count (not yet attached to email): ${state.photos.length}`,
+    ];
+
+    const payload = {
+      type: "quote",
+      name: state.name,
+      email: state.email,
+      phone: state.phone,
+      service: "Residential Move – Quiz Funnel",
+      details: detailsLines.join("\n"),
+    };
+
+    const res = await fetch("/api/quote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      setSubmitted(true);
+    } else {
+      setError(
+        "We generated your estimate, but there was an issue sending details. If you don’t hear from us soon, please call or email directly."
+      );
     }
-
-    const cardElement = elements.getElement(CardElement);
-    if (!cardElement) {
-      setError("Could not find card input. Please refresh and try again.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.clientSecret) {
-        throw new Error(data.error || "Unable to start payment");
-      }
-
-      const { error: stripeError, paymentIntent } =
-        await stripe.confirmCardPayment(data.clientSecret, {
-          payment_method: {
-            card: cardElement,
-            billing_details: {
-              email: form.email,
-            },
-          },
-        });
-
-      if (stripeError) {
-        console.error(stripeError);
-        throw new Error(stripeError.message || "Payment failed");
-      }
-
-      if (paymentIntent && paymentIntent.status === "succeeded") {
-        setSuccess(true);
-        (e.target as HTMLFormElement).reset();
-      } else {
-        throw new Error("Payment was not completed. Please try again.");
-      }
-    } catch (err: any) {
-      setError(err.message || "Something went wrong while processing payment.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (err) {
+    console.error(err);
+    setError(
+      "There was an issue submitting your request. Please also feel free to call or email us directly."
+    );
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
