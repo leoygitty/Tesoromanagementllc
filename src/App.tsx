@@ -1,3 +1,10 @@
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  CardElement,
+  useElements,
+  useStripe,
+} from "@stripe/react-stripe-js";
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +17,9 @@ const BUSINESS = {
   phone: "(215) 531-0907",
   email: "Neighborhoodkrew@gmail.com",
   facebook: "https://www.facebook.com/TheNeighborhoodKrew",
-};
+  const stripePromise = loadStripe(
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string
+);
 
 // Exit-intent & promo email logic
 const EXIT_DISMISS_KEY = "nk_exit_dismissed_until";
@@ -115,7 +124,173 @@ const REVIEWS: Review[] = [
     meta: "Philadelphia, PA",
   },
 ];
+type DepositFormLocal = {
+  email: string;
+  service: string;
+  date: string;
+  timeWindow: string;
+};
 
+function DepositCheckoutForm() {
+  const stripe = useStripe();
+  const elements = useElements();
+
+  const [form, setForm] = useState<DepositFormLocal>({
+    email: "",
+    service: "Residential & Apartment Move",
+    date: "",
+    timeWindow: "Morning (8am–12pm)",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const updateField = (field: keyof DepositFormLocal, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(false);
+
+    if (!stripe || !elements) {
+      setError("Payment system is still loading. Please try again in a moment.");
+      return;
+    }
+
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      setError("Could not find card input. Please refresh and try again.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // 1) Ask backend to create PaymentIntent
+      const res = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.clientSecret) {
+        throw new Error(data.error || "Unable to start payment");
+      }
+
+      // 2) Confirm card payment with Stripe.js
+      const { error: stripeError, paymentIntent } =
+        await stripe.confirmCardPayment(data.clientSecret, {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              email: form.email,
+            },
+          },
+        });
+
+      if (stripeError) {
+        console.error(stripeError);
+        throw new Error(stripeError.message || "Payment failed");
+      }
+
+      if (paymentIntent && paymentIntent.status === "succeeded") {
+        setSuccess(true);
+        (e.target as HTMLFormElement).reset();
+      } else {
+        throw new Error("Payment was not completed. Please try again.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Something went wrong while processing payment.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <Input
+        type="email"
+        required
+        placeholder="Your email"
+        value={form.email}
+        onChange={(e) =>
+          updateField("email", (e.target as HTMLInputElement).value)
+        }
+      />
+      <select
+        className="border rounded-md px-3 py-2 w-full text-sm"
+        value={form.service}
+        onChange={(e) => updateField("service", e.target.value)}
+      >
+        <option>Residential & Apartment Move</option>
+        <option>Commercial & Freight</option>
+        <option>In-Home Move (appliance / furniture)</option>
+        <option>Junk Removal</option>
+        <option>Packing Only</option>
+        <option>Labor Only (No Truck)</option>
+      </select>
+      <div className="flex flex-col md:flex-row gap-3">
+        <Input
+          type="date"
+          required
+          value={form.date}
+          onChange={(e) =>
+            updateField("date", (e.target as HTMLInputElement).value)
+          }
+        />
+        <select
+          className="border rounded-md px-3 py-2 w-full text-sm"
+          value={form.timeWindow}
+          onChange={(e) => updateField("timeWindow", e.target.value)}
+        >
+          <option>Morning (8am–12pm)</option>
+          <option>Midday (12pm–4pm)</option>
+          <option>Evening (4pm–8pm)</option>
+          <option>Flexible / Call to confirm</option>
+        </select>
+      </div>
+
+      <div className="border rounded-md px-3 py-2 bg-white">
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: "14px",
+                color: "#111",
+                "::placeholder": { color: "#9ca3af" },
+              },
+              invalid: { color: "#ef4444" },
+            },
+          }}
+        />
+      </div>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      {success && (
+        <p className="text-sm text-green-600">
+          Deposit paid! We’ll follow up to confirm your move details.
+        </p>
+      )}
+
+      <Button
+        type="submit"
+        style={{ backgroundColor: "#b6e300", color: "#111" }}
+        className="w-full rounded-2xl"
+        disabled={loading || !stripe || !elements}
+      >
+        {loading ? "Processing..." : "Pay $75 Deposit & Reserve Date"}
+      </Button>
+
+      <p className="text-[11px] text-gray-500 mt-2">
+        Deposit is applied toward your final move total. You can adjust the
+        exact policy with the owner (e.g. refundable up to 72 hours before the
+        move).
+      </p>
+    </form>
+  );
+}
 export default function App() {
   const [exitOpen, setExitOpen] = useState(false);
   const [exitEmail, setExitEmail] = useState("");
@@ -654,7 +829,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* Reserve Date with Deposit */}
+            {/* Reserve Date with Deposit (Stripe Elements on-site card form) */}
       <section className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold mb-3">
@@ -666,6 +841,16 @@ export default function App() {
             finalize your full quote and apply this deposit to your final move
             invoice.
           </p>
+
+          <Card className="max-w-xl">
+            <CardContent className="pt-6">
+              <Elements stripe={stripePromise}>
+                <DepositCheckoutForm />
+              </Elements>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
 
           <Card className="max-w-xl">
             <CardContent className="pt-6">
