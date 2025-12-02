@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Phone, Mail, Facebook } from "lucide-react";
+import { Phone, Mail, Facebook, Menu } from "lucide-react";
 
 const BRAND = { dark: "#1f160f", lime: "#b6e300" };
 const BUSINESS = {
@@ -64,6 +64,58 @@ type DepositForm = {
   timeWindow: string;
 };
 
+type Review = {
+  title: string;
+  body: string;
+  name: string;
+  meta?: string;
+};
+
+const REVIEWS: Review[] = [
+  {
+    title: "“Every item arrived undamaged”",
+    body:
+      "From the moment I contacted Alex, I knew I was in good hands. He came out to my house to see what his team would be moving to give me a quote. He was very patient working around the weather. I am pleased to say every item arrived at the new home undamaged. His pricing was reasonable with exceptional service. I would highly recommend Alex and the Neighborhood Krew and give them 20 stars if I could.",
+    name: "Verified Homeowner",
+    meta: "Full home move",
+  },
+  {
+    title: "“They treated my furniture like it was theirs”",
+    body:
+      "The crew showed up on time, wrapped every piece of furniture, and took extra care with my glass cabinets. They worked quickly but never rushed. It honestly felt like they were moving their own home.",
+    name: "Maria P.",
+    meta: "Princeton, NJ",
+  },
+  {
+    title: "“Saved our grand opening”",
+    body:
+      "We had fixtures and gym equipment show up late for our buildout. Neighborhood Krew rearranged their schedule, delivered everything same-day, and got us ready for our soft opening. Couldn’t have pulled it off without them.",
+    name: "Chris L.",
+    meta: "Retail / Gym buildout",
+  },
+  {
+    title: "“The only movers I’ll call from now on”",
+    body:
+      "I’ve moved three times in the last 5 years and this was by far the smoothest. Transparent rates, no surprise fees, and the guys were friendly and professional the entire time.",
+    name: "Devon S.",
+    meta: "Bucks County, PA",
+  },
+  {
+    title: "“Handled our piano and appliances perfectly”",
+    body:
+      "We needed a piano and a few new appliances moved around inside the house. They navigated tight stairwells and doorways without a scratch. In-home move was worth every penny.",
+    name: "Hannah R.",
+    meta: "In-home move",
+  },
+  {
+    title: "“Clean, fast, and respectful”",
+    body:
+      "They laid down floor protection, wrapped our door frames, and cleaned up as they went. The crew was respectful to both our family and the property. Highly recommend.",
+    name: "Jordan K.",
+    meta: "Philadelphia, PA",
+  },
+];
+
 export default function App() {
   const [exitOpen, setExitOpen] = useState(false);
   const [exitEmail, setExitEmail] = useState("");
@@ -77,7 +129,9 @@ export default function App() {
   });
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [headerSmall, setHeaderSmall] = useState(false);
+  const [activeReview, setActiveReview] = useState(0);
 
+  // Exit intent popup
   useEffect(() => {
     const onOut = (e: MouseEvent) => {
       if (e.clientY <= 0 && shouldOpenExit()) {
@@ -89,12 +143,21 @@ export default function App() {
     return () => removeEventListener("mouseout", onOut);
   }, []);
 
+  // Shrinking header on scroll
   useEffect(() => {
     const onScroll = () => {
       setHeaderSmall(window.scrollY > 40);
     };
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Auto-rotating reviews
+  useEffect(() => {
+    const id = setInterval(() => {
+      setActiveReview((prev) => (prev + 1) % REVIEWS.length);
+    }, 8000); // 8 seconds per review
+    return () => clearInterval(id);
   }, []);
 
   const closeExit = () => {
@@ -154,6 +217,8 @@ export default function App() {
       ★★★★★
     </div>
   );
+
+  const currentReview = REVIEWS[activeReview];
 
   return (
     <div id="top">
@@ -226,7 +291,7 @@ export default function App() {
             }`}
           >
             <a href="#services">Services</a>
-            <a href="#pricing">Pricing</a>
+            <a href="#pricing">In-Home Moves</a>
             <a href="#reviews">Reviews</a>
             <a href="#gallery">Gallery</a>
             <a href="#hiring">We’re Hiring</a>
@@ -234,13 +299,12 @@ export default function App() {
 
           {/* Mobile menu button */}
           <button
-            className="md:hidden inline-flex items-center justify-center rounded-md border px-2 py-1 text-sm"
+            className="md:hidden inline-flex items-center gap-1 rounded-md border px-2 py-1 text-sm bg-white"
             onClick={() => setMobileNavOpen((open) => !open)}
             aria-label="Toggle navigation menu"
           >
-            <span className="block w-5 h-[2px] bg-black mb-1" />
-            <span className="block w-5 h-[2px] bg-black mb-1" />
-            <span className="block w-5 h-[2px] bg-black" />
+            <Menu className="h-5 w-5" />
+            <span className="text-xs">Menu</span>
           </button>
         </div>
 
@@ -260,7 +324,7 @@ export default function App() {
                 onClick={() => setMobileNavOpen(false)}
                 className="py-1"
               >
-                Pricing
+                In-Home Moves
               </a>
               <a
                 href="#reviews"
@@ -398,246 +462,17 @@ export default function App() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-12 md:py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-6">Simple Pricing</h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>2 Movers + Truck</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-extrabold">$150/hr</div>
-                <p className="text-sm text-gray-600 mt-2">
-                  2-hour minimum • Includes pads, shrink wrap & basic supplies
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>3 Movers + Truck</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-extrabold">$210/hr</div>
-                <p className="text-sm text-gray-600 mt-2">
-                  Great for 2–3 bedroom moves
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Packing / Labor Only</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-extrabold">$75/hr</div>
-                <p className="text-sm text-gray-600 mt-2">
-                  Per mover • 2-hour minimum
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Reserve Date with Deposit */}
-      <section className="py-12 md:py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-3">
-            Reserve Your Move Date with a Deposit
-          </h2>
-          <p className="text-sm text-gray-600 mb-4">
-            In a time crunch? Secure your preferred move date with a $100
-            deposit. We’ll call to finalize your full quote and apply this
-            deposit to your invoice.
-          </p>
-
-          <Card className="max-w-xl">
-            <CardContent className="pt-6">
-              <form onSubmit={submitDeposit} className="space-y-3">
-                <Input
-                  type="email"
-                  required
-                  placeholder="Your email"
-                  value={depositForm.email}
-                  onChange={(e) =>
-                    handleDepositChange(
-                      "email",
-                      (e.target as HTMLInputElement).value
-                    )
-                  }
-                />
-                <select
-                  className="border rounded-md px-3 py-2 w-full text-sm"
-                  value={depositForm.service}
-                  onChange={(e) =>
-                    handleDepositChange("service", e.target.value)
-                  }
-                >
-                  <option>Residential & Apartment Move</option>
-                  <option>Commercial & Freight</option>
-                  <option>Junk Removal</option>
-                  <option>Packing Only</option>
-                  <option>Labor Only (No Truck)</option>
-                </select>
-                <div className="flex flex-col md:flex-row gap-3">
-                  <Input
-                    type="date"
-                    required
-                    value={depositForm.date}
-                    onChange={(e) =>
-                      handleDepositChange(
-                        "date",
-                        (e.target as HTMLInputElement).value
-                      )
-                    }
-                  />
-                  <select
-                    className="border rounded-md px-3 py-2 w-full text-sm"
-                    value={depositForm.timeWindow}
-                    onChange={(e) =>
-                      handleDepositChange("timeWindow", e.target.value)
-                    }
-                  >
-                    <option>Morning (8am–12pm)</option>
-                    <option>Midday (12pm–4pm)</option>
-                    <option>Evening (4pm–8pm)</option>
-                    <option>Flexible / Call to confirm</option>
-                  </select>
-                </div>
-
-                {depositError && (
-                  <p className="text-sm text-red-600">{depositError}</p>
-                )}
-
-                <Button
-                  type="submit"
-                  style={{ backgroundColor: BRAND.lime, color: "#111" }}
-                  className="w-full rounded-2xl"
-                  disabled={depositLoading}
-                >
-                  {depositLoading
-                    ? "Starting secure checkout..."
-                    : "Pay $100 Deposit & Reserve Date"}
-                </Button>
-
-                <p className="text-[11px] text-gray-500 mt-2">
-                  Deposit is applied toward your final move total. You can
-                  adjust the exact policy with the owner (e.g. refundable up to
-                  72 hours before the move).
-                </p>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Reviews */}
-      <section id="reviews" className="py-12 md:py-16">
-        <div className="max-w-6xl mx-auto px-4">
-          <p className="text-sm text-gray-500 mb-1">
-            Trusted by more than 10,000 customers.
-          </p>
-          <h2 className="text-2xl font-bold mb-6">What Our Customers Say</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>“Every item arrived undamaged”</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <StarRow />
-                <p className="mt-3 text-gray-700">
-                  From the moment I contacted Alex, I knew I was in good hands.
-                  He came out to my house to see what his team would be moving
-                  to give me a quote... He was very patient working around the
-                  weather. I am pleased to say every item arrived at the new
-                  home undamaged. His pricing was reasonable with exceptional
-                  service. I would highly recommend Alex and the Neighborhood
-                  Krew and give them 20 stars if I could.
-                </p>
-                <div className="mt-2 text-sm text-gray-500">
-                  — Verified Homeowner
-                </div>
-              </CardContent>
-            </Card>
-            <div className="grid gap-6">
-              <Card>
-                <CardContent>
-                  <StarRow />
-                  <p className="mt-2">
-                    “Team was early, wrapped everything, and got us moved in
-                    record time. 10/10.”
-                  </p>
-                  <div className="mt-2 text-sm text-gray-500">
-                    — Maria P., Princeton, NJ
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent>
-                  <StarRow />
-                  <p className="mt-2">
-                    “Best movers I’ve used. Fair hourly rate and super careful
-                    with my gym equipment.”
-                  </p>
-                  <div className="mt-2 text-sm text-gray-500">
-                    — Devon S., Bucks County
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent>
-                  <StarRow />
-                  <p className="mt-2">
-                    “Responsive, transparent pricing, and the crew was
-                    respectful. Highly recommend.”
-                  </p>
-                  <div className="mt-2 text-sm text-gray-500">
-                    — Hannah R., Philadelphia
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent>
-                  <StarRow />
-                  <p className="mt-2">
-                    “Handled a store buildout flawlessly. Will be using them for
-                    future freight runs.”
-                  </p>
-                  <div className="mt-2 text-sm text-gray-500">
-                    — Chris L., Retail Ops
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Gallery */}
-      <section id="gallery" className="py-12 md:py-16">
-        <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-6">Recent Jobs & Trucks</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <img
-                key={i}
-                src={`/gallery/krew${i + 1}.jpg`}
-                className="rounded-lg border object-cover w-full h-40"
-                alt={`Job ${i + 1}`}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Contact with "Choose Service" dropdown */}
+      {/* Contact / Quote – moved above pricing */}
       <section id="contact" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8">
           <div>
             <h2 className="text-2xl font-bold mb-3">Get Your Quote</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Tell us about your move, in-home project, or junk removal job and
+              we’ll follow up with a clear, custom quote.
+            </p>
             <form
-              onSubmit={async (e) => {
+              onSubmit={(e) => {
                 e.preventDefault();
                 alert("Thanks! We’ll get back to you shortly.");
                 (e.currentTarget as HTMLFormElement).reset();
@@ -655,13 +490,14 @@ export default function App() {
                 <option value="">Choose service</option>
                 <option>Residential & Apartment Move</option>
                 <option>Commercial & Freight</option>
+                <option>In-Home Move (appliance / furniture)</option>
                 <option>Junk Removal</option>
                 <option>Packing Only</option>
                 <option>Labor Only (No Truck)</option>
               </select>
               <Textarea
                 name="details"
-                placeholder="Move details (where from, where to, stairs, etc.)"
+                placeholder="Move details (where from, where to, stairs, dates, etc.)"
               />
               <Button style={{ backgroundColor: "#b6e300", color: "#111" }}>
                 Request Quote
@@ -718,8 +554,237 @@ export default function App() {
         </div>
       </section>
 
+      {/* Pricing – now specifically In-Home Moves */}
+      <section id="pricing" className="py-12 md:py-16 bg-white">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-2xl font-bold mb-2">Simple In-Home Moves</h2>
+          <p className="text-sm text-gray-600 mb-6 max-w-2xl">
+            In-home moves are perfect for things like shifting new appliances,
+            rearranging heavy furniture, or moving items between rooms and
+            floors.{" "}
+            <span className="font-semibold">
+              Full residential moves (entire apartments or houses) require a
+              custom quote and will cost more than these in-home rates.
+            </span>
+          </p>
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>2 Movers (In-Home)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-extrabold">$150/hr</div>
+                <p className="text-sm text-gray-600 mt-2">
+                  For in-home furniture rearranges, appliance swaps, and small
+                  jobs. 2-hour minimum.
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>3 Movers (In-Home)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-extrabold">$210/hr</div>
+                <p className="text-sm text-gray-600 mt-2">
+                  Great when you have stairs, tight spaces, or heavier items
+                  that need extra hands.
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Labor Only</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-extrabold">$75/hr</div>
+                <p className="text-sm text-gray-600 mt-2">
+                  Per mover • 2-hour minimum • You provide the truck, we provide
+                  the muscle for loading/unloading.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Reserve Date with Deposit */}
+      <section className="py-12 md:py-16 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-2xl font-bold mb-3">
+            Reserve Your Move Date with a Deposit
+          </h2>
+          <p className="text-sm text-gray-600 mb-4">
+            In a time crunch? Secure your preferred move date with a{" "}
+            <span className="font-semibold">$75 deposit.</span> We’ll call to
+            finalize your full quote and apply this deposit to your final move
+            invoice.
+          </p>
+
+          <Card className="max-w-xl">
+            <CardContent className="pt-6">
+              <form onSubmit={submitDeposit} className="space-y-3">
+                <Input
+                  type="email"
+                  required
+                  placeholder="Your email"
+                  value={depositForm.email}
+                  onChange={(e) =>
+                    handleDepositChange(
+                      "email",
+                      (e.target as HTMLInputElement).value
+                    )
+                  }
+                />
+                <select
+                  className="border rounded-md px-3 py-2 w-full text-sm"
+                  value={depositForm.service}
+                  onChange={(e) =>
+                    handleDepositChange("service", e.target.value)
+                  }
+                >
+                  <option>Residential & Apartment Move</option>
+                  <option>Commercial & Freight</option>
+                  <option>In-Home Move (appliance / furniture)</option>
+                  <option>Junk Removal</option>
+                  <option>Packing Only</option>
+                  <option>Labor Only (No Truck)</option>
+                </select>
+                <div className="flex flex-col md:flex-row gap-3">
+                  <Input
+                    type="date"
+                    required
+                    value={depositForm.date}
+                    onChange={(e) =>
+                      handleDepositChange(
+                        "date",
+                        (e.target as HTMLInputElement).value
+                      )
+                    }
+                  />
+                  <select
+                    className="border rounded-md px-3 py-2 w-full text-sm"
+                    value={depositForm.timeWindow}
+                    onChange={(e) =>
+                      handleDepositChange("timeWindow", e.target.value)
+                    }
+                  >
+                    <option>Morning (8am–12pm)</option>
+                    <option>Midday (12pm–4pm)</option>
+                    <option>Evening (4pm–8pm)</option>
+                    <option>Flexible / Call to confirm</option>
+                  </select>
+                </div>
+
+                {depositError && (
+                  <p className="text-sm text-red-600">{depositError}</p>
+                )}
+
+                <Button
+                  type="submit"
+                  style={{ backgroundColor: BRAND.lime, color: "#111" }}
+                  className="w-full rounded-2xl"
+                  disabled={depositLoading}
+                >
+                  {depositLoading
+                    ? "Starting secure checkout..."
+                    : "Pay $75 Deposit & Reserve Date"}
+                </Button>
+
+                <p className="text-[11px] text-gray-500 mt-2">
+                  Deposit is applied toward your final move total. You can
+                  adjust the exact policy with the owner (e.g. refundable up to
+                  72 hours before the move).
+                </p>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Reviews – auto-rotating slideshow */}
+      <section id="reviews" className="py-12 md:py-16 bg-white">
+        <div className="max-w-6xl mx-auto px-4">
+          <p className="text-sm text-gray-500 mb-1">
+            Trusted by more than 10,000 customers.
+          </p>
+          <h2 className="text-2xl font-bold mb-6">What Our Customers Say</h2>
+
+          <div className="grid md:grid-cols-[2fr,1fr] gap-8 items-stretch">
+            {/* Main sliding review */}
+            <Card className="relative overflow-hidden">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between gap-4 mb-2">
+                  <CardTitle className="text-base md:text-lg">
+                    {currentReview.title}
+                  </CardTitle>
+                  <StarRow />
+                </div>
+                <p className="mt-3 text-gray-700 text-sm md:text-base">
+                  {currentReview.body}
+                </p>
+                <div className="mt-4 text-sm text-gray-600">
+                  — {currentReview.name}
+                  {currentReview.meta ? ` • ${currentReview.meta}` : ""}
+                </div>
+              </CardContent>
+
+              {/* Dots for slideshow */}
+              <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
+                {REVIEWS.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveReview(idx)}
+                    className={`h-2 w-2 rounded-full transition ${
+                      idx === activeReview
+                        ? "bg-black"
+                        : "bg-gray-300 hover:bg-gray-400"
+                    }`}
+                    aria-label={`Go to review ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            </Card>
+
+            {/* Side stack of quick quotes */}
+            <div className="space-y-3">
+              {REVIEWS.slice(0, 3).map((r, idx) => (
+                <Card key={idx} className="border-dashed border-gray-200">
+                  <CardContent className="py-3">
+                    <StarRow />
+                    <p className="mt-1 text-xs text-gray-700 line-clamp-3">
+                      {r.body}
+                    </p>
+                    <div className="mt-1 text-[11px] text-gray-500">
+                      — {r.name}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Gallery */}
+      <section id="gallery" className="py-12 md:py-16">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-2xl font-bold mb-6">Recent Jobs & Trucks</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <img
+                key={i}
+                src={`/gallery/krew${i + 1}.jpg`}
+                className="rounded-lg border object-cover w-full h-40"
+                alt={`Job ${i + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* We're Hiring */}
-      <section id="hiring" className="py-12 md:py-16">
+      <section id="hiring" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold">We’re Hiring!</h2>
           <p className="text-gray-600 mt-2">
@@ -747,12 +812,7 @@ export default function App() {
             className="mt-4 grid md:grid-cols-3 gap-3"
           >
             <Input name="name" placeholder="Full name" required />
-            <Input
-              name="email"
-              type="email"
-              placeholder="Email"
-              required
-            />
+            <Input name="email" type="email" placeholder="Email" required />
             <Input name="phone" placeholder="Phone" required />
             <Input name="city" placeholder="City" />
             <select
