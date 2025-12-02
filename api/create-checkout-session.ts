@@ -21,44 +21,26 @@ export default async function handler(req: any, res: any) {
   const depositAmount = 7500;
 
   try {
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      customer_email: email,
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            unit_amount: depositAmount,
-            product_data: {
-              name: `Move date deposit – ${service}`,
-              description: `Preferred date: ${date}${
-                timeWindow ? ` (${timeWindow})` : ""
-              }`,
-            },
-          },
-          quantity: 1,
-        },
-      ],
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: depositAmount,
+      currency: "usd",
+      receipt_email: email,
       metadata: {
         kind: "move_deposit",
         service,
         date,
         timeWindow: timeWindow || "",
       },
-      success_url: `${
-        process.env.NEXT_PUBLIC_SITE_URL || "https://neighborhood-krew.vercel.app"
-      }/booking-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${
-        process.env.NEXT_PUBLIC_SITE_URL || "https://neighborhood-krew.vercel.app"
-      }/booking-cancelled`,
+      automatic_payment_methods: { enabled: true },
     });
 
-    return res.status(200).json({ url: session.url });
+    return res.status(200).json({
+      clientSecret: paymentIntent.client_secret,
+    });
   } catch (err: any) {
-    console.error("Stripe checkout error:", err);
+    console.error("Stripe PaymentIntent error:", err);
     return res
       .status(500)
-      .json({ error: "Unable to create checkout session" });
+      .json({ error: "Unable to create payment intent" });
   }
 }
