@@ -17,7 +17,8 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const depositAmount = 10000; // $100.00 in cents – change if needed
+  // Change this to adjust deposit amount
+  const depositAmount = 10000; // $50.00 in cents
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -31,25 +32,33 @@ export default async function handler(req: any, res: any) {
             unit_amount: depositAmount,
             product_data: {
               name: `Move date deposit – ${service}`,
-              description: `Preferred date: ${date}${timeWindow ? ` (${timeWindow})` : ""}`,
+              description: `Preferred date: ${date}${
+                timeWindow ? ` (${timeWindow})` : ""
+              }`,
             },
           },
           quantity: 1,
         },
       ],
       metadata: {
+        kind: "move_deposit",
         service,
         date,
         timeWindow: timeWindow || "",
-        kind: "move_deposit",
       },
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://yourdomain.com"}/booking-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://yourdomain.com"}/booking-cancelled`,
+      success_url: `${
+        process.env.NEXT_PUBLIC_SITE_URL || "https://neighborhood-krew.vercel.app"
+      }/booking-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${
+        process.env.NEXT_PUBLIC_SITE_URL || "https://neighborhood-krew.vercel.app"
+      }/booking-cancelled`,
     });
 
     return res.status(200).json({ url: session.url });
   } catch (err: any) {
     console.error("Stripe checkout error:", err);
-    return res.status(500).json({ error: "Unable to create checkout session" });
+    return res
+      .status(500)
+      .json({ error: "Unable to create checkout session" });
   }
 }
