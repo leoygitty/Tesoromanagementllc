@@ -17,8 +17,8 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  // Adjust this to change deposit amount: 10000 = $100.00
-  const depositAmount = 10000;
+  // $75.00 deposit in cents
+  const depositAmount = 7500;
 
   try {
     const session = await stripe.checkout.sessions.create({
