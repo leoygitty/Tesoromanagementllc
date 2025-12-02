@@ -1,34 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Phone, Mail, Facebook, Menu } from "lucide-react";
-import { loadStripe } from "@stripe/stripe-js";
-import {
-  Elements,
-  CardElement,
-  useElements,
-  useStripe,
-} from "@stripe/react-stripe-js";
 
-const BRAND = { dark: "#1f160f", lime: "#b6e300" };
+// Brand + business config
+const BRAND = {
+  dark: "#1f160f",
+  lime: "#b6e300",
+};
+
 const BUSINESS = {
   phone: "(215) 531-0907",
   email: "Neighborhoodkrew@gmail.com",
   facebook: "https://www.facebook.com/TheNeighborhoodKrew",
 };
 
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string
-);
+// --- Exit-intent + promo helpers ----------------------------------------
 
-// Exit-intent promo logic
 const EXIT_DISMISS_KEY = "nk_exit_dismissed_until";
 const EXIT_SEEN_SESSION = "nk_exit_seen_session";
 
 function shouldOpenExit() {
   try {
+    if (typeof window === "undefined") return false;
     if (sessionStorage.getItem(EXIT_SEEN_SESSION) === "1") return false;
     const until = Number(localStorage.getItem(EXIT_DISMISS_KEY) || 0);
     if (until && Date.now() < until) return false;
@@ -40,6 +31,7 @@ function shouldOpenExit() {
 
 function markExitSeen() {
   try {
+    if (typeof window === "undefined") return;
     sessionStorage.setItem(EXIT_SEEN_SESSION, "1");
   } catch {
     // ignore
@@ -48,6 +40,7 @@ function markExitSeen() {
 
 function dismissExit(days: number) {
   try {
+    if (typeof window === "undefined") return;
     localStorage.setItem(
       EXIT_DISMISS_KEY,
       String(Date.now() + days * 24 * 60 * 60 * 1000)
@@ -58,453 +51,243 @@ function dismissExit(days: number) {
 }
 
 async function subscribeAndSendPromo(email: string) {
-  const r = await fetch("/api/subscribe", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
-  }).catch(() => null);
-  if (!r) return { ok: false };
-  const data = await r.json().catch(() => ({}));
-  return data;
-}
-
-type Review = {
-  title: string;
-  body: string;
-  name: string;
-  meta?: string;
-};
-
-const REVIEWS: Review[] = [
-  {
-    title: "“Every item arrived undamaged”",
-    body:
-      "From the moment I contacted Alex, I knew I was in good hands. He came out to my house to see what his team would be moving to give me a quote. He was very patient working around the weather. I am pleased to say every item arrived at the new home undamaged. His pricing was reasonable with exceptional service. I would highly recommend Alex and the Neighborhood Krew and give them 20 stars if I could.",
-    name: "Verified Homeowner",
-    meta: "Full home move",
-  },
-  {
-    title: "“They treated my furniture like it was theirs”",
-    body:
-      "The crew showed up on time, wrapped every piece of furniture, and took extra care with my glass cabinets. They worked quickly but never rushed. It honestly felt like they were moving their own home.",
-    name: "Maria P.",
-    meta: "Princeton, NJ",
-  },
-  {
-    title: "“Saved our grand opening”",
-    body:
-      "We had fixtures and gym equipment show up late for our buildout. Neighborhood Krew rearranged their schedule, delivered everything same-day, and got us ready for our soft opening. Couldn’t have pulled it off without them.",
-    name: "Chris L.",
-    meta: "Retail / Gym buildout",
-  },
-  {
-    title: "“The only movers I’ll call from now on”",
-    body:
-      "I’ve moved three times in the last 5 years and this was by far the smoothest. Transparent rates, no surprise fees, and the guys were friendly and professional the entire time.",
-    name: "Devon S.",
-    meta: "Bucks County, PA",
-  },
-  {
-    title: "“Handled our piano and appliances perfectly”",
-    body:
-      "We needed a piano and a few new appliances moved around inside the house. They navigated tight stairwells and doorways without a scratch. In-home move was worth every penny.",
-    name: "Hannah R.",
-    meta: "In-home move",
-  },
-  {
-    title: "“Clean, fast, and respectful”",
-    body:
-      "They laid down floor protection, wrapped our door frames, and cleaned up as they went. The crew was respectful to both our family and the property. Highly recommend.",
-    name: "Jordan K.",
-    meta: "Philadelphia, PA",
-  },
-];
-
-// Stripe deposit form
-type DepositFormLocal = {
-  email: string;
-  service: string;
-  date: string;
-  timeWindow: string;
-};
-
-function DepositCheckoutForm() {
-  const stripe = useStripe();
-  const elements = useElements();
-
-  const [form, setForm] = useState<DepositFormLocal>({
-    email: "",
-    service: "Residential & Apartment Move",
-    date: "",
-    timeWindow: "Morning (8am–12pm)",
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-
-  const updateField = (field: keyof DepositFormLocal, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError(null);
-  setSubmitted(false);
-
-  if (!state.name || !state.email) {
-    setError("Please enter your name and email so we can follow up.");
-    return;
-  }
-
-  const est = computeEstimate(state);
-  setEstimate(est);
-
-  setSubmitting(true);
   try {
-    const detailsLines = [
-      `Move type: ${state.moveType}`,
-      `Home size: ${
-        state.size === "studio_1br"
-          ? "Studio / 1 Bedroom"
-          : state.size === "2br"
-          ? "2 Bedroom"
-          : state.size === "3br"
-          ? "3 Bedroom"
-          : state.size === "4br"
-          ? "4 Bedroom"
-          : state.size === "5plus"
-          ? "5+ Bedroom"
-          : "Not specified"
-      }`,
-      `Approx. square footage: ${state.sqft || "N/A"}`,
-      `From ZIP: ${state.fromZip || "N/A"}`,
-      `To ZIP: ${state.toZip || "N/A"}`,
-      `Approx. distance: ${
-        state.distance === "under25"
-          ? "Under 25 miles"
-          : state.distance === "25-75"
-          ? "25–75 miles"
-          : state.distance === "75-150"
-          ? "75–150 miles"
-          : "150+ miles / Long-distance"
-      }`,
-      `Stairs: ${state.stairs}`,
-      `Elevator: ${
-        state.hasElevator === "yes"
-          ? "Yes"
-          : state.hasElevator === "no"
-          ? "No"
-          : "Not sure"
-      }`,
-      `Special items: ${
-        state.specialItems.trim() || "No special items specified"
-      }`,
-      `Preferred move date: ${state.moveDate || "Not specified"}`,
-      "",
-      `ROUGH ESTIMATE (non-binding): $${est.low.toLocaleString()} – $${est.high.toLocaleString()}`,
-      "This is a rough ballpark only. Final pricing will be provided after speaking with the crew and confirming details.",
-      "",
-      `Photo count (not yet attached to email): ${state.photos.length}`,
-    ];
-
-    const payload = {
-      type: "quote",
-      name: state.name,
-      email: state.email,
-      phone: state.phone,
-      service: "Residential Move – Quiz Funnel",
-      details: detailsLines.join("\n"),
-    };
-
-    const res = await fetch("/api/quote", {
+    const res = await fetch("/api/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ email }),
     });
-
-    if (res.ok) {
-      setSubmitted(true);
-    } else {
-      setError(
-        "We generated your estimate, but there was an issue sending details. If you don’t hear from us soon, please call or email directly."
-      );
-    }
-  } catch (err) {
-    console.error(err);
-    setError(
-      "There was an issue submitting your request. Please also feel free to call or email us directly."
-    );
-  } finally {
-    setSubmitting(false);
+    const data = await res.json().catch(() => ({}));
+    return data;
+  } catch {
+    return { ok: false };
   }
-};
+}
 
+// --- Simple UI primitives ------------------------------------------------
+
+type DivProps = React.HTMLAttributes<HTMLDivElement>;
+
+function Card(props: DivProps) {
+  const { className = "", ...rest } = props;
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <Input
-        type="email"
-        required
-        placeholder="Your email"
-        value={form.email}
-        onChange={(e) =>
-          updateField("email", (e.target as HTMLInputElement).value)
-        }
-      />
-      <select
-        className="border rounded-md px-3 py-2 w-full text-sm"
-        value={form.service}
-        onChange={(e) => updateField("service", e.target.value)}
-      >
-        <option>Residential & Apartment Move</option>
-        <option>Commercial & Freight</option>
-        <option>In-Home Move (appliance / furniture)</option>
-        <option>Junk Removal</option>
-        <option>Packing Only</option>
-        <option>Labor Only (No Truck)</option>
-      </select>
-      <div className="flex flex-col md:flex-row gap-3">
-        <Input
-          type="date"
-          required
-          value={form.date}
-          onChange={(e) =>
-            updateField("date", (e.target as HTMLInputElement).value)
-          }
-        />
-        <select
-          className="border rounded-md px-3 py-2 w-full text-sm"
-          value={form.timeWindow}
-          onChange={(e) => updateField("timeWindow", e.target.value)}
-        >
-          <option>Morning (8am–12pm)</option>
-          <option>Midday (12pm–4pm)</option>
-          <option>Evening (4pm–8pm)</option>
-          <option>Flexible / Call to confirm</option>
-        </select>
-      </div>
-
-      <div className="border rounded-md px-3 py-2 bg-white">
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: "14px",
-                color: "#111",
-                "::placeholder": { color: "#9ca3af" },
-              },
-              invalid: { color: "#ef4444" },
-            },
-          }}
-        />
-      </div>
-
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {success && (
-        <p className="text-sm text-green-600">
-          Deposit paid! We’ll follow up to confirm your move details.
-        </p>
-      )}
-
-      <Button
-        type="submit"
-        style={{ backgroundColor: "#b6e300", color: "#111" }}
-        className="w-full rounded-2xl"
-        disabled={loading || !stripe || !elements}
-      >
-        {loading ? "Processing..." : "Pay $75 Deposit & Reserve Date"}
-      </Button>
-
-      <p className="text-[11px] text-gray-500 mt-2">
-        Deposit is applied toward your final move total. You can adjust the
-        exact policy with the owner (e.g. refundable up to 72 hours before the
-        move).
-      </p>
-    </form>
+    <div
+      className={
+        "rounded-2xl border border-gray-200 bg-white shadow-sm " + className
+      }
+      {...rest}
+    />
   );
 }
 
-// Quiz / wizard types + helpers
-type MoveSize = "studio_1br" | "2br" | "3br" | "4br" | "5plus";
-type QuoteStep = 1 | 2 | 3;
+function CardHeader(props: DivProps) {
+  const { className = "", ...rest } = props;
+  return (
+    <div className={"px-4 pt-4 md:px-6 md:pt-5 " + className} {...rest} />
+  );
+}
 
-type QuoteWizardState = {
-  moveType: "Local" | "Long-distance";
-  size: MoveSize | "";
+function CardContent(props: DivProps) {
+  const { className = "", ...rest } = props;
+  return (
+    <div className={"px-4 pb-4 md:px-6 md:pb-6 " + className} {...rest} />
+  );
+}
+
+function CardTitle(props: DivProps) {
+  const { className = "", ...rest } = props;
+  return (
+    <h3
+      className={
+        "text-lg md:text-xl font-semibold tracking-tight " + className
+      }
+      {...rest}
+    />
+  );
+}
+
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: "solid" | "outline" | "ghost";
+};
+
+function Button({ variant = "solid", className = "", ...rest }: ButtonProps) {
+  const base =
+    "inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2";
+  let style = "";
+  if (variant === "solid") {
+    style = "bg-lime-400 text-black hover:bg-lime-300 focus:ring-lime-400";
+  } else if (variant === "outline") {
+    style =
+      "border border-white/70 bg-transparent text-white hover:bg-white/10 focus:ring-white";
+  } else {
+    style =
+      "bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-300";
+  }
+  return <button className={`${base} ${style} ${className}`} {...rest} />;
+}
+
+type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
+
+function TextInput({ className = "", ...rest }: InputProps) {
+  return (
+    <input
+      className={
+        "w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-lime-400 focus:outline-none focus:ring-2 focus:ring-lime-300 " +
+        className
+      }
+      {...rest}
+    />
+  );
+}
+
+type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
+
+function TextArea({ className = "", ...rest }: TextareaProps) {
+  return (
+    <textarea
+      className={
+        "w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-lime-400 focus:outline-none focus:ring-2 focus:ring-lime-300 " +
+        className
+      }
+      {...rest}
+    />
+  );
+}
+
+// --- Quote Wizard / Quiz Funnel -----------------------------------------
+
+type JobType = "residential" | "commercial" | "junk";
+
+type WizardState = {
+  jobType: JobType;
+  size: string;
   sqft: string;
   fromZip: string;
   toZip: string;
-  distance: "under25" | "25-75" | "75-150" | "150+";
-  stairs: "None" | "Some" | "A lot";
-  hasElevator: "yes" | "no" | "unknown";
+  distance: string;
+  stairs: string;
+  hasElevator: "yes" | "no" | "unsure";
   specialItems: string;
+  moveDate: string;
   name: string;
   email: string;
   phone: string;
-  moveDate: string;
   photos: File[];
+  businessType: string;
+  junkWeight: string;
+  junkDescription: string;
 };
 
-function computeEstimate(state: QuoteWizardState) {
-  let low = 2000;
-  let high = 3500;
+type Estimate = { low: number; high: number };
 
-  switch (state.size) {
-    case "2br":
-      low = 3000;
-      high = 5000;
-      break;
-    case "3br":
-      low = 4500;
-      high = 7000;
-      break;
-    case "4br":
-      low = 6500;
-      high = 10000;
-      break;
-    case "5plus":
-      low = 9000;
-      high = 12000;
-      break;
-    default:
-      break;
-  }
-
-  // Sqft nudge
-  const sqft = parseInt(state.sqft || "0", 10);
-  if (!isNaN(sqft) && sqft > 0) {
-    if (sqft > 2500) {
-      low *= 1.1;
-      high *= 1.15;
-    } else if (sqft < 900) {
-      low *= 0.9;
-      high *= 0.9;
+function computeEstimate(state: WizardState): Estimate {
+  if (state.jobType === "junk") {
+    switch (state.junkWeight) {
+      case "under500":
+        return { low: 200, high: 400 };
+      case "500-1500":
+        return { low: 350, high: 700 };
+      case "1500-3000":
+        return { low: 600, high: 1200 };
+      case "3000plus":
+        return { low: 1000, high: 2000 };
+      default:
+        return { low: 300, high: 900 };
     }
   }
 
-  // Distance
-  if (state.moveType === "Long-distance" || state.distance === "150+") {
-    low *= 1.2;
-    high *= 1.25;
-  } else if (state.distance === "75-150") {
-    low *= 1.1;
-    high *= 1.15;
+  let baseLow = 2000;
+  let baseHigh = 6000;
+
+  if (state.jobType === "residential") {
+    if (state.size === "studio_1br") {
+      baseLow = 2000;
+      baseHigh = 4000;
+    } else if (state.size === "2br") {
+      baseLow = 2500;
+      baseHigh = 5000;
+    } else if (state.size === "3br") {
+      baseLow = 3500;
+      baseHigh = 7000;
+    } else if (state.size === "4br") {
+      baseLow = 4500;
+      baseHigh = 9000;
+    } else if (state.size === "5plus") {
+      baseLow = 6000;
+      baseHigh = 12000;
+    }
+  } else if (state.jobType === "commercial") {
+    baseLow = 4000;
+    baseHigh = 15000;
   }
 
-  // Stairs
-  if (state.stairs === "Some") {
-    low *= 1.05;
-    high *= 1.08;
-  } else if (state.stairs === "A lot") {
-    low *= 1.1;
-    high *= 1.15;
+  if (state.distance === "75-150") {
+    baseLow += 500;
+    baseHigh += 1000;
+  } else if (state.distance === "150plus") {
+    baseLow += 1000;
+    baseHigh += 2000;
   }
 
-  // Special items
-  if (state.specialItems.trim().length > 0) {
-    low *= 1.03;
-    high *= 1.06;
-  }
-
-  // Clamp between 2k–12k
-  low = Math.max(2000, Math.min(low, 12000));
-  high = Math.max(low + 500, Math.min(high, 12000));
-
-  // Round to nearest $50
-  low = Math.round(low / 50) * 50;
-  high = Math.round(high / 50) * 50;
-
-  return { low, high };
+  return { low: baseLow, high: baseHigh };
 }
 
-function QuoteButton({ label }: { label: string }) {
-  return (
-    <Button
-      style={{ backgroundColor: BRAND.lime, color: "#111" }}
-      className="mt-3 w-full"
-      onClick={() =>
-        document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })
-      }
-    >
-      Get a Quote for {label}
-    </Button>
-  );
-}
-
-function StarRow() {
-  return (
-    <div
-      aria-label="5 star rating"
-      className="text-yellow-500"
-      style={{ letterSpacing: "2px" }}
-    >
-      ★★★★★
-    </div>
-  );
-}
-
-// Multi-step quote / quiz wizard
-function QuoteWizard() {
-  const [step, setStep] = useState<QuoteStep>(1);
-  const [state, setState] = useState<QuoteWizardState>({
-    moveType: "Local",
+export function QuoteWizard() {
+  const [step, setStep] = useState(0);
+  const [state, setState] = useState<WizardState>({
+    jobType: "residential",
     size: "",
     sqft: "",
     fromZip: "",
     toZip: "",
-    distance: "under25",
-    stairs: "None",
-    hasElevator: "unknown",
+    distance: "",
+    stairs: "none",
+    hasElevator: "unsure",
     specialItems: "",
+    moveDate: "",
     name: "",
     email: "",
     phone: "",
-    moveDate: "",
     photos: [],
+    businessType: "",
+    junkWeight: "",
+    junkDescription: "",
   });
-  const [error, setError] = useState<string | null>(null);
-  const [estimate, setEstimate] = useState<{ low: number; high: number } | null>(
-    null
-  );
+
+  const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const totalSteps = 3;
-  const progress = (step / totalSteps) * 100;
-
-  const updateField = (field: keyof QuoteWizardState, value: any) => {
-    setState((prev) => ({ ...prev, [field]: value }));
+  const stepsByJobType: Record<JobType, string[]> = {
+    residential: ["Job Type", "Home & Distance", "Logistics", "Contact"],
+    commercial: ["Job Type", "Scope & Distance", "Logistics", "Contact"],
+    junk: ["Job Type", "Junk Details", "Contact"],
   };
 
-  const nextStep = () => {
-    setError(null);
-    if (step === 1) {
-      if (!state.size) {
-        setError("Please choose your home size.");
-        return;
-      }
-      if (!state.sqft) {
-        setError("Please estimate your square footage.");
-        return;
-      }
-    }
-    if (step === 2) {
-      if (!state.fromZip || !state.toZip) {
-        setError("Please enter both starting and destination ZIP codes.");
-        return;
-      }
-    }
-    setStep((s) => (s < totalSteps ? ((s + 1) as QuoteStep) : s));
-  };
+  const steps = stepsByJobType[state.jobType];
+  const totalSteps = steps.length;
+  const progress = ((step + 1) / totalSteps) * 100;
+  const isLastStep = step === totalSteps - 1;
 
-  const prevStep = () => {
-    setError(null);
-    setStep((s) => (s > 1 ? ((s - 1) as QuoteStep) : s));
-  };
-
-  const handlePhotosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    updateField("photos", files);
+    setState((s) => ({ ...s, photos: files }));
   };
+
+  function nextStep() {
+    if (step < totalSteps - 1) {
+      setStep((s) => s + 1);
+      setError(null);
+    }
+  }
+
+  function prevStep() {
+    if (step > 0) {
+      setStep((s) => s - 1);
+      setError(null);
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -519,69 +302,81 @@ function QuoteWizard() {
     const est = computeEstimate(state);
     setEstimate(est);
 
+    const jobLabel =
+      state.jobType === "residential"
+        ? "Residential move"
+        : state.jobType === "commercial"
+        ? "Commercial move"
+        : "Junk removal";
+
+    const detailsLines: string[] = [`Job type: ${jobLabel}`];
+
+    if (state.jobType === "commercial") {
+      detailsLines.push(
+        `Business/project: ${state.businessType || "N/A"}`
+      );
+    }
+
+    if (state.jobType === "junk") {
+      detailsLines.push(
+        `Estimated junk weight: ${
+          state.junkWeight || "not specified"
+        }`
+      );
+      detailsLines.push(
+        `Junk description: ${
+          state.junkDescription || "not specified"
+        }`
+      );
+    } else {
+      detailsLines.push(
+        `Home size: ${
+          state.size || "not specified"
+        }, approx. square footage: ${state.sqft || "N/A"}`
+      );
+      detailsLines.push(
+        `Approx. distance: ${state.distance || "N/A"}`
+      );
+      detailsLines.push(`To ZIP: ${state.toZip || "N/A"}`);
+    }
+
+    detailsLines.push(`From ZIP: ${state.fromZip || "N/A"}`);
+    detailsLines.push(
+      `Preferred date: ${state.moveDate || "Not specified"}`
+    );
+    detailsLines.push("");
+    detailsLines.push(
+      `ROUGH ESTIMATE (non-binding): $${est.low.toLocaleString()} – $${est.high.toLocaleString()}`
+    );
+    detailsLines.push(
+      "This is a rough ballpark only. Final pricing will be provided after speaking with the crew and confirming details."
+    );
+    detailsLines.push("");
+    detailsLines.push(
+      `Special items / notes: ${
+        state.specialItems || "(none provided)"
+      }`
+    );
+    detailsLines.push(
+      `Photo count (uploaded via quiz): ${state.photos.length}`
+    );
+
+    const payload = {
+      type: "quote",
+      name: state.name,
+      email: state.email,
+      phone: state.phone,
+      service: `${jobLabel} – Quiz Funnel`,
+      details: detailsLines.join("\n"),
+    };
+
     setSubmitting(true);
     try {
-      const fd = new FormData();
-      fd.append("name", state.name);
-      fd.append("email", state.email);
-      fd.append("phone", state.phone);
-      fd.append("service", "Residential Move – Quiz Funnel");
-
-      const detailsLines = [
-        `Move type: ${state.moveType}`,
-        `Home size: ${
-          state.size === "studio_1br"
-            ? "Studio / 1 Bedroom"
-            : state.size === "2br"
-            ? "2 Bedroom"
-            : state.size === "3br"
-            ? "3 Bedroom"
-            : state.size === "4br"
-            ? "4 Bedroom"
-            : state.size === "5plus"
-            ? "5+ Bedroom"
-            : "Not specified"
-        }`,
-        `Approx. square footage: ${state.sqft || "N/A"}`,
-        `From ZIP: ${state.fromZip || "N/A"}`,
-        `To ZIP: ${state.toZip || "N/A"}`,
-        `Approx. distance: ${
-          state.distance === "under25"
-            ? "Under 25 miles"
-            : state.distance === "25-75"
-            ? "25–75 miles"
-            : state.distance === "75-150"
-            ? "75–150 miles"
-            : "150+ miles / Long-distance"
-        }`,
-        `Stairs: ${state.stairs}`,
-        `Elevator: ${
-          state.hasElevator === "yes"
-            ? "Yes"
-            : state.hasElevator === "no"
-            ? "No"
-            : "Not sure"
-        }`,
-        `Special items: ${
-          state.specialItems.trim() || "No special items specified"
-        }`,
-        `Preferred move date: ${state.moveDate || "Not specified"}`,
-        "",
-        `ROUGH ESTIMATE (non-binding): $${est.low.toLocaleString()} – $${est.high.toLocaleString()}`,
-        "This is a rough ballpark only. Final pricing will be provided after speaking with the crew and confirming details.",
-      ];
-
-      fd.append("details", detailsLines.join("\n"));
-
-      state.photos.forEach((file) => {
-        fd.append("photos", file, file.name);
-      });
-
       const res = await fetch("/api/quote", {
         method: "POST",
-        body: fd,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
-
       if (res.ok) {
         setSubmitted(true);
       } else {
@@ -599,363 +394,558 @@ function QuoteWizard() {
     }
   };
 
+  const currentStepLabel = steps[step];
+
+  // bespoke end copy per job type
+  let jobSpecificLine = "";
+  if (state.jobType === "residential") {
+    jobSpecificLine =
+      "A move coordinator will review your answers, confirm the crew size and trucks needed, and follow up with a firm quote.";
+  } else if (state.jobType === "commercial") {
+    jobSpecificLine =
+      "Our commercial team will look at your scope and schedule, then coordinate a detailed plan around access windows, freight elevators, and any build-out timelines.";
+  } else {
+    jobSpecificLine =
+      "A junk removal dispatcher will match your estimate to the right truck size and reach out to lock in a time window.";
+  }
+
+  const commonLine =
+    "This range is based on similar jobs we’ve completed in the area and is meant as a starting point, not a final price.";
+
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="mb-4">
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-            <span>
-              Step {step} of {totalSteps}
-            </span>
-            <span>
-              {step === 1
-                ? "About your home"
-                : step === 2
-                ? "Distance & access"
-                : "Contact & estimate"}
-            </span>
+    <Card className="shadow-lg">
+      <CardHeader>
+        <CardTitle className="flex flex-col gap-1">
+          <span>Instant Ballpark Estimate</span>
+          <span className="text-sm font-normal text-gray-600">
+            Answer a few quick questions and see a rough price range in
+            under 60 seconds.
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Progress */}
+          <div>
+            <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2 overflow-hidden">
+              <div
+                className="h-full bg-lime-400 transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="text-xs text-gray-500">
+              Step {step + 1} of {totalSteps} · {currentStepLabel}
+            </p>
           </div>
-          <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${progress}%`,
-                backgroundColor: BRAND.lime,
-              }}
-            />
-          </div>
-        </div>
 
-        {error && (
-          <p className="mb-3 text-xs text-red-600 bg-red-50 border border-red-100 rounded-md px-3 py-2">
-            {error}
-          </p>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {step === 1 && (
-            <>
-              <p className="text-sm text-gray-700">
-                Let&apos;s start with the basics.{" "}
-                <span className="font-semibold">
-                  What kind of home are we moving?
-                </span>
+          {/* Step 0 – job type */}
+          {step === 0 && (
+            <div className="space-y-3">
+              <label className="block text-sm font-medium">
+                What kind of job is this?
+              </label>
+              <select
+                className="border rounded-md px-3 py-2 w-full text-sm"
+                value={state.jobType}
+                onChange={(e) =>
+                  setState((s) => ({
+                    ...s,
+                    jobType: e.target.value as JobType,
+                  }))
+                }
+              >
+                <option value="residential">
+                  Residential home / apartment move
+                </option>
+                <option value="commercial">
+                  Commercial move / store buildout / freight
+                </option>
+                <option value="junk">
+                  Junk removal / cleanout
+                </option>
+              </select>
+              <p className="text-xs text-gray-500">
+                We’ll tailor the questions to your move so you only
+                answer what matters.
               </p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {[
-                  { label: "Studio / 1 BR", value: "studio_1br" as MoveSize },
-                  { label: "2 Bedroom", value: "2br" as MoveSize },
-                  { label: "3 Bedroom", value: "3br" as MoveSize },
-                  { label: "4 Bedroom", value: "4br" as MoveSize },
-                  { label: "5+ Bedroom", value: "5plus" as MoveSize },
-                ].map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => updateField("size", opt.value)}
-                    className={`rounded-lg border px-2 py-2 text-left ${
-                      state.size === opt.value
-                        ? "border-black bg-black text-white"
-                        : "border-gray-200 hover:border-gray-400"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              <div className="grid gap-3 text-sm">
-                <label className="text-xs text-gray-700">
-                  Is this a local move or long-distance?
-                  <div className="mt-1 inline-flex rounded-full bg-gray-100 p-1 text-xs">
-                    {["Local", "Long-distance"].map((type) => (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() =>
-                          updateField(
-                            "moveType",
-                            type as QuoteWizardState["moveType"]
-                          )
-                        }
-                        className={`px-3 py-1 rounded-full ${
-                          state.moveType === type
-                            ? "bg-black text-white"
-                            : "text-gray-700"
-                        }`}
-                      >
-                        {type}
-                      </button>
-                    ))}
-                  </div>
+            </div>
+          )}
+
+          {/* Step 1 – residential */}
+          {step === 1 && state.jobType === "residential" && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium">
+                  Home size
                 </label>
-                <label className="text-xs text-gray-700">
-                  Roughly how many square feet is your home?
-                  <Input
-                    className="mt-1"
-                    type="number"
-                    min={300}
-                    max={10000}
+                <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
+                  {[
+                    { id: "studio_1br", label: "Studio / 1 BR" },
+                    { id: "2br", label: "2 BR" },
+                    { id: "3br", label: "3 BR" },
+                    { id: "4br", label: "4 BR" },
+                    { id: "5plus", label: "5+ BR" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() =>
+                        setState((s) => ({ ...s, size: opt.id }))
+                      }
+                      className={`border rounded-md px-3 py-2 text-left ${
+                        state.size === opt.id
+                          ? "border-lime-400 bg-lime-50"
+                          : "border-gray-300"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium">
+                    Approx. square footage
+                  </label>
+                  <TextInput
                     placeholder="e.g. 1,800"
                     value={state.sqft}
                     onChange={(e) =>
-                      updateField("sqft", (e.target as HTMLInputElement).value)
+                      setState((s) => ({ ...s, sqft: e.target.value }))
                     }
                   />
-                </label>
-              </div>
-            </>
-          )}
-
-          {step === 2 && (
-            <>
-              <p className="text-sm text-gray-700">
-                Now let&apos;s get a feel for the{" "}
-                <span className="font-semibold">
-                  distance and how easy it is to move things in/out.
-                </span>
-              </p>
-              <div className="grid gap-3 text-sm">
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="text-xs text-gray-700">
-                    From ZIP
-                    <Input
-                      className="mt-1"
-                      maxLength={10}
-                      placeholder="19103"
-                      value={state.fromZip}
-                      onChange={(e) =>
-                        updateField(
-                          "fromZip",
-                          (e.target as HTMLInputElement).value
-                        )
-                      }
-                    />
-                  </label>
-                  <label className="text-xs text-gray-700">
-                    To ZIP
-                    <Input
-                      className="mt-1"
-                      maxLength={10}
-                      placeholder="08540"
-                      value={state.toZip}
-                      onChange={(e) =>
-                        updateField(
-                          "toZip",
-                          (e.target as HTMLInputElement).value
-                        )
-                      }
-                    />
-                  </label>
                 </div>
-                <label className="text-xs text-gray-700">
-                  About how far is the move?
+                <div>
+                  <label className="block text-sm font-medium">
+                    Approx. distance
+                  </label>
                   <select
-                    className="mt-1 border rounded-md px-3 py-2 w-full text-xs"
+                    className="border rounded-md px-3 py-2 w-full text-sm"
                     value={state.distance}
                     onChange={(e) =>
-                      updateField(
-                        "distance",
-                        e.target.value as QuoteWizardState["distance"]
-                      )
+                      setState((s) => ({
+                        ...s,
+                        distance: e.target.value,
+                      }))
                     }
                   >
+                    <option value="">Select</option>
                     <option value="under25">Under 25 miles</option>
                     <option value="25-75">25–75 miles</option>
                     <option value="75-150">75–150 miles</option>
-                    <option value="150+">150+ miles</option>
+                    <option value="150plus">
+                      150+ miles / long-distance
+                    </option>
                   </select>
-                </label>
-                <label className="text-xs text-gray-700">
-                  How many stairs are we working with?
-                  <select
-                    className="mt-1 border rounded-md px-3 py-2 w-full text-xs"
-                    value={state.stairs}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium">
+                    From ZIP
+                  </label>
+                  <TextInput
+                    value={state.fromZip}
                     onChange={(e) =>
-                      updateField(
-                        "stairs",
-                        e.target.value as QuoteWizardState["stairs"]
-                      )
-                    }
-                  >
-                    <option>None</option>
-                    <option>Some</option>
-                    <option>A lot</option>
-                  </select>
-                </label>
-                <label className="text-xs text-gray-700">
-                  Elevator access?
-                  <select
-                    className="mt-1 border rounded-md px-3 py-2 w-full text-xs"
-                    value={state.hasElevator}
-                    onChange={(e) =>
-                      updateField(
-                        "hasElevator",
-                        e.target.value as QuoteWizardState["hasElevator"]
-                      )
-                    }
-                  >
-                    <option value="unknown">Not sure / N/A</option>
-                    <option value="yes">Yes, elevator available</option>
-                    <option value="no">No elevator</option>
-                  </select>
-                </label>
-                <label className="text-xs text-gray-700">
-                  Any heavy or specialty items we should know about?
-                  <Textarea
-                    className="mt-1"
-                    rows={3}
-                    placeholder="Piano, safe, gym equipment, delicate antiques, etc."
-                    value={state.specialItems}
-                    onChange={(e) =>
-                      updateField(
-                        "specialItems",
-                        (e.target as HTMLTextAreaElement).value
-                      )
+                      setState((s) => ({
+                        ...s,
+                        fromZip: e.target.value,
+                      }))
                     }
                   />
-                </label>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">
+                    To ZIP
+                  </label>
+                  <TextInput
+                    value={state.toZip}
+                    onChange={(e) =>
+                      setState((s) => ({
+                        ...s,
+                        toZip: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
               </div>
-            </>
+            </div>
           )}
 
-          {step === 3 && (
-            <>
-              <p className="text-sm text-gray-700">
-                Last step.{" "}
-                <span className="font-semibold">
-                  Where can we send your ballpark estimate and follow up?
-                </span>
-              </p>
-              <div className="grid gap-3 text-sm">
-                <Input
-                  name="name"
-                  placeholder="Full name"
-                  value={state.name}
+          {/* Step 1 – commercial */}
+          {step === 1 && state.jobType === "commercial" && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium">
+                  Business / project type
+                </label>
+                <TextInput
+                  placeholder="e.g. retail buildout, office move, gym install"
+                  value={state.businessType}
                   onChange={(e) =>
-                    updateField("name", (e.target as HTMLInputElement).value)
-                  }
-                  required
-                />
-                <Input
-                  name="email"
-                  type="email"
-                  placeholder="Email"
-                  value={state.email}
-                  onChange={(e) =>
-                    updateField("email", (e.target as HTMLInputElement).value)
-                  }
-                  required
-                />
-                <Input
-                  name="phone"
-                  placeholder="Phone (optional but helpful)"
-                  value={state.phone}
-                  onChange={(e) =>
-                    updateField("phone", (e.target as HTMLInputElement).value)
+                    setState((s) => ({
+                      ...s,
+                      businessType: e.target.value,
+                    }))
                   }
                 />
-                <label className="text-xs text-gray-700">
-                  Preferred move date (if known)
-                  <Input
-                    className="mt-1"
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium">
+                    Approx. square footage
+                  </label>
+                  <TextInput
+                    placeholder="e.g. 3,500"
+                    value={state.sqft}
+                    onChange={(e) =>
+                      setState((s) => ({ ...s, sqft: e.target.value }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">
+                    Approx. distance
+                  </label>
+                  <select
+                    className="border rounded-md px-3 py-2 w-full text-sm"
+                    value={state.distance}
+                    onChange={(e) =>
+                      setState((s) => ({
+                        ...s,
+                        distance: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Select</option>
+                    <option value="under25">Under 25 miles</option>
+                    <option value="25-75">25–75 miles</option>
+                    <option value="75-150">75–150 miles</option>
+                    <option value="150plus">
+                      150+ miles / long-distance
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium">
+                    From ZIP
+                  </label>
+                  <TextInput
+                    value={state.fromZip}
+                    onChange={(e) =>
+                      setState((s) => ({
+                        ...s,
+                        fromZip: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">
+                    To ZIP
+                  </label>
+                  <TextInput
+                    value={state.toZip}
+                    onChange={(e) =>
+                      setState((s) => ({
+                        ...s,
+                        toZip: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 1 – junk */}
+          {step === 1 && state.jobType === "junk" && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium">
+                  What are we hauling away?
+                </label>
+                <TextArea
+                  rows={3}
+                  placeholder="e.g. garage cleanout, basement furniture, renovation debris"
+                  value={state.junkDescription}
+                  onChange={(e) =>
+                    setState((s) => ({
+                      ...s,
+                      junkDescription: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium">
+                  Estimated total weight of junk
+                </label>
+                <select
+                  className="border rounded-md px-3 py-2 w-full text-sm"
+                  value={state.junkWeight}
+                  onChange={(e) =>
+                    setState((s) => ({
+                      ...s,
+                      junkWeight: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Choose an estimate</option>
+                  <option value="under500">
+                    Under 500 lbs (small load)
+                  </option>
+                  <option value="500-1500">
+                    500–1,500 lbs (pickup / small trailer)
+                  </option>
+                  <option value="1500-3000">
+                    1,500–3,000 lbs (half box truck)
+                  </option>
+                  <option value="3000plus">
+                    3,000+ lbs (full truck / heavy debris)
+                  </option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium">
+                    Property ZIP
+                  </label>
+                  <TextInput
+                    value={state.fromZip}
+                    onChange={(e) =>
+                      setState((s) => ({
+                        ...s,
+                        fromZip: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">
+                    Preferred date
+                  </label>
+                  <TextInput
                     type="date"
                     value={state.moveDate}
                     onChange={(e) =>
-                      updateField(
-                        "moveDate",
-                        (e.target as HTMLInputElement).value
-                      )
+                      setState((s) => ({
+                        ...s,
+                        moveDate: e.target.value,
+                      }))
                     }
                   />
-                </label>
-                <label className="text-xs text-gray-700">
-                  Optional photos (help us get closer with your estimate):
-                  <input
-                    type="file"
-                    name="photos"
-                    accept="image/*"
-                    multiple
-                    className="mt-1 block w-full text-xs text-gray-700"
-                    onChange={handlePhotosChange}
-                  />
-                  <span className="mt-1 block text-[11px] text-gray-500">
-                    Add pictures of stairs, driveways, tight spaces, or the
-                    items you’re most concerned about.
-                  </span>
-                </label>
-              </div>
-
-              {estimate && (
-                <div className="mt-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-700">
-                  <div className="font-semibold text-gray-900 mb-1">
-                    Your rough ballpark estimate:
-                  </div>
-                  <div className="text-lg font-bold text-gray-900">
-                    ${estimate.low.toLocaleString()} – $
-                    {estimate.high.toLocaleString()}
-                  </div>
-                  <p className="mt-1">
-                    This is a{" "}
-                    <span className="font-semibold">non-binding range</span>{" "}
-                    based on the details you shared. Final pricing will be
-                    confirmed after speaking with our team and locking in your
-                    move plan.
-                  </p>
-                  <p className="mt-1">
-                    For the most accurate quote, call{" "}
-                    <a
-                      href="tel:+12155310907"
-                      className="underline font-medium"
-                    >
-                      {BUSINESS.phone}
-                    </a>{" "}
-                    or reply to the follow-up email we send.
-                  </p>
                 </div>
-              )}
-
-              {submitted && (
-                <p className="mt-2 text-[11px] text-green-600">
-                  We’ve received your details and rough estimate. The crew will
-                  review and follow up to firm up pricing and availability.
-                </p>
-              )}
-            </>
+              </div>
+            </div>
           )}
 
-          {/* Navigation buttons */}
-          <div className="flex items-center justify-between pt-2">
-            {step > 1 ? (
-              <button
-                type="button"
-                onClick={prevStep}
-                className="text-xs text-gray-600 hover:text-gray-900"
-              >
-                ← Back
-              </button>
-            ) : (
-              <span />
-            )}
+          {/* Step 2 – logistics for non-junk */}
+          {step === 2 && state.jobType !== "junk" && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium">
+                  Stairs at either location?
+                </label>
+                <select
+                  className="border rounded-md px-3 py-2 w-full text-sm"
+                  value={state.stairs}
+                  onChange={(e) =>
+                    setState((s) => ({ ...s, stairs: e.target.value }))
+                  }
+                >
+                  <option value="none">No stairs</option>
+                  <option value="some">
+                    1–2 flights / split level
+                  </option>
+                  <option value="heavy">
+                    3+ flights or walk-up
+                  </option>
+                </select>
+              </div>
 
-            {step < totalSteps ? (
-              <Button
-                type="button"
-                style={{ backgroundColor: "#111", color: "#fff" }}
-                size="sm"
-                onClick={nextStep}
-              >
-                Next
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                size="sm"
-                style={{ backgroundColor: BRAND.lime, color: "#111" }}
-                disabled={submitting}
-              >
-                {submitting ? "Calculating & Sending..." : "See My Estimate"}
-              </Button>
-            )}
+              <div>
+                <label className="block text-sm font-medium">
+                  Elevator access?
+                </label>
+                <select
+                  className="border rounded-md px-3 py-2 w-full text-sm"
+                  value={state.hasElevator}
+                  onChange={(e) =>
+                    setState((s) => ({
+                      ...s,
+                      hasElevator: e.target
+                        .value as WizardState["hasElevator"],
+                    }))
+                  }
+                >
+                  <option value="unsure">Not sure yet</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium">
+                  Any special or heavy items?
+                </label>
+                <TextArea
+                  rows={3}
+                  placeholder="Pianos, safes, gym equipment, pool tables, etc."
+                  value={state.specialItems}
+                  onChange={(e) =>
+                    setState((s) => ({
+                      ...s,
+                      specialItems: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium">
+                  Preferred move date
+                </label>
+                <TextInput
+                  type="date"
+                  value={state.moveDate}
+                  onChange={(e) =>
+                    setState((s) => ({
+                      ...s,
+                      moveDate: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Contact step – junk(step2) or others(step3) */}
+          {((step === 2 && state.jobType === "junk") ||
+            (step === 3 && state.jobType !== "junk")) && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium">
+                    Full name
+                  </label>
+                  <TextInput
+                    value={state.name}
+                    onChange={(e) =>
+                      setState((s) => ({ ...s, name: e.target.value }))
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">
+                    Phone
+                  </label>
+                  <TextInput
+                    value={state.phone}
+                    onChange={(e) =>
+                      setState((s) => ({ ...s, phone: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium">
+                  Email address
+                </label>
+                <TextInput
+                  type="email"
+                  value={state.email}
+                  onChange={(e) =>
+                    setState((s) => ({ ...s, email: e.target.value }))
+                  }
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium">
+                  Upload photos (optional)
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoChange}
+                  className="block w-full text-sm text-gray-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-lime-100 file:text-gray-900 hover:file:bg-lime-200"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Photos help us give a tighter quote. They’re not
+                  attached to emails yet, but we see how many you
+                  uploaded.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-md px-3 py-2">
+              {error}
+            </div>
+          )}
+
+          {submitted && estimate && (
+            <div className="rounded-lg border border-lime-300 bg-lime-50 px-3 py-3 text-sm">
+              <div className="font-semibold text-gray-900">
+                Rough ballpark estimate:
+              </div>
+              <div className="text-lg font-bold">
+                ${estimate.low.toLocaleString()} – $
+                {estimate.high.toLocaleString()}
+              </div>
+              <p className="mt-1 text-gray-700">{commonLine}</p>
+              <p className="mt-1 text-gray-700">{jobSpecificLine}</p>
+              <p className="mt-1 text-xs text-gray-600">
+                You’ll get an email confirmation with these details, and
+                you can always reply directly if anything changes.
+              </p>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-2">
+            <button
+              type="button"
+              onClick={prevStep}
+              disabled={step === 0 || submitting}
+              className={`text-sm px-3 py-2 rounded-md border ${
+                step === 0 || submitting
+                  ? "opacity-40 cursor-not-allowed"
+                  : "hover:bg-gray-50"
+              }`}
+            >
+              Back
+            </button>
+            <div className="flex items-center gap-3">
+              {!isLastStep && (
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  disabled={submitting}
+                >
+                  Next
+                </Button>
+              )}
+              {isLastStep && (
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? "Submitting..." : "See My Estimate"}
+                </Button>
+              )}
+            </div>
           </div>
         </form>
       </CardContent>
@@ -963,40 +953,83 @@ function QuoteWizard() {
   );
 }
 
+// --- Reviews slider data --------------------------------------------------
+
+type Review = {
+  name: string;
+  location: string;
+  text: string;
+};
+
+const REVIEWS: Review[] = [
+  {
+    name: "Verified Homeowner",
+    location: "Bucks County, PA",
+    text:
+      "From the moment I contacted Alex, I knew I was in good hands. He came out in person, walked the house, and gave me a game plan. Even with terrible weather, his team wrapped every piece, kept the floors clean, and every item arrived undamaged. I’d give them 20 stars if I could.",
+  },
+  {
+    name: "Maria P.",
+    location: "Princeton, NJ",
+    text:
+      "The crew was early, friendly, and wrapped everything like it was their own. We were out of the old place and into the new one faster than I expected.",
+  },
+  {
+    name: "Devon S.",
+    location: "Bucks County, PA",
+    text:
+      "Best movers I’ve used. They handled heavy gym equipment and stairs without a single complaint. Transparent hourly pricing and worth every dollar.",
+  },
+  {
+    name: "Hannah R.",
+    location: "Philadelphia, PA",
+    text:
+      "Very responsive, no hidden fees, and the team was respectful of the building rules and neighbors. I’ve already referred them to two friends.",
+  },
+  {
+    name: "Chris L.",
+    location: "Retail Operations",
+    text:
+      "Handled a store buildout and freight runs flawlessly. Showed up on time, worked around contractors, and kept everything organized.",
+  },
+];
+
+// --- Main App -------------------------------------------------------------
+
 export default function App() {
   const [exitOpen, setExitOpen] = useState(false);
   const [exitEmail, setExitEmail] = useState("");
+  const [navScrolled, setNavScrolled] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [headerSmall, setHeaderSmall] = useState(false);
   const [activeReview, setActiveReview] = useState(0);
 
-  // Exit intent
   useEffect(() => {
-    const onOut = (e: MouseEvent) => {
+    const onMouseOut = (e: MouseEvent) => {
       if (e.clientY <= 0 && shouldOpenExit()) {
         setExitOpen(true);
         markExitSeen();
       }
     };
-    addEventListener("mouseout", onOut);
-    return () => removeEventListener("mouseout", onOut);
+    if (typeof window !== "undefined") {
+      window.addEventListener("mouseout", onMouseOut);
+      return () => window.removeEventListener("mouseout", onMouseOut);
+    }
   }, []);
 
-  // Shrinking header
   useEffect(() => {
     const onScroll = () => {
-      setHeaderSmall(window.scrollY > 40);
+      setNavScrolled(window.scrollY > 10);
     };
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+    if (typeof window !== "undefined") {
+      window.addEventListener("scroll", onScroll);
+      return () => window.removeEventListener("scroll", onScroll);
+    }
   }, []);
 
-  // Auto-rotating reviews
   useEffect(() => {
-    const id = setInterval(
-      () => setActiveReview((prev) => (prev + 1) % REVIEWS.length),
-      8000
-    );
+    const id = setInterval(() => {
+      setActiveReview((idx) => (idx + 1) % REVIEWS.length);
+    }, 7000);
     return () => clearInterval(id);
   }, []);
 
@@ -1005,137 +1038,151 @@ export default function App() {
     dismissExit(7);
   };
 
+  const handlePromoSubmit = async (email: string) => {
+    const res = await subscribeAndSendPromo(email);
+    dismissExit(7);
+    setExitOpen(false);
+    if (res?.code) {
+      alert(`Promo code sent to ${email}. Backup code: ${res.code}`);
+    } else if (res?.ok) {
+      alert("Promo sent — check your email.");
+    } else {
+      alert(
+        "We saved your email. Once email sending is fully wired, you’ll receive promos automatically."
+      );
+    }
+  };
+
+  const StarRow = () => (
+    <div
+      aria-label="5 star rating"
+      className="text-yellow-500"
+      style={{ letterSpacing: "2px" }}
+    >
+      ★★★★★
+    </div>
+  );
+
   const currentReview = REVIEWS[activeReview];
 
   return (
-    <div id="top">
-      {/* Top contact bar */}
+    <div id="top" className="min-h-screen bg-white text-slate-900">
+      {/* Top contact bar with centered tagline */}
       <div className="bg-black text-white text-xs sm:text-sm">
-        <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-white/80">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/10">
-              <Phone className="h-3 w-3" />
-            </span>
-            <span>Fast, careful, neighbor-approved movers</span>
+        <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div className="w-full text-center font-semibold tracking-wide">
+            Fast, Careful, Neighbor-Approved Movers
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <a
-              href="tel:+12155310907"
-              className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs sm:text-[13px] hover:bg-white/10 hover:border-white/40 transition"
-            >
-              <Phone className="h-3 w-3" />
-              <span>{BUSINESS.phone}</span>
-            </a>
+          <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-2 text-white/85">
+            <span className="flex items-center gap-1">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.11 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.8 12.8 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.8 12.8 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+              </svg>
+              <a href="tel:+12155310907" className="underline">
+                {BUSINESS.phone}
+              </a>
+            </span>
+            <span className="hidden sm:inline">•</span>
             <a
               href={`mailto:${BUSINESS.email}`}
-              className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs sm:text-[13px] hover:bg-white/10 hover:border-white/40 transition"
+              className="underline"
             >
-              <Mail className="h-3 w-3" />
-              <span>Email us</span>
+              {BUSINESS.email}
             </a>
+            <span className="hidden sm:inline">•</span>
             <a
               href={BUSINESS.facebook}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs sm:text-[13px] hover:bg-white/10 hover:border-white/40 transition"
+              className="underline"
             >
-              <Facebook className="h-3 w-3" />
-              <span>Facebook</span>
+              Facebook
             </a>
           </div>
         </div>
       </div>
 
-      {/* Header / Nav */}
+      {/* Main nav */}
       <header
-        className={`border-b bg-white/80 backdrop-blur sticky top-0 z-40 transition-all duration-200 ${
-          headerSmall ? "shadow-sm" : ""
+        className={`sticky top-0 z-40 border-b bg-white/80 backdrop-blur ${
+          navScrolled ? "py-2 shadow-sm" : "py-3"
         }`}
       >
-        <div
-          className={`max-w-6xl mx-auto px-4 flex items-center justify-between transition-all duration-200 ${
-            headerSmall ? "py-2" : "py-3"
-          }`}
-        >
+        <div className="max-w-6xl mx-auto px-4 flex items-center justify-between gap-4">
           <a
             href="#top"
-            className={`font-semibold transition-all ${
-              headerSmall ? "text-sm" : "text-base"
-            }`}
+            className="flex items-center gap-2 font-semibold text-sm sm:text-base"
           >
-            Neighborhood Krew Inc
+            <img
+              src="/logo-nk.png"
+              alt="Neighborhood Krew Inc logo"
+              className="h-7 w-7 rounded-full border border-black/10 object-contain"
+            />
+            <span>Neighborhood Krew Inc</span>
           </a>
 
-          {/* Desktop nav */}
-          <nav
-            className={`hidden md:flex items-center gap-6 transition-all duration-200 ${
-              headerSmall ? "text-xs" : "text-sm"
-            }`}
-          >
-            <a href="#services">Services</a>
-            <a href="#pricing">In-Home Moves</a>
-            <a href="#reviews">Reviews</a>
-            <a href="#gallery">Gallery</a>
-            <a href="#hiring">We’re Hiring</a>
+          <nav className="hidden md:flex items-center gap-6 text-sm">
+            <a href="#quote" className="hover:text-lime-500">
+              Instant Estimate
+            </a>
+            <a href="#services" className="hover:text-lime-500">
+              Services
+            </a>
+            <a href="#pricing" className="hover:text-lime-500">
+              Pricing
+            </a>
+            <a href="#reviews" className="hover:text-lime-500">
+              Reviews
+            </a>
+            <a href="#gallery" className="hover:text-lime-500">
+              Gallery
+            </a>
+            <a href="#hiring" className="hover:text-lime-500">
+              We’re Hiring
+            </a>
           </nav>
 
-          {/* Mobile menu */}
           <button
-            className="md:hidden inline-flex items-center gap-1 rounded-md border px-2 py-1 text-sm bg-white"
-            onClick={() => setMobileNavOpen((open) => !open)}
-            aria-label="Toggle navigation menu"
+            className="md:hidden inline-flex items-center justify-center rounded-md border border-gray-300 p-2"
+            onClick={() => setMobileNavOpen((o) => !o)}
+            aria-label="Toggle navigation"
           >
-            <Menu className="h-5 w-5" />
-            <span className="text-xs">Menu</span>
+            <span className="flex flex-col gap-0.5 mr-1">
+              <span className="w-4 h-0.5 bg-gray-800 rounded" />
+              <span className="w-4 h-0.5 bg-gray-800 rounded" />
+              <span className="w-4 h-0.5 bg-gray-800 rounded" />
+            </span>
+            <span className="text-xs font-medium">Menu</span>
           </button>
         </div>
-
         {mobileNavOpen && (
           <div className="md:hidden border-t bg-white">
-            <nav className="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-2 text-sm">
-              <a
-                href="#services"
-                onClick={() => setMobileNavOpen(false)}
-                className="py-1"
-              >
-                Services
-              </a>
-              <a
-                href="#pricing"
-                onClick={() => setMobileNavOpen(false)}
-                className="py-1"
-              >
-                In-Home Moves
-              </a>
-              <a
-                href="#reviews"
-                onClick={() => setMobileNavOpen(false)}
-                className="py-1"
-              >
-                Reviews
-              </a>
-              <a
-                href="#gallery"
-                onClick={() => setMobileNavOpen(false)}
-                className="py-1"
-              >
-                Gallery
-              </a>
-              <a
-                href="#hiring"
-                onClick={() => setMobileNavOpen(false)}
-                className="py-1"
-              >
-                We’re Hiring
-              </a>
-              <a
-                href="#contact"
-                onClick={() => setMobileNavOpen(false)}
-                className="py-1 font-semibold text-[color:#1f160f]"
-              >
-                Get a Quote
-              </a>
-            </nav>
+            <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-2 text-sm">
+              {[
+                ["#quote", "Instant Estimate"],
+                ["#services", "Services"],
+                ["#pricing", "Pricing"],
+                ["#reviews", "Reviews"],
+                ["#gallery", "Gallery"],
+                ["#hiring", "We’re Hiring"],
+              ].map(([href, label]) => (
+                <a
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileNavOpen(false)}
+                  className="py-1"
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
           </div>
         )}
       </header>
@@ -1144,314 +1191,316 @@ export default function App() {
       <section className="relative overflow-hidden">
         <img
           src="/main2.jpg"
+          alt="Neighborhood Krew moving truck"
           className="absolute inset-0 w-full h-full object-cover"
-          alt="Neighborhood Krew truck"
         />
         <div
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(to bottom, rgba(31,22,15,.72), rgba(31,22,15,.65))",
+              "linear-gradient(to bottom, rgba(31,22,15,0.78), rgba(31,22,15,0.75))",
           }}
         />
         <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24 text-white">
           <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">
-            Fast, Careful,{" "}
-            <span
-              className="px-2 rounded-xl"
-              style={{ backgroundColor: BRAND.lime, color: "#111" }}
-            >
-              Neighbor-Approved
-            </span>{" "}
-            Movers
+            Stress-free moves in Greater Philly & New Jersey
           </h1>
-          <p className="mt-4 text-white/85 text-lg">
-            Local & long-distance moving, packing, junk removal, and freight.
-            Serving Greater Philadelphia & New Jersey.
+          <p className="mt-4 text-white/85 text-lg max-w-2xl">
+            Local and long-distance moves, commercial buildouts, gym
+            installs, and junk removal — handled carefully by a crew
+            that treats your space like their own.
           </p>
           <div className="mt-6 flex flex-col sm:flex-row gap-3">
             <a href="tel:+12155310907">
-              <Button variant="outline">Call {BUSINESS.phone}</Button>
+              <Button variant="outline">
+                Call {BUSINESS.phone}
+              </Button>
             </a>
             <Button
-              style={{ backgroundColor: BRAND.lime, color: "#111" }}
               onClick={() =>
                 document
-                  .getElementById("contact")
+                  .getElementById("quote")
                   ?.scrollIntoView({ behavior: "smooth" })
               }
             >
-              Get My Quote
+              Start My Instant Estimate
             </Button>
           </div>
-
           <div className="mt-8 text-sm text-white/85">
             Trusted by premium brands & venues
           </div>
           <div className="mt-3 grid grid-cols-3 gap-3">
             <img
               src="/featured/lux1.jpg"
-              className="rounded-lg border object-cover h-32 w-full"
-              alt="Premium client 1"
+              alt="Premium client install"
+              className="rounded-lg border border-white/15 object-cover h-28 md:h-32 w-full"
             />
             <img
               src="/featured/lux2.jpg"
-              className="rounded-lg border object-cover h-32 w-full"
-              alt="Premium client 2"
+              alt="Gymshark buildout wall"
+              className="rounded-lg border border-white/15 object-cover h-28 md:h-32 w-full"
             />
             <img
               src="/featured/lux3.jpg"
-              className="rounded-lg border object-cover h-32 w-full"
-              alt="Premium client 3"
+              alt="Gym inventory move"
+              className="rounded-lg border border-white/15 object-cover h-28 md:h-32 w-full"
             />
+          </div>
+        </div>
+      </section>
+
+      {/* Instant estimate / quiz funnel */}
+      <section id="quote" className="py-12 md:py-16 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-5 gap-8 items-start">
+          <div className="md:col-span-3">
+            <QuoteWizard />
+          </div>
+          <div className="md:col-span-2 space-y-4 text-sm text-gray-700">
+            <h2 className="text-xl font-bold">
+              How the estimate works
+            </h2>
+            <p>
+              This quiz gives you a{" "}
+              <strong>rough ballpark range</strong> based on similar
+              jobs we’ve completed. Your final price is confirmed after
+              we talk through the details and schedule.
+            </p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Residential ballparks typically fall between $2k–$12k.</li>
+              <li>
+                Commercial and specialty projects can be higher depending
+                on scope and access.
+              </li>
+              <li>
+                Junk removal pricing is based on volume, weight, and dump
+                fees.
+              </li>
+            </ul>
+            <p className="text-xs text-gray-500">
+              No spam — just a tailored quote and clear next steps from
+              a real person on the crew.
+            </p>
           </div>
         </div>
       </section>
 
       {/* Services */}
       <section id="services" className="py-12 md:py-16">
-        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-center md:text-left">
-                Residential & Apartment
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              Full-service moves with protection wrap, disassembly/reassembly,
-              and careful loading.
-              <QuoteButton label="Residential Moves" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-center md:text-left">
-                Commercial & Freight
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              Store buildouts, distribution, palletized freight, gym & office
-              moves.
-              <QuoteButton label="Commercial & Freight" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-center md:text-left">
-                Junk Removal & Hauling
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              Cleanouts and responsible disposal, priced by volume.
-              <QuoteButton label="Junk Removal" />
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Quote / Contact – WIZARD + promo */}
-      <section id="contact" className="py-12 md:py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">
-              Instant Ballpark Estimate
-            </h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Answer a few quick questions and we&apos;ll show you a{" "}
-              <span className="font-semibold">rough price range</span> for your
-              residential move. Then we&apos;ll follow up to lock in an official
-              quote.
-            </p>
-            <QuoteWizard />
-          </div>
-          <div>
-            <h3 className="font-semibold mb-2">
-              Join our list for a promo code
-            </h3>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const email = (e.currentTarget as any).email.value;
-                const res = await subscribeAndSendPromo(email);
-                dismissExit(7);
-                setExitOpen(false);
-                if (res?.code)
-                  alert(
-                    `Promo code sent to ${email}. Backup code: ${res.code}`
-                  );
-                else
-                  alert(
-                    res?.ok
-                      ? "Promo sent — check your email."
-                      : "We saved your email. Connect email to auto-send."
-                  );
-                (e.currentTarget as HTMLFormElement).reset();
-              }}
-              className="flex gap-2"
-            >
-              <Input
-                name="email"
-                type="email"
-                placeholder="you@email.com"
-                required
-              />
-              <Button style={{ backgroundColor: "#b6e300", color: "#111" }}>
-                Get Code
-              </Button>
-            </form>
-            <p className="text-sm text-gray-600 mt-4">
-              Questions? Email{" "}
-              <a href={`mailto:${BUSINESS.email}`} className="underline">
-                {BUSINESS.email}
-              </a>{" "}
-              or call{" "}
-              <a href="tel:+12155310907" className="underline">
-                {BUSINESS.phone}
-              </a>
-              .
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing – In-home moves only */}
-      <section id="pricing" className="py-12 md:py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-2">Simple In-Home Moves</h2>
-          <p className="text-sm text-gray-600 mb-6 max-w-2xl">
-            In-home moves are perfect for things like shifting new appliances,
-            rearranging heavy furniture, or moving items between rooms and
-            floors.{" "}
-            <span className="font-semibold">
-              Full residential moves (entire apartments or houses) require a
-              custom quote and will cost more than these in-home rates.
-            </span>
+          <h2 className="text-2xl font-bold mb-6 text-center md:text-left">
+            Services
+          </h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-center md:text-left">
+                  Residential & Apartment
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-700">
+                  Full-service moves with padding, shrink wrap,
+                  disassembly/reassembly, and careful loading —
+                  apartments, condos, single-family homes and more.
+                </p>
+                <Button
+                  className="mt-4 w-full"
+                  onClick={() =>
+                    document
+                      .getElementById("quote")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                >
+                  Get a quote for Residential
+                </Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-center md:text-left">
+                  Commercial & Freight
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-700">
+                  Store buildouts, office moves, palletized freight,
+                  gym installs, and recurring runs. Coordinated around
+                  access windows and building rules.
+                </p>
+                <Button
+                  className="mt-4 w-full"
+                  onClick={() =>
+                    document
+                      .getElementById("quote")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                >
+                  Get a quote for Commercial
+                </Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-center md:text-left">
+                  Junk Removal & Hauling
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-700">
+                  Garages, basements, renovation debris and more —
+                  priced by volume and weight with responsible disposal
+                  and recycling whenever possible.
+                </p>
+                <Button
+                  className="mt-4 w-full"
+                  onClick={() =>
+                    document
+                      .getElementById("quote")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                >
+                  Get a quote for Junk Removal
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" className="py-12 md:py-16 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-2xl font-bold mb-2">
+            Simple In-Home Move Pricing
+          </h2>
+          <p className="text-sm text-gray-700 mb-6 max-w-3xl">
+            For{" "}
+            <strong>in-home moves</strong> (like swapping rooms, moving
+            new appliances, or rearranging furniture), we keep it
+            simple. Full residential moves, long-distance jobs, and
+            commercial projects are quoted individually through the
+            instant estimate and a quick call.
           </p>
           <div className="grid md:grid-cols-3 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>2 Movers (In-Home)</CardTitle>
+                <CardTitle>2 Movers + Truck</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-extrabold">$150/hr</div>
                 <p className="text-sm text-gray-600 mt-2">
-                  For in-home furniture rearranges, appliance swaps, and small
-                  jobs. 2-hour minimum.
+                  2-hour minimum. Includes pads, shrink wrap and basic
+                  equipment.
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>3 Movers (In-Home)</CardTitle>
+                <CardTitle>3 Movers + Truck</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-extrabold">$210/hr</div>
                 <p className="text-sm text-gray-600 mt-2">
-                  Great when you have stairs, tight spaces, or heavier items
-                  that need extra hands.
+                  Ideal for 2–3 bedroom homes, small offices or heavier
+                  moves.
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Labor Only</CardTitle>
+                <CardTitle>Packing / Labor Only</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-extrabold">$75/hr</div>
                 <p className="text-sm text-gray-600 mt-2">
-                  Per mover • 2-hour minimum • You provide the truck, we provide
-                  the muscle for loading/unloading.
+                  Per mover, 2-hour minimum. Perfect if you already have
+                  a truck and just need a strong, careful crew.
                 </p>
               </CardContent>
             </Card>
           </div>
-        </div>
-      </section>
-
-      {/* Reserve Date with Deposit – Stripe Elements */}
-      <section className="py-12 md:py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-3">
-            Reserve Your Move Date with a Deposit
-          </h2>
-          <p className="text-sm text-gray-600 mb-4">
-            In a time crunch? Secure your preferred move date with a{" "}
-            <span className="font-semibold">$75 deposit.</span> We’ll call to
-            finalize your full quote and apply this deposit to your final move
-            invoice.
+          <p className="mt-4 text-xs text-gray-600">
+            Full residential and commercial move pricing depends on
+            distance, access, and inventory. Use the Instant Estimate
+            above and we’ll confirm a custom quote.
           </p>
-          <Card className="max-w-xl">
-            <CardContent className="pt-6">
-              <Elements stripe={stripePromise}>
-                <DepositCheckoutForm />
-              </Elements>
-            </CardContent>
-          </Card>
         </div>
       </section>
 
-      {/* Reviews – auto-rotating slideshow */}
-      <section id="reviews" className="py-12 md:py-16 bg-white">
+      {/* Reviews */}
+      <section id="reviews" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
-          <p className="text-sm text-gray-500 mb-1">
+          <h2 className="text-2xl font-bold mb-2">
             Trusted by more than 10,000 customers.
+          </h2>
+          <p className="text-sm text-gray-700 mb-6">
+            Here’s what real neighbors and business owners say about
+            moving with the Krew.
           </p>
-          <h2 className="text-2xl font-bold mb-6">What Our Customers Say</h2>
-
-          <div className="grid md:grid-cols-[2fr,1fr] gap-8 items-stretch">
-            <Card className="relative overflow-hidden">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between gap-4 mb-2">
-                  <CardTitle className="text-base md:text-lg">
-                    {currentReview.title}
-                  </CardTitle>
-                  <StarRow />
-                </div>
-                <p className="mt-3 text-gray-700 text-sm md:text-base">
-                  {currentReview.body}
+          <div className="grid md:grid-cols-2 gap-8 items-start">
+            {/* Main rotating review */}
+            <Card className="md:col-span-1">
+              <CardHeader>
+                <CardTitle>Featured review</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <StarRow />
+                <p className="mt-3 text-sm text-gray-800 leading-relaxed">
+                  {currentReview.text}
                 </p>
-                <div className="mt-4 text-sm text-gray-600">
-                  — {currentReview.name}
-                  {currentReview.meta ? ` • ${currentReview.meta}` : ""}
+                <div className="mt-3 text-xs text-gray-500">
+                  — {currentReview.name}, {currentReview.location}
+                </div>
+                <div className="mt-4 flex gap-1">
+                  {REVIEWS.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveReview(idx)}
+                      className={`h-2 w-2 rounded-full ${
+                        idx === activeReview
+                          ? "bg-lime-500"
+                          : "bg-gray-300"
+                      }`}
+                      aria-label={`Show review ${idx + 1}`}
+                    />
+                  ))}
                 </div>
               </CardContent>
-              <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
-                {REVIEWS.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveReview(idx)}
-                    className={`h-2 w-2 rounded-full transition ${
-                      idx === activeReview
-                        ? "bg-black"
-                        : "bg-gray-300 hover:bg-gray-400"
-                    }`}
-                    aria-label={`Go to review ${idx + 1}`}
-                  />
-                ))}
-              </div>
             </Card>
 
-            <div className="space-y-3">
-              {REVIEWS.slice(0, 3).map((r, idx) => (
-                <Card key={idx} className="border-dashed border-gray-200">
-                  <CardContent className="py-3">
-                    <StarRow />
-                    <p className="mt-1 text-xs text-gray-700">
-                      {r.body.substring(0, 150)}...
-                    </p>
-                    <div className="mt-1 text-[11px] text-gray-500">
-                      — {r.name}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            {/* Static supporting quotes */}
+            <div className="space-y-4 text-sm text-gray-800">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <StarRow />
+                <p className="mt-2">
+                  “Crew was on time, protected every doorway, and checked
+                  in with us before moving the big pieces. It felt like
+                  having good friends helping instead of random movers.”
+                </p>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <StarRow />
+                <p className="mt-2">
+                  “They moved our office without interrupting business.
+                  Computers, desks, files — everything labeled and reset
+                  exactly where we needed.”
+                </p>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <StarRow />
+                <p className="mt-2">
+                  “Junk removal team knocked out a full garage in a
+                  couple of hours. No surprises on price and they swept
+                  up before leaving.”
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Gallery */}
-      <section id="gallery" className="py-12 md:py-16">
+      <section id="gallery" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold mb-6">Recent Jobs & Trucks</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -1459,46 +1508,66 @@ export default function App() {
               <img
                 key={i}
                 src={`/gallery/krew${i + 1}.jpg`}
+                alt={`Neighborhood Krew job ${i + 1}`}
                 className="rounded-lg border object-cover w-full h-40"
-                alt={`Job ${i + 1}`}
               />
             ))}
           </div>
         </div>
       </section>
 
-      {/* We’re Hiring */}
-      <section id="hiring" className="py-12 md:py-16 bg-gray-50">
+      {/* Hiring */}
+      <section id="hiring" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold">We’re Hiring!</h2>
-          <p className="text-gray-600 mt-2">
-            Looking for hard-working movers and drivers. Fill out the form and
-            we’ll get in touch.
+          <p className="text-sm text-gray-700 mt-2 max-w-2xl">
+            Looking for hard-working movers and drivers who care about
+            doing things the right way. Fill out a few details and
+            we’ll reach out if it’s a fit.
           </p>
           <form
             onSubmit={async (e) => {
               e.preventDefault();
               const fd = new FormData(e.currentTarget as HTMLFormElement);
-              const raw = Object.fromEntries(fd.entries());
-              const payload = { type: "hiring_application", ...raw };
-              const r = await fetch("/api/apply", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-              });
-              if (r.ok) alert("Thanks! Your application was submitted.");
-              else alert("Could not submit application. Please email us.");
-              (e.currentTarget as HTMLFormElement).reset();
+              const data = Object.fromEntries(fd.entries());
+              try {
+                const r = await fetch("/api/apply", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(data),
+                });
+                if (r.ok) {
+                  alert("Thanks! Your application was submitted.");
+                  (e.currentTarget as HTMLFormElement).reset();
+                } else {
+                  alert(
+                    "Could not submit application. Please email us directly."
+                  );
+                }
+              } catch {
+                alert(
+                  "Could not submit application. Please email us directly."
+                );
+              }
             }}
-            className="mt-4 grid md:grid-cols-3 gap-3"
+            className="mt-4 grid md:grid-cols-3 gap-3 text-sm"
           >
-            <Input name="name" placeholder="Full name" required />
-            <Input name="email" type="email" placeholder="Email" required />
-            <Input name="phone" placeholder="Phone" required />
-            <Input name="city" placeholder="City" />
+            <TextInput name="name" placeholder="Full name" required />
+            <TextInput
+              name="email"
+              type="email"
+              placeholder="Email"
+              required
+            />
+            <TextInput
+              name="phone"
+              placeholder="Phone"
+              required
+            />
+            <TextInput name="city" placeholder="City" />
             <select
               name="role"
-              className="border rounded-md px-3 py-2 w-full"
+              className="border rounded-md px-3 py-2 w-full text-sm"
               required
             >
               <option value="">Position interested in</option>
@@ -1508,124 +1577,123 @@ export default function App() {
             </select>
             <select
               name="availability"
-              className="border rounded-md px-3 py-2 w-full"
+              className="border rounded-md px-3 py-2 w-full text-sm"
             >
               <option>Full-time</option>
               <option>Part-time</option>
               <option>Weekends only</option>
             </select>
-            <Textarea
+            <TextArea
               name="notes"
               className="md:col-span-3"
               placeholder="Tell us about your experience"
+              rows={3}
             />
             <div className="md:col-span-3">
-              <Button style={{ backgroundColor: "#b6e300", color: "#111" }}>
-                Submit Application
-              </Button>
+              <Button type="submit">Submit Application</Button>
             </div>
           </form>
         </div>
       </section>
 
+      {/* Simple newsletter / promo form */}
+      <section className="py-10 border-t bg-gray-900 text-gray-100">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row gap-6 items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">
+              Join the Neighborhood list
+            </h3>
+            <p className="text-sm text-gray-300 mt-1 max-w-md">
+              Be the first to hear about move-day promos, off-peak
+              discounts, and last-minute openings.
+            </p>
+          </div>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const email = (e.currentTarget as any).email.value;
+              await handlePromoSubmit(email);
+              (e.currentTarget as HTMLFormElement).reset();
+            }}
+            className="flex w-full md:w-auto gap-2"
+          >
+            <TextInput
+              name="email"
+              type="email"
+              placeholder="you@email.com"
+              required
+              className="bg-white"
+            />
+            <Button type="submit">Get Promo Code</Button>
+          </form>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="border-t bg-white">
+      <footer className="border-t">
         <div className="max-w-6xl mx-auto px-4 py-6 text-xs sm:text-sm flex flex-col md:flex-row items-center justify-between gap-3">
-          <div className="text-gray-600">
-            © {new Date().getFullYear()} Neighborhood Krew Inc. All rights
-            reserved.
+          <div>
+            © {new Date().getFullYear()} Neighborhood Krew Inc · Fully
+            licensed & insured
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <a
-              href="tel:+12155310907"
-              className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50 transition"
-            >
-              <Phone className="h-3 w-3 text-gray-700" />
-              <span>{BUSINESS.phone}</span>
-            </a>
-            <a
-              href={`mailto:${BUSINESS.email}`}
-              className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50 transition"
-            >
-              <Mail className="h-3 w-3 text-gray-700" />
-              <span>Contact</span>
-            </a>
-            <a
-              href={BUSINESS.facebook}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50 transition"
-            >
-              <Facebook className="h-3 w-3 text-gray-700" />
-              <span>Facebook</span>
-            </a>
-          </div>
+          <a
+            href={BUSINESS.facebook}
+            className="underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Visit us on Facebook
+          </a>
         </div>
       </footer>
 
-      {/* Exit-intent promo popup */}
+      {/* Floating call now (mobile only) */}
+      <a
+        href="tel:+12155310907"
+        className="fixed bottom-4 right-4 z-40 px-4 py-2 rounded-full bg-lime-400 text-xs font-semibold shadow-lg text-black sm:hidden"
+      >
+        Call now
+      </a>
+
+      {/* Exit-intent promo modal */}
       {exitOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold">Wait — take $25 off?</h3>
+            <h3 className="text-xl font-bold">
+              Wait — take $25 off your move?
+            </h3>
             <p className="text-sm text-gray-600 mt-2">
-              Join our list and we’ll email you a one-time promo code
-              instantly.
+              Join our email list and we’ll send a one-time Neighborhood
+              discount code for your next move.
             </p>
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
-                const email = exitEmail;
-                const res = await subscribeAndSendPromo(email);
-                closeExit();
-                if (res?.code)
-                  alert(
-                    `Promo code sent to ${email}. Backup: ${res.code}`
-                  );
-                else
-                  alert(
-                    res?.ok
-                      ? "Promo sent — check your email."
-                      : "We saved your email. Connect email to auto-send."
-                  );
+                await handlePromoSubmit(exitEmail);
               }}
               className="mt-4 flex gap-2"
             >
-              <Input
+              <TextInput
                 type="email"
                 placeholder="you@email.com"
                 value={exitEmail}
-                onChange={(e) =>
-                  setExitEmail((e.target as HTMLInputElement).value)
-                }
+                onChange={(e) => setExitEmail(e.target.value)}
                 required
               />
-              <Button style={{ backgroundColor: "#b6e300", color: "#111" }}>
-                Send
-              </Button>
+              <Button type="submit">Send</Button>
             </form>
             <div className="mt-3 flex justify-end gap-3">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  closeExit();
-                }}
+              <button
+                type="button"
+                onClick={closeExit}
+                className="text-sm text-gray-500 hover:text-gray-800"
               >
                 No thanks
-              </Button>
+              </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Mobile "Call Now" button */}
-      <a
-        href="tel:+12155310907"
-        className="fixed bottom-4 right-4 z-40 md:hidden inline-flex items-center gap-2 rounded-full bg-black text-white px-4 py-2 shadow-lg text-sm"
-      >
-        <Phone className="h-4 w-4" />
-        <span>Call Now</span>
-      </a>
     </div>
   );
 }
