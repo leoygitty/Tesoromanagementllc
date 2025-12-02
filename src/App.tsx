@@ -156,7 +156,7 @@ export default function App() {
   useEffect(() => {
     const id = setInterval(() => {
       setActiveReview((prev) => (prev + 1) % REVIEWS.length);
-    }, 8000); // 8 seconds per review
+    }, 8000);
     return () => clearInterval(id);
   }, []);
 
@@ -432,7 +432,9 @@ export default function App() {
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-3 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Residential & Apartment</CardTitle>
+              <CardTitle className="text-center md:text-left">
+                Residential & Apartment
+              </CardTitle>
             </CardHeader>
             <CardContent>
               Full-service moves with protection wrap, disassembly/reassembly,
@@ -442,7 +444,9 @@ export default function App() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Commercial & Freight</CardTitle>
+              <CardTitle className="text-center md:text-left">
+                Commercial & Freight
+              </CardTitle>
             </CardHeader>
             <CardContent>
               Store buildouts, distribution, palletized freight, gym & office
@@ -452,7 +456,9 @@ export default function App() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Junk Removal & Hauling</CardTitle>
+              <CardTitle className="text-center md:text-left">
+                Junk Removal & Hauling
+              </CardTitle>
             </CardHeader>
             <CardContent>
               Cleanouts and responsible disposal, priced by volume.
@@ -462,20 +468,44 @@ export default function App() {
         </div>
       </section>
 
-      {/* Contact / Quote – moved above pricing */}
+      {/* Contact / Quote – moved above pricing, now with file upload */}
       <section id="contact" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8">
           <div>
             <h2 className="text-2xl font-bold mb-3">Get Your Quote</h2>
             <p className="text-sm text-gray-600 mb-4">
               Tell us about your move, in-home project, or junk removal job and
-              we’ll follow up with a clear, custom quote.
+              we’ll follow up with a clear, custom quote. You can also attach
+              photos so we can give a more accurate estimate.
             </p>
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e: React.FormEvent<HTMLFormElement>) => {
                 e.preventDefault();
-                alert("Thanks! We’ll get back to you shortly.");
-                (e.currentTarget as HTMLFormElement).reset();
+                const formEl = e.currentTarget;
+                const formData = new FormData(formEl);
+
+                try {
+                  const res = await fetch("/api/quote", {
+                    method: "POST",
+                    body: formData,
+                  });
+                  if (res.ok) {
+                    alert(
+                      "Thanks! We received your details and any photos. We’ll get back to you shortly."
+                    );
+                  } else {
+                    alert(
+                      "We received your request, but there was an issue submitting details. If you don’t hear from us, please call or email directly."
+                    );
+                  }
+                } catch (err) {
+                  console.error(err);
+                  alert(
+                    "There was an issue submitting your request. Please also feel free to call or email us directly."
+                  );
+                }
+
+                formEl.reset();
               }}
               className="space-y-3"
             >
@@ -499,6 +529,22 @@ export default function App() {
                 name="details"
                 placeholder="Move details (where from, where to, stairs, dates, etc.)"
               />
+              <div className="text-xs text-gray-600">
+                <label className="block">
+                  Optional photos (up to several images):
+                  <input
+                    type="file"
+                    name="photos"
+                    accept="image/*"
+                    multiple
+                    className="mt-1 block w-full text-xs text-gray-700"
+                  />
+                </label>
+                <p className="mt-1">
+                  Attach pictures of stairs, driveways, tight spaces, or items
+                  you’re most worried about.
+                </p>
+              </div>
               <Button style={{ backgroundColor: "#b6e300", color: "#111" }}>
                 Request Quote
               </Button>
@@ -554,7 +600,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* Pricing – now specifically In-Home Moves */}
+      {/* Pricing – specifically In-Home Moves */}
       <section id="pricing" className="py-12 md:py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold mb-2">Simple In-Home Moves</h2>
