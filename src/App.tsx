@@ -18,8 +18,6 @@ const BUSINESS = {
   email: "Neighborhoodkrew@gmail.com",
   facebook: "https://www.facebook.com/TheNeighborhoodKrew",
 };
-
-// ⬇️ This must be OUTSIDE the BUSINESS object, like this:
 const stripePromise = loadStripe(
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string
 );
