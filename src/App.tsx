@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Phone, Mail, Facebook } from "lucide-react";
 
 const BRAND = { dark: "#1f160f", lime: "#b6e300" };
 const BUSINESS = {
@@ -74,9 +75,9 @@ export default function App() {
     date: "",
     timeWindow: "Morning (8am–12pm)",
   });
-
-  useEffect(() => {
-    const onOut = (e: MouseEvent) => {
+const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
+  const [headerSmall, setHeaderSmall] = useState(false);  
+  const onOut = (e: MouseEvent) => {
       if (e.clientY <= 0 && shouldOpenExit()) {
         setExitOpen(true);
         markExitSeen();
@@ -85,7 +86,13 @@ export default function App() {
     addEventListener("mouseout", onOut);
     return () => removeEventListener("mouseout", onOut);
   }, []);
-
+  useEffect(() => {
+    const onScroll = () => {
+      setHeaderSmall(window.scrollY > 40);
+    };
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   const closeExit = () => {
     setExitOpen(false);
     dismissExit(7);
@@ -147,39 +154,141 @@ export default function App() {
 
   return (
     <div id="top">
-      {/* Top contact bar */}
-      <div className="bg-black text-white text-sm">
+           {/* Top contact bar */}
+      <div className="bg-black text-white text-xs sm:text-sm">
         <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-          <div>
-            Call{" "}
-            <a className="underline" href="tel:+12155310907">
-              {BUSINESS.phone}
-            </a>{" "}
-            • Email{" "}
-            <a className="underline" href={`mailto:${BUSINESS.email}`}>
-              {BUSINESS.email}
+          {/* Tagline / trust */}
+          <div className="flex items-center gap-2 text-white/80">
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/10">
+              <Phone className="h-3 w-3" />
+            </span>
+            <span>Fast, careful, neighbor-approved movers</span>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="tel:+12155310907"
+              className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs sm:text-[13px] hover:bg-white/10 hover:border-white/40 transition"
+            >
+              <Phone className="h-3 w-3" />
+              <span>{BUSINESS.phone}</span>
+            </a>
+
+            <a
+              href={`mailto:${BUSINESS.email}`}
+              className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs sm:text-[13px] hover:bg-white/10 hover:border-white/40 transition"
+            >
+              <Mail className="h-3 w-3" />
+              <span>Email us</span>
+            </a>
+
+            <a
+              href={BUSINESS.facebook}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs sm:text-[13px] hover:bg-white/10 hover:border-white/40 transition"
+            >
+              <Facebook className="h-3 w-3" />
+              <span>Facebook</span>
             </a>
           </div>
-          <a className="underline" href={BUSINESS.facebook}>
-            Facebook
-          </a>
         </div>
       </div>
-
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <a href="#top" className="font-semibold">
+                {/* Header with mobile nav */}
+      <header
+        className={`border-b bg-white/80 backdrop-blur sticky top-0 z-40 transition-all duration-200 ${
+          headerSmall ? "shadow-sm" : ""
+        }`}
+      >
+        <div
+          className={`max-w-6xl mx-auto px-4 flex items-center justify-between transition-all duration-200 ${
+            headerSmall ? "py-2" : "py-3"
+          }`}
+        >
+          <a
+            href="#top"
+            className={`font-semibold transition-all ${
+              headerSmall ? "text-sm" : "text-base"
+            }`}
+          >
             Neighborhood Krew Inc
           </a>
-          <nav className="hidden md:flex items-center gap-6 text-sm">
+
+          {/* Desktop nav */}
+          <nav
+            className={`hidden md:flex items-center gap-6 transition-all duration-200 ${
+              headerSmall ? "text-xs" : "text-sm"
+            }`}
+          >
             <a href="#services">Services</a>
             <a href="#pricing">Pricing</a>
             <a href="#reviews">Reviews</a>
             <a href="#gallery">Gallery</a>
             <a href="#hiring">We’re Hiring</a>
           </nav>
+
+          {/* Mobile menu button */}
+          <button
+            className="md:hidden inline-flex items-center justify-center rounded-md border px-2 py-1 text-sm"
+            onClick={() => setMobileNavOpen((open) => !open)}
+            aria-label="Toggle navigation menu"
+          >
+            <span className="block w-5 h-[2px] bg-black mb-1" />
+            <span className="block w-5 h-[2px] bg-black mb-1" />
+            <span className="block w-5 h-[2px] bg-black" />
+          </button>
         </div>
+
+        {/* Mobile nav dropdown */}
+        {mobileNavOpen && (
+          <div className="md:hidden border-t bg-white">
+            <nav className="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-2 text-sm">
+              <a
+                href="#services"
+                onClick={() => setMobileNavOpen(false)}
+                className="py-1"
+              >
+                Services
+              </a>
+              <a
+                href="#pricing"
+                onClick={() => setMobileNavOpen(false)}
+                className="py-1"
+              >
+                Pricing
+              </a>
+              <a
+                href="#reviews"
+                onClick={() => setMobileNavOpen(false)}
+                className="py-1"
+              >
+                Reviews
+              </a>
+              <a
+                href="#gallery"
+                onClick={() => setMobileNavOpen(false)}
+                className="py-1"
+              >
+                Gallery
+              </a>
+              <a
+                href="#hiring"
+                onClick={() => setMobileNavOpen(false)}
+                className="py-1"
+              >
+                We’re Hiring
+              </a>
+              <a
+                href="#contact"
+                onClick={() => setMobileNavOpen(false)}
+                className="py-1 font-semibold text-[color:#1f160f]"
+              >
+                Get a Quote
+              </a>
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* Hero with faded background image */}
@@ -422,12 +531,14 @@ export default function App() {
         </div>
       </section>
 
-      {/* Reviews */}
+            {/* Reviews */}
       <section id="reviews" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
+          <p className="text-sm text-gray-500 mb-1">
+            Trusted by more than 10,000 customers.
+          </p>
           <h2 className="text-2xl font-bold mb-6">What Our Customers Say</h2>
           <div className="grid md:grid-cols-2 gap-6">
-            <Card>
               <CardHeader>
                 <CardTitle>“Every item arrived undamaged”</CardTitle>
               </CardHeader>
@@ -442,7 +553,6 @@ export default function App() {
                   service. I would highly recommend Alex and the Neighborhood
                   Krew and give them 20 stars if I could.
                 </p>
-                <img
                   src="/reviews/review1.jpg"
                   alt="Full review screenshot"
                   className="mt-3 rounded-lg border"
@@ -699,18 +809,37 @@ export default function App() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t">
-        <div className="max-w-6xl mx-auto px-4 py-6 text-sm flex flex-col md:flex-row items-center justify-between gap-3">
-          <div>
-            © {new Date().getFullYear()} Neighborhood Krew Inc
+          {/* Footer */}
+      <footer className="border-t bg-white">
+        <div className="max-w-6xl mx-auto px-4 py-6 text-xs sm:text-sm flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="text-gray-600">
+            © {new Date().getFullYear()} Neighborhood Krew Inc. All rights reserved.
           </div>
-          <a
-            href={BUSINESS.facebook}
-            className="underline"
-          >
-            Facebook
-          </a>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="tel:+12155310907"
+              className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50 transition"
+            >
+              <Phone className="h-3 w-3 text-gray-700" />
+              <span>{BUSINESS.phone}</span>
+            </a>
+            <a
+              href={`mailto:${BUSINESS.email}`}
+              className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50 transition"
+            >
+              <Mail className="h-3 w-3 text-gray-700" />
+              <span>Contact</span>
+            </a>
+            <a
+              href={BUSINESS.facebook}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1 hover:bg-gray-50 transition"
+            >
+              <Facebook className="h-3 w-3 text-gray-700" />
+              <span>Facebook</span>
+            </a>
+          </div>
         </div>
       </footer>
 
