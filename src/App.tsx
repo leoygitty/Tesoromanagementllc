@@ -18,11 +18,12 @@ const BUSINESS = {
   email: "Neighborhoodkrew@gmail.com",
   facebook: "https://www.facebook.com/TheNeighborhoodKrew",
 };
+
 const stripePromise = loadStripe(
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string
 );
 
-// Exit-intent & promo email logic
+// Exit-intent promo logic
 const EXIT_DISMISS_KEY = "nk_exit_dismissed_until";
 const EXIT_SEEN_SESSION = "nk_exit_seen_session";
 
@@ -66,13 +67,6 @@ async function subscribeAndSendPromo(email: string) {
   const data = await r.json().catch(() => ({}));
   return data;
 }
-
-type DepositForm = {
-  email: string;
-  service: string;
-  date: string;
-  timeWindow: string;
-};
 
 type Review = {
   title: string;
@@ -125,6 +119,7 @@ const REVIEWS: Review[] = [
     meta: "Philadelphia, PA",
   },
 ];
+
 type DepositFormLocal = {
   email: string;
   service: string;
@@ -168,7 +163,6 @@ function DepositCheckoutForm() {
 
     setLoading(true);
     try {
-      // 1) Ask backend to create PaymentIntent
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -180,7 +174,6 @@ function DepositCheckoutForm() {
         throw new Error(data.error || "Unable to start payment");
       }
 
-      // 2) Confirm card payment with Stripe.js
       const { error: stripeError, paymentIntent } =
         await stripe.confirmCardPayment(data.clientSecret, {
           payment_method: {
@@ -292,22 +285,41 @@ function DepositCheckoutForm() {
     </form>
   );
 }
+
+function QuoteButton({ label }: { label: string }) {
+  return (
+    <Button
+      style={{ backgroundColor: BRAND.lime, color: "#111" }}
+      className="mt-3 w-full"
+      onClick={() =>
+        document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })
+      }
+    >
+      Get a Quote for {label}
+    </Button>
+  );
+}
+
+function StarRow() {
+  return (
+    <div
+      aria-label="5 star rating"
+      className="text-yellow-500"
+      style={{ letterSpacing: "2px" }}
+    >
+      ★★★★★
+    </div>
+  );
+}
+
 export default function App() {
   const [exitOpen, setExitOpen] = useState(false);
   const [exitEmail, setExitEmail] = useState("");
-  const [depositLoading, setDepositLoading] = useState(false);
-  const [depositError, setDepositError] = useState<string | null>(null);
-  const [depositForm, setDepositForm] = useState<DepositForm>({
-    email: "",
-    service: "Residential & Apartment Move",
-    date: "",
-    timeWindow: "Morning (8am–12pm)",
-  });
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [headerSmall, setHeaderSmall] = useState(false);
   const [activeReview, setActiveReview] = useState(0);
 
-  // Exit intent popup
+  // Exit intent
   useEffect(() => {
     const onOut = (e: MouseEvent) => {
       if (e.clientY <= 0 && shouldOpenExit()) {
@@ -319,7 +331,7 @@ export default function App() {
     return () => removeEventListener("mouseout", onOut);
   }, []);
 
-  // Shrinking header on scroll
+  // Shrinking header
   useEffect(() => {
     const onScroll = () => {
       setHeaderSmall(window.scrollY > 40);
@@ -330,9 +342,10 @@ export default function App() {
 
   // Auto-rotating reviews
   useEffect(() => {
-    const id = setInterval(() => {
-      setActiveReview((prev) => (prev + 1) % REVIEWS.length);
-    }, 8000);
+    const id = setInterval(
+      () => setActiveReview((prev) => (prev + 1) % REVIEWS.length),
+      8000
+    );
     return () => clearInterval(id);
   }, []);
 
@@ -341,59 +354,6 @@ export default function App() {
     dismissExit(7);
   };
 
-  const handleDepositChange = (field: keyof DepositForm, value: string) => {
-    setDepositForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const submitDeposit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setDepositLoading(true);
-    setDepositError(null);
-    try {
-      const res = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(depositForm),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.url) {
-        throw new Error(data.error || "Unable to start checkout");
-      }
-      window.location.href = data.url;
-    } catch (err: any) {
-      console.error(err);
-      setDepositError(
-        err.message || "Something went wrong starting secure checkout."
-      );
-    } finally {
-      setDepositLoading(false);
-    }
-  };
-
-  const QuoteBtn = ({ label }: { label: string }) => (
-    <Button
-      style={{ backgroundColor: BRAND.lime, color: "#111" }}
-      className="mt-3 w-full"
-      onClick={() =>
-        document
-          .getElementById("contact")
-          ?.scrollIntoView({ behavior: "smooth" })
-      }
-    >
-      Get a Quote for {label}
-    </Button>
-  );
-
-  const StarRow = () => (
-    <div
-      aria-label="5 star rating"
-      className="text-yellow-500"
-      style={{ letterSpacing: "2px" }}
-    >
-      ★★★★★
-    </div>
-  );
-
   const currentReview = REVIEWS[activeReview];
 
   return (
@@ -401,15 +361,12 @@ export default function App() {
       {/* Top contact bar */}
       <div className="bg-black text-white text-xs sm:text-sm">
         <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-          {/* Tagline / trust */}
           <div className="flex items-center gap-2 text-white/80">
             <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/10">
               <Phone className="h-3 w-3" />
             </span>
             <span>Fast, careful, neighbor-approved movers</span>
           </div>
-
-          {/* Action buttons */}
           <div className="flex flex-wrap items-center gap-2">
             <a
               href="tel:+12155310907"
@@ -418,7 +375,6 @@ export default function App() {
               <Phone className="h-3 w-3" />
               <span>{BUSINESS.phone}</span>
             </a>
-
             <a
               href={`mailto:${BUSINESS.email}`}
               className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs sm:text-[13px] hover:bg-white/10 hover:border-white/40 transition"
@@ -426,7 +382,6 @@ export default function App() {
               <Mail className="h-3 w-3" />
               <span>Email us</span>
             </a>
-
             <a
               href={BUSINESS.facebook}
               target="_blank"
@@ -440,7 +395,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Header with mobile nav */}
+      {/* Header / Nav */}
       <header
         className={`border-b bg-white/80 backdrop-blur sticky top-0 z-40 transition-all duration-200 ${
           headerSmall ? "shadow-sm" : ""
@@ -473,7 +428,7 @@ export default function App() {
             <a href="#hiring">We’re Hiring</a>
           </nav>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu */}
           <button
             className="md:hidden inline-flex items-center gap-1 rounded-md border px-2 py-1 text-sm bg-white"
             onClick={() => setMobileNavOpen((open) => !open)}
@@ -484,7 +439,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* Mobile nav dropdown */}
         {mobileNavOpen && (
           <div className="md:hidden border-t bg-white">
             <nav className="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-2 text-sm">
@@ -535,7 +489,7 @@ export default function App() {
         )}
       </header>
 
-      {/* Hero with faded background image */}
+      {/* Hero */}
       <section className="relative overflow-hidden">
         <img
           src="/main2.jpg"
@@ -615,7 +569,7 @@ export default function App() {
             <CardContent>
               Full-service moves with protection wrap, disassembly/reassembly,
               and careful loading.
-              <QuoteBtn label="Residential Moves" />
+              <QuoteButton label="Residential Moves" />
             </CardContent>
           </Card>
           <Card>
@@ -627,7 +581,7 @@ export default function App() {
             <CardContent>
               Store buildouts, distribution, palletized freight, gym & office
               moves.
-              <QuoteBtn label="Commercial & Freight" />
+              <QuoteButton label="Commercial & Freight" />
             </CardContent>
           </Card>
           <Card>
@@ -638,13 +592,13 @@ export default function App() {
             </CardHeader>
             <CardContent>
               Cleanouts and responsible disposal, priced by volume.
-              <QuoteBtn label="Junk Removal" />
+              <QuoteButton label="Junk Removal" />
             </CardContent>
           </Card>
         </div>
       </section>
 
-      {/* Contact / Quote – moved above pricing, now with file upload */}
+      {/* Quote / Contact – with file upload */}
       <section id="contact" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8">
           <div>
@@ -659,7 +613,6 @@ export default function App() {
                 e.preventDefault();
                 const formEl = e.currentTarget;
                 const formData = new FormData(formEl);
-
                 try {
                   const res = await fetch("/api/quote", {
                     method: "POST",
@@ -680,13 +633,17 @@ export default function App() {
                     "There was an issue submitting your request. Please also feel free to call or email us directly."
                   );
                 }
-
                 formEl.reset();
               }}
               className="space-y-3"
             >
               <Input name="name" placeholder="Full name" required />
-              <Input name="email" type="email" placeholder="Email" required />
+              <Input
+                name="email"
+                type="email"
+                placeholder="Email"
+                required
+              />
               <Input name="phone" placeholder="Phone" />
               <select
                 name="service"
@@ -776,7 +733,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* Pricing – specifically In-Home Moves */}
+      {/* Pricing – In-home moves only */}
       <section id="pricing" className="py-12 md:py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold mb-2">Simple In-Home Moves</h2>
@@ -830,7 +787,7 @@ export default function App() {
         </div>
       </section>
 
-            {/* Reserve Date with Deposit (Stripe Elements on-site card form) */}
+      {/* Reserve Date with Deposit – Stripe Elements */}
       <section className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold mb-3">
@@ -842,93 +799,11 @@ export default function App() {
             finalize your full quote and apply this deposit to your final move
             invoice.
           </p>
-
           <Card className="max-w-xl">
             <CardContent className="pt-6">
               <Elements stripe={stripePromise}>
                 <DepositCheckoutForm />
               </Elements>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-          <Card className="max-w-xl">
-            <CardContent className="pt-6">
-              <form onSubmit={submitDeposit} className="space-y-3">
-                <Input
-                  type="email"
-                  required
-                  placeholder="Your email"
-                  value={depositForm.email}
-                  onChange={(e) =>
-                    handleDepositChange(
-                      "email",
-                      (e.target as HTMLInputElement).value
-                    )
-                  }
-                />
-                <select
-                  className="border rounded-md px-3 py-2 w-full text-sm"
-                  value={depositForm.service}
-                  onChange={(e) =>
-                    handleDepositChange("service", e.target.value)
-                  }
-                >
-                  <option>Residential & Apartment Move</option>
-                  <option>Commercial & Freight</option>
-                  <option>In-Home Move (appliance / furniture)</option>
-                  <option>Junk Removal</option>
-                  <option>Packing Only</option>
-                  <option>Labor Only (No Truck)</option>
-                </select>
-                <div className="flex flex-col md:flex-row gap-3">
-                  <Input
-                    type="date"
-                    required
-                    value={depositForm.date}
-                    onChange={(e) =>
-                      handleDepositChange(
-                        "date",
-                        (e.target as HTMLInputElement).value
-                      )
-                    }
-                  />
-                  <select
-                    className="border rounded-md px-3 py-2 w-full text-sm"
-                    value={depositForm.timeWindow}
-                    onChange={(e) =>
-                      handleDepositChange("timeWindow", e.target.value)
-                    }
-                  >
-                    <option>Morning (8am–12pm)</option>
-                    <option>Midday (12pm–4pm)</option>
-                    <option>Evening (4pm–8pm)</option>
-                    <option>Flexible / Call to confirm</option>
-                  </select>
-                </div>
-
-                {depositError && (
-                  <p className="text-sm text-red-600">{depositError}</p>
-                )}
-
-                <Button
-                  type="submit"
-                  style={{ backgroundColor: BRAND.lime, color: "#111" }}
-                  className="w-full rounded-2xl"
-                  disabled={depositLoading}
-                >
-                  {depositLoading
-                    ? "Starting secure checkout..."
-                    : "Pay $75 Deposit & Reserve Date"}
-                </Button>
-
-                <p className="text-[11px] text-gray-500 mt-2">
-                  Deposit is applied toward your final move total. You can
-                  adjust the exact policy with the owner (e.g. refundable up to
-                  72 hours before the move).
-                </p>
-              </form>
             </CardContent>
           </Card>
         </div>
@@ -943,7 +818,6 @@ export default function App() {
           <h2 className="text-2xl font-bold mb-6">What Our Customers Say</h2>
 
           <div className="grid md:grid-cols-[2fr,1fr] gap-8 items-stretch">
-            {/* Main sliding review */}
             <Card className="relative overflow-hidden">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between gap-4 mb-2">
@@ -960,8 +834,6 @@ export default function App() {
                   {currentReview.meta ? ` • ${currentReview.meta}` : ""}
                 </div>
               </CardContent>
-
-              {/* Dots for slideshow */}
               <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
                 {REVIEWS.map((_, idx) => (
                   <button
@@ -978,14 +850,13 @@ export default function App() {
               </div>
             </Card>
 
-            {/* Side stack of quick quotes */}
             <div className="space-y-3">
               {REVIEWS.slice(0, 3).map((r, idx) => (
                 <Card key={idx} className="border-dashed border-gray-200">
                   <CardContent className="py-3">
                     <StarRow />
-                    <p className="mt-1 text-xs text-gray-700 line-clamp-3">
-                      {r.body}
+                    <p className="mt-1 text-xs text-gray-700">
+                      {r.body.substring(0, 150)}...
                     </p>
                     <div className="mt-1 text-[11px] text-gray-500">
                       — {r.name}
@@ -1015,7 +886,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* We're Hiring */}
+      {/* We’re Hiring */}
       <section id="hiring" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold">We’re Hiring!</h2>
@@ -1035,10 +906,7 @@ export default function App() {
                 body: JSON.stringify(payload),
               });
               if (r.ok) alert("Thanks! Your application was submitted.");
-              else
-                alert(
-                  "Could not submit application. Please email us."
-                );
+              else alert("Could not submit application. Please email us.");
               (e.currentTarget as HTMLFormElement).reset();
             }}
             className="mt-4 grid md:grid-cols-3 gap-3"
@@ -1169,7 +1037,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Mobile "Call Now" floating button */}
+      {/* Mobile "Call Now" button */}
       <a
         href="tel:+12155310907"
         className="fixed bottom-4 right-4 z-40 md:hidden inline-flex items-center gap-2 rounded-full bg-black text-white px-4 py-2 shadow-lg text-sm"
