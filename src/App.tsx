@@ -75,9 +75,11 @@ export default function App() {
     date: "",
     timeWindow: "Morning (8am–12pm)",
   });
-const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
-  const [headerSmall, setHeaderSmall] = useState(false);  
-  const onOut = (e: MouseEvent) => {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [headerSmall, setHeaderSmall] = useState(false);
+
+  useEffect(() => {
+    const onOut = (e: MouseEvent) => {
       if (e.clientY <= 0 && shouldOpenExit()) {
         setExitOpen(true);
         markExitSeen();
@@ -86,6 +88,7 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
     addEventListener("mouseout", onOut);
     return () => removeEventListener("mouseout", onOut);
   }, []);
+
   useEffect(() => {
     const onScroll = () => {
       setHeaderSmall(window.scrollY > 40);
@@ -93,6 +96,7 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
   const closeExit = () => {
     setExitOpen(false);
     dismissExit(7);
@@ -116,7 +120,6 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
       if (!res.ok || !data.url) {
         throw new Error(data.error || "Unable to start checkout");
       }
-      // Redirect to Stripe Checkout
       window.location.href = data.url;
     } catch (err: any) {
       console.error(err);
@@ -154,7 +157,7 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
 
   return (
     <div id="top">
-           {/* Top contact bar */}
+      {/* Top contact bar */}
       <div className="bg-black text-white text-xs sm:text-sm">
         <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
           {/* Tagline / trust */}
@@ -195,7 +198,8 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
           </div>
         </div>
       </div>
-                {/* Header with mobile nav */}
+
+      {/* Header with mobile nav */}
       <header
         className={`border-b bg-white/80 backdrop-blur sticky top-0 z-40 transition-all duration-200 ${
           headerSmall ? "shadow-sm" : ""
@@ -395,10 +399,7 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
       </section>
 
       {/* Pricing */}
-      <section
-        id="pricing"
-        className="py-12 md:py-16 bg-gray-50"
-      >
+      <section id="pricing" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold mb-6">Simple Pricing</h2>
           <div className="grid md:grid-cols-3 gap-6">
@@ -531,7 +532,7 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
         </div>
       </section>
 
-            {/* Reviews */}
+      {/* Reviews */}
       <section id="reviews" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
           <p className="text-sm text-gray-500 mb-1">
@@ -539,6 +540,7 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
           </p>
           <h2 className="text-2xl font-bold mb-6">What Our Customers Say</h2>
           <div className="grid md:grid-cols-2 gap-6">
+            <Card>
               <CardHeader>
                 <CardTitle>“Every item arrived undamaged”</CardTitle>
               </CardHeader>
@@ -553,10 +555,6 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
                   service. I would highly recommend Alex and the Neighborhood
                   Krew and give them 20 stars if I could.
                 </p>
-                  src="/reviews/review1.jpg"
-                  alt="Full review screenshot"
-                  className="mt-3 rounded-lg border"
-                />
                 <div className="mt-2 text-sm text-gray-500">
                   — Verified Homeowner
                 </div>
@@ -647,12 +645,7 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
               className="space-y-3"
             >
               <Input name="name" placeholder="Full name" required />
-              <Input
-                name="email"
-                type="email"
-                placeholder="Email"
-                required
-              />
+              <Input name="email" type="email" placeholder="Email" required />
               <Input name="phone" placeholder="Phone" />
               <select
                 name="service"
@@ -670,9 +663,7 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
                 name="details"
                 placeholder="Move details (where from, where to, stairs, etc.)"
               />
-              <Button
-                style={{ backgroundColor: "#b6e300", color: "#111" }}
-              >
+              <Button style={{ backgroundColor: "#b6e300", color: "#111" }}>
                 Request Quote
               </Button>
             </form>
@@ -708,25 +699,17 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
                 placeholder="you@email.com"
                 required
               />
-              <Button
-                style={{ backgroundColor: "#b6e300", color: "#111" }}
-              >
+              <Button style={{ backgroundColor: "#b6e300", color: "#111" }}>
                 Get Code
               </Button>
             </form>
             <p className="text-sm text-gray-600 mt-4">
               Questions? Email{" "}
-              <a
-                href={`mailto:${BUSINESS.email}`}
-                className="underline"
-              >
+              <a href={`mailto:${BUSINESS.email}`} className="underline">
                 {BUSINESS.email}
               </a>{" "}
               or call{" "}
-              <a
-                href="tel:+12155310907"
-                className="underline"
-              >
+              <a href="tel:+12155310907" className="underline">
                 {BUSINESS.phone}
               </a>
               .
@@ -746,9 +729,7 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              const fd = new FormData(
-                e.currentTarget as HTMLFormElement
-              );
+              const fd = new FormData(e.currentTarget as HTMLFormElement);
               const raw = Object.fromEntries(fd.entries());
               const payload = { type: "hiring_application", ...raw };
               const r = await fetch("/api/apply", {
@@ -756,8 +737,7 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
               });
-              if (r.ok)
-                alert("Thanks! Your application was submitted.");
+              if (r.ok) alert("Thanks! Your application was submitted.");
               else
                 alert(
                   "Could not submit application. Please email us."
@@ -799,9 +779,7 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
               placeholder="Tell us about your experience"
             />
             <div className="md:col-span-3">
-              <Button
-                style={{ backgroundColor: "#b6e300", color: "#111" }}
-              >
+              <Button style={{ backgroundColor: "#b6e300", color: "#111" }}>
                 Submit Application
               </Button>
             </div>
@@ -809,11 +787,12 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
         </div>
       </section>
 
-          {/* Footer */}
+      {/* Footer */}
       <footer className="border-t bg-white">
         <div className="max-w-6xl mx-auto px-4 py-6 text-xs sm:text-sm flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="text-gray-600">
-            © {new Date().getFullYear()} Neighborhood Krew Inc. All rights reserved.
+            © {new Date().getFullYear()} Neighborhood Krew Inc. All rights
+            reserved.
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <a
@@ -880,9 +859,7 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
                 }
                 required
               />
-              <Button
-                style={{ backgroundColor: "#b6e300", color: "#111" }}
-              >
+              <Button style={{ backgroundColor: "#b6e300", color: "#111" }}>
                 Send
               </Button>
             </form>
@@ -899,6 +876,15 @@ const [mobileNavOpen, setMobileNavOpen] = useState(false);  useEffect(() => {
           </div>
         </div>
       )}
+
+      {/* Mobile "Call Now" floating button */}
+      <a
+        href="tel:+12155310907"
+        className="fixed bottom-4 right-4 z-40 md:hidden inline-flex items-center gap-2 rounded-full bg-black text-white px-4 py-2 shadow-lg text-sm"
+      >
+        <Phone className="h-4 w-4" />
+        <span>Call Now</span>
+      </a>
     </div>
   );
 }
