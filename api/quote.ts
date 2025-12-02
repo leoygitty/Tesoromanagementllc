@@ -1,145 +1,81 @@
 // api/quote.ts
-import Busboy from "busboy";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY || "");
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Optional CRM webhook forward
-async function sendToWebhook(payload: any) {
-  const url = process.env.QUOTE_WEBHOOK_URL;
-  if (!url) return;
-  try {
-    await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-  } catch (err) {
-    console.error("Error sending to webhook:", err);
-  }
-}
+// Helper: basic type for incoming payload
+type QuotePayload = {
+  type?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  service?: string;
+  details?: string;
+};
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const fields: Record<string, string> = {};
-  const files: { filename: string; mimeType: string; data: Buffer }[] = [];
-
   try {
-    const busboy = Busboy({ headers: req.headers });
-
-    busboy.on("field", (name, value) => {
-      fields[name] = value;
-    });
-
-    busboy.on("file", (_name, file, info) => {
-      const { filename, mimeType } = info;
-      const chunks: Buffer[] = [];
-
-      file.on("data", (data: Buffer) => {
-        chunks.push(data);
-      });
-
-      file.on("end", () => {
-        const buffer = Buffer.concat(chunks);
-        if (buffer.length > 0) {
-          files.push({
-            filename: filename || "attachment",
-            mimeType,
-            data: buffer,
-          });
-        }
-      });
-    });
-
-    await new Promise<void>((resolve, reject) => {
-      busboy.on("finish", resolve);
-      busboy.on("error", reject);
-      req.pipe(busboy);
-    });
+    const body = (req.body || {}) as QuotePayload;
 
     const {
-      name = "",
+      type = "quote",
+      name = "Unknown",
       email = "",
       phone = "",
-      service = "",
-      details = "",
-    } = fields;
+      service,
+      details,
+    } = body;
 
-    if (!name || !email || !service) {
-      return res
-        .status(400)
-        .json({ error: "Missing required fields: name, email, or service" });
-    }
+    // Build a safe text body no matter what shape we get
+    const lines: string[] = [];
 
-    const ownerEmail =
-      process.env.QUOTE_TO_EMAIL || "Neighborhoodkrew@gmail.com";
-    const yourEmail = "tesoromanagements@gmail.com";
+    lines.push(`New ${type === "hiring_application" ? "Hiring Application" : "Quote Lead"} from website`);
+    lines.push("");
+    lines.push(`Name: ${name}`);
+    if (email) lines.push(`Email: ${email}`);
+    if (phone) lines.push(`Phone: ${phone}`);
+    if (service) lines.push(`Service: ${service}`);
+    lines.push("");
 
-    const subject = `New quote request – ${service} from ${name}`;
-
-    const plainText = `
-New quote request from Neighborhood Krew site:
-
-Name: ${name}
-Email: ${email}
-Phone: ${phone || "N/A"}
-Service: ${service}
-
-Details:
-${details || "(none provided)"}
-
-Attached photos: ${files.length}
-    `.trim();
-
-    const html = `
-      <h2>New quote request from Neighborhood Krew website</h2>
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Phone:</strong> ${phone || "N/A"}</p>
-      <p><strong>Service:</strong> ${service}</p>
-      <p><strong>Details:</strong><br/>${(details || "")
-        .replace(/\n/g, "<br/>")}</p>
-      <p><strong>Attached photos:</strong> ${files.length}</p>
-    `;
-
-    const attachments =
-      files.length > 0
-        ? files.map((f) => ({
-            filename: f.filename,
-            content: f.data.toString("base64"),
-            type: f.mimeType,
-          }))
-        : [];
-
-    if (!process.env.RESEND_API_KEY) {
-      console.warn("RESEND_API_KEY not set – skipping email send.");
+    if (details && details.trim().length > 0) {
+      lines.push("Details:");
+      lines.push(details.trim());
     } else {
-      await resend.emails.send({
-        from: "Neighborhood Krew <no-reply@your-domain.com>",
-        to: [ownerEmail, yourEmail], // Owner + you
-        subject,
-        text: plainText,
-        html,
-        attachments,
-      });
+      lines.push("Details: (none provided)");
     }
 
-    await sendToWebhook({
-      type: "quote_request",
-      fields,
-      fileCount: files.length,
-      createdAt: new Date().toISOString(),
+    const textBody = lines.join("\n");
+
+    // Send email via Resend
+    // Make sure RESEND_API_KEY is set in Vercel
+    const toOwner = "Neighborhoodkrew@gmail.com";
+    const ccCustomer = email && email.includes("@") ? email : undefined;
+    const bccYou = "tesoromanagements@gmail.com";
+
+    await resend.emails.send({
+      from: "Neighborhood Krew Website <no-reply@neighborhood-krew.com>",
+      to: [toOwner],
+      cc: ccCustomer ? [ccCustomer] : undefined,
+      bcc: [bccYou],
+      subject:
+        type === "hiring_application"
+          ? `New Hiring Application – ${name}`
+          : `New Quote Request – ${name}`,
+      text: textBody,
     });
 
     return res.status(200).json({ ok: true });
   } catch (err) {
-    console.error("Error handling quote:", err);
+    console.error("QUOTE API ERROR:", err);
+    // Important: still respond with a clear error so the frontend knows
     return res
       .status(500)
-      .json({ error: "Error processing quote request" });
+      .json({ ok: false, error: "EMAIL_SEND_FAILED" });
   }
 }
