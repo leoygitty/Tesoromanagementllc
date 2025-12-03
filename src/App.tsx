@@ -344,10 +344,10 @@ export function QuoteWizard() {
     );
     detailsLines.push("");
     detailsLines.push(
-      `ROUGH ESTIMATE (non-binding): $${est.low.toLocaleString()} – $${est.high.toLocaleString()}`
+      `ESTIMATED RANGE (non-binding): $${est.low.toLocaleString()} – $${est.high.toLocaleString()}`
     );
     detailsLines.push(
-      "This is a rough ballpark only. Final pricing will be provided after speaking with the crew and confirming details."
+      "This is a rough starting point only. Final pricing will be provided after speaking with the crew and confirming details."
     );
     detailsLines.push("");
     detailsLines.push(
@@ -411,13 +411,13 @@ export function QuoteWizard() {
     "This range is based on similar jobs we’ve completed in the area and is meant as a starting point, not a final price.";
 
   return (
-    <Card className="shadow-lg">
+    <Card className="shadow-lg border-2 border-gray-900">
       <CardHeader>
-        <CardTitle className="flex flex-col gap-1">
-          <span>Instant Ballpark Estimate</span>
-          <span className="text-sm font-normal text-gray-600">
-            Answer a few quick questions and see a rough price range in
-            under 60 seconds.
+        <CardTitle className="flex flex-col gap-1 text-2xl md:text-3xl">
+          <span>Free Quote</span>
+          <span className="text-sm md:text-base font-normal text-gray-600">
+            Answer a few quick questions and see your estimated price
+            range in under 60 seconds.
           </span>
         </CardTitle>
       </CardHeader>
@@ -898,20 +898,26 @@ export function QuoteWizard() {
           )}
 
           {submitted && estimate && (
-            <div className="rounded-lg border border-lime-300 bg-lime-50 px-3 py-3 text-sm">
-              <div className="font-semibold text-gray-900">
-                Rough ballpark estimate:
+            <div className="space-y-3">
+              <div className="rounded-lg border border-lime-300 bg-lime-50 px-3 py-3 text-sm">
+                <div className="font-semibold text-gray-900">
+                  Estimated range (non-binding):
+                </div>
+                <div className="text-lg font-bold">
+                  ${estimate.low.toLocaleString()} – $
+                  {estimate.high.toLocaleString()}
+                </div>
+                <p className="mt-1 text-gray-700">{commonLine}</p>
+                <p className="mt-1 text-gray-700">{jobSpecificLine}</p>
+                <p className="mt-1 text-xs text-gray-600">
+                  You’ll get an email confirmation with these details,
+                  and you can always reply directly if anything changes.
+                </p>
               </div>
-              <div className="text-lg font-bold">
-                ${estimate.low.toLocaleString()} – $
+              <div className="rounded-full bg-lime-400 text-black border-2 border-black px-4 py-3 text-center font-extrabold text-lg md:text-2xl animate-bounce">
+                Estimated range: ${estimate.low.toLocaleString()} – $
                 {estimate.high.toLocaleString()}
               </div>
-              <p className="mt-1 text-gray-700">{commonLine}</p>
-              <p className="mt-1 text-gray-700">{jobSpecificLine}</p>
-              <p className="mt-1 text-xs text-gray-600">
-                You’ll get an email confirmation with these details, and
-                you can always reply directly if anything changes.
-              </p>
             </div>
           )}
 
@@ -1119,7 +1125,7 @@ export default function App() {
             className="flex items-center gap-2 font-semibold text-sm sm:text-base"
           >
             <img
-              src="/public/official-krew-logo.png"
+              src="/official-krew-logo.png"
               alt="Neighborhood Krew Inc logo"
               className="h-7 w-7 rounded-full border border-black/10 object-contain bg-white"
             />
@@ -1128,7 +1134,7 @@ export default function App() {
 
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <a href="#quote" className="hover:text-lime-500">
-              Instant Estimate
+              Free Quote
             </a>
             <a href="#services" className="hover:text-lime-500">
               Services
@@ -1164,7 +1170,7 @@ export default function App() {
           <div className="md:hidden border-t bg-white">
             <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-2 text-sm">
               {[
-                ["#quote", "Instant Estimate"],
+                ["#quote", "Free Quote"],
                 ["#services", "Services"],
                 ["#pricing", "Pricing"],
                 ["#reviews", "Reviews"],
@@ -1215,12 +1221,7 @@ export default function App() {
             installs, and junk removal — handled carefully by a crew
             that treats your space like their own.
           </p>
-          <div className="mt-6 flex flex-col sm:flex-row gap-3">
-            <a href="tel:+12155310907">
-              <Button variant="outline">
-                Call {BUSINESS.phone}
-              </Button>
-            </a>
+          <div className="mt-6 flex flex-col gap-3 max-w-xs">
             <Button
               onClick={() =>
                 document
@@ -1230,6 +1231,14 @@ export default function App() {
             >
               Start My Instant Estimate
             </Button>
+            <a
+              href="tel:+12155310907"
+              className="self-center w-full"
+            >
+              <Button variant="outline" className="w-full">
+                Call {BUSINESS.phone}
+              </Button>
+            </a>
           </div>
           <div className="mt-8 text-sm text-white/85">
             Trusted by premium brands & venues
@@ -1254,24 +1263,21 @@ export default function App() {
         </div>
       </section>
 
-      {/* Instant estimate / quiz funnel */}
+      {/* Free quote / quiz funnel */}
       <section id="quote" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-5 gap-8 items-start">
           <div className="md:col-span-3">
             <QuoteWizard />
           </div>
           <div className="md:col-span-2 space-y-4 text-sm text-gray-700">
-            <h2 className="text-xl font-bold">
-              How the estimate works
-            </h2>
+            <h2 className="text-xl font-bold">How the quote works</h2>
             <p>
-              This quiz gives you a{" "}
-              <strong>rough ballpark range</strong> based on similar
-              jobs we’ve completed. Your final price is confirmed after
-              we talk through the details and schedule.
+              This quiz gives you a quick free quote range based on
+              similar jobs we’ve completed. Your final price is
+              confirmed after we talk through the details and schedule.
             </p>
             <ul className="list-disc list-inside space-y-1">
-              <li>Residential ballparks typically fall between $2k–$12k.</li>
+              <li>Residential quotes typically fall between $1k–$12k.</li>
               <li>
                 Commercial and specialty projects can be higher depending
                 on scope and access.
@@ -1354,7 +1360,7 @@ export default function App() {
                 <p className="text-sm text-gray-700">
                   Garages, basements, renovation debris and more —
                   priced by volume and weight with responsible disposal
-                  and recycling whenever possible.
+                  and recycling.
                 </p>
                 <Button
                   className="mt-4 w-full"
@@ -1384,7 +1390,7 @@ export default function App() {
             new appliances, or rearranging furniture), we keep it
             simple. Full residential moves, long-distance jobs, and
             commercial projects are quoted individually through the
-            instant estimate and a quick call.
+            free quote quiz and a quick call.
           </p>
           <div className="grid md:grid-cols-3 gap-6">
             <Card>
@@ -1426,7 +1432,7 @@ export default function App() {
           </div>
           <p className="mt-4 text-xs text-gray-600">
             Full residential and commercial move pricing depends on
-            distance, access, and inventory. Use the Instant Estimate
+            distance, access, and inventory. Use the Free Quote section
             above and we’ll confirm a custom quote.
           </p>
         </div>
