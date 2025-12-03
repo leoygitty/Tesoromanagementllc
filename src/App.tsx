@@ -73,7 +73,8 @@ function Card(props: DivProps) {
   return (
     <div
       className={
-        "rounded-2xl border border-gray-200 bg-white shadow-sm " + className
+        "rounded-2xl border border-slate-900/15 bg-white shadow-sm " +
+        className
       }
       {...rest}
     />
@@ -201,19 +202,19 @@ function computeEstimate(state: WizardState): Estimate {
 
   if (state.jobType === "residential") {
     if (state.size === "studio_1br") {
-      baseLow = 2000;
-      baseHigh = 4000;
+      baseLow = 1000;
+      baseHigh = 3000;
     } else if (state.size === "2br") {
-      baseLow = 2500;
-      baseHigh = 5000;
+      baseLow = 1500;
+      baseHigh = 4000;
     } else if (state.size === "3br") {
-      baseLow = 3500;
-      baseHigh = 7000;
+      baseLow = 2500;
+      baseHigh = 6000;
     } else if (state.size === "4br") {
-      baseLow = 4500;
+      baseLow = 3500;
       baseHigh = 9000;
     } else if (state.size === "5plus") {
-      baseLow = 6000;
+      baseLow = 5000;
       baseHigh = 12000;
     }
   } else if (state.jobType === "commercial") {
@@ -347,7 +348,7 @@ export function QuoteWizard() {
       `ESTIMATED RANGE (non-binding): $${est.low.toLocaleString()} – $${est.high.toLocaleString()}`
     );
     detailsLines.push(
-      "This is a rough starting point only. Final pricing will be provided after speaking with the crew and confirming details."
+      "This is an initial range only. Final pricing will be provided after speaking with the crew and confirming details."
     );
     detailsLines.push("");
     detailsLines.push(
@@ -364,7 +365,7 @@ export function QuoteWizard() {
       name: state.name,
       email: state.email,
       phone: state.phone,
-      service: `${jobLabel} – Quiz Funnel`,
+      service: `${jobLabel} – Quote Wizard`,
       details: detailsLines.join("\n"),
     };
 
@@ -411,12 +412,14 @@ export function QuoteWizard() {
     "This range is based on similar jobs we’ve completed in the area and is meant as a starting point, not a final price.";
 
   return (
-    <Card className="shadow-lg border-2 border-gray-900">
+    <Card className="shadow-xl border-slate-900/25">
       <CardHeader>
-        <CardTitle className="flex flex-col gap-1 text-2xl md:text-3xl">
-          <span>Free Quote</span>
-          <span className="text-sm md:text-base font-normal text-gray-600">
-            Answer a few quick questions and see your estimated price
+        <CardTitle className="flex flex-col gap-1">
+          <span className="text-2xl md:text-3xl font-extrabold">
+            Free Quote
+          </span>
+          <span className="text-sm font-normal text-gray-600">
+            Answer a few quick questions and see an estimated price
             range in under 60 seconds.
           </span>
         </CardTitle>
@@ -898,26 +901,20 @@ export function QuoteWizard() {
           )}
 
           {submitted && estimate && (
-            <div className="space-y-3">
-              <div className="rounded-lg border border-lime-300 bg-lime-50 px-3 py-3 text-sm">
-                <div className="font-semibold text-gray-900">
-                  Estimated range (non-binding):
-                </div>
-                <div className="text-lg font-bold">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 rounded-full border-2 border-lime-500 bg-lime-400 px-4 py-2 text-sm font-semibold text-black shadow-md animate-bounce">
+                <span>Estimated range:</span>
+                <span className="text-lg md:text-2xl font-extrabold">
                   ${estimate.low.toLocaleString()} – $
                   {estimate.high.toLocaleString()}
-                </div>
-                <p className="mt-1 text-gray-700">{commonLine}</p>
-                <p className="mt-1 text-gray-700">{jobSpecificLine}</p>
-                <p className="mt-1 text-xs text-gray-600">
-                  You’ll get an email confirmation with these details,
-                  and you can always reply directly if anything changes.
-                </p>
+                </span>
               </div>
-              <div className="rounded-full bg-lime-400 text-black border-2 border-black px-4 py-3 text-center font-extrabold text-lg md:text-2xl animate-bounce">
-                Estimated range: ${estimate.low.toLocaleString()} – $
-                {estimate.high.toLocaleString()}
-              </div>
+              <p className="mt-1 text-gray-700 text-sm">{commonLine}</p>
+              <p className="mt-1 text-gray-700 text-sm">{jobSpecificLine}</p>
+              <p className="mt-1 text-xs text-gray-600">
+                You’ll get an email confirmation with these details, and
+                you can always reply directly if anything changes.
+              </p>
             </div>
           )}
 
@@ -998,24 +995,18 @@ const REVIEWS: Review[] = [
   },
 ];
 
-// --- Gallery data ---------------------------------------------------------
+// --- Gallery slideshow data ----------------------------------------------
 
-type GalleryImage = {
-  src: string;
-  alt: string;
-};
-
-const GALLERY_IMAGES: GalleryImage[] = [
-  { src: "/gallery/krew1.jpg", alt: "Neighborhood Krew job 1" },
-  { src: "/gallery/krew2.jpg", alt: "Neighborhood Krew job 2" },
-  { src: "/gallery/krew3.jpg", alt: "Neighborhood Krew job 3" },
-  { src: "/gallery/krew4.jpg", alt: "Neighborhood Krew job 4" },
-  { src: "/gallery/krew5.jpg", alt: "Neighborhood Krew job 5" },
-  { src: "/gallery/krew6.jpg", alt: "Neighborhood Krew job 6" },
-  { src: "/featured/lux1.jpg", alt: "Premium client install" },
-  { src: "/featured/lux2.jpg", alt: "Gymshark buildout wall" },
-  { src: "/featured/lux3.jpg", alt: "Gym inventory move" },
-  { src: "/main2.jpg", alt: "Neighborhood Krew main truck shot" },
+const GALLERY_IMAGES: string[] = [
+  "/gallery/krew1.jpg",
+  "/gallery/krew2.jpg",
+  "/gallery/krew3.jpg",
+  "/gallery/krew4.jpg",
+  "/gallery/krew5.jpg",
+  "/gallery/krew6.jpg",
+  "/gallery/k6.jpg", // new uploads
+  "/gallery/k7.jpg",
+  "/gallery/k8.jpg",
 ];
 
 // --- Main App -------------------------------------------------------------
@@ -1026,7 +1017,8 @@ export default function App() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [activeReview, setActiveReview] = useState(0);
-  const [activeGallery, setActiveGallery] = useState(0);
+
+  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
@@ -1061,7 +1053,7 @@ export default function App() {
 
   useEffect(() => {
     const id = setInterval(() => {
-      setActiveGallery((idx) => (idx + 1) % GALLERY_IMAGES.length);
+      setActiveGalleryIndex((idx) => (idx + 1) % GALLERY_IMAGES.length);
     }, 6000);
     return () => clearInterval(id);
   }, []);
@@ -1097,7 +1089,7 @@ export default function App() {
   );
 
   const currentReview = REVIEWS[activeReview];
-  const currentGallery = GALLERY_IMAGES[activeGallery];
+  const currentGalleryImage = GALLERY_IMAGES[activeGalleryIndex];
 
   return (
     <div id="top" className="min-h-screen bg-white text-slate-900">
@@ -1251,8 +1243,20 @@ export default function App() {
             installs, and junk removal — handled carefully by a crew
             that treats your space like their own.
           </p>
-          <div className="mt-6 flex flex-col gap-3 max-w-xs">
+          <div className="mt-6 flex flex-col items-center justify-center sm:flex-row sm:justify-start sm:items-center gap-3">
             <Button
+              className="w-full sm:w-auto"
+              onClick={() =>
+                document
+                  .getElementById("quote")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
+              Start My Free Quote
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full sm:w-auto border border-white/50 text-white hover:bg-white/10"
               onClick={() =>
                 document
                   .getElementById("services")
@@ -1261,11 +1265,8 @@ export default function App() {
             >
               Explore Services
             </Button>
-            <a
-              href="tel:+12155310907"
-              className="self-center w-full"
-            >
-              <Button variant="outline" className="w-full">
+            <a href="tel:+12155310907" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto">
                 Call {BUSINESS.phone}
               </Button>
             </a>
@@ -1376,7 +1377,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* Free quote / quiz funnel (moved below Services) */}
+      {/* Instant estimate / quote wizard – now below services */}
       <section id="quote" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-5 gap-8 items-start">
           <div className="md:col-span-3">
@@ -1385,12 +1386,17 @@ export default function App() {
           <div className="md:col-span-2 space-y-4 text-sm text-gray-700">
             <h2 className="text-xl font-bold">How the quote works</h2>
             <p>
-              This quiz gives you a quick free quote range based on
-              similar jobs we’ve completed. Your final price is
-              confirmed after we talk through the details and schedule.
+              This quick quiz gives you an{" "}
+              <strong>initial price range</strong> based on similar jobs
+              we’ve completed. Your final price is confirmed after we
+              talk through the details and schedule.
             </p>
             <ul className="list-disc list-inside space-y-1">
-              <li>Residential quotes typically fall between $1k–$12k.</li>
+              <li>
+                Residential estimates typically fall between{" "}
+                <strong>$1k–$12k</strong>, depending on size, access,
+                and distance.
+              </li>
               <li>
                 Commercial and specialty projects can be higher depending
                 on scope and access.
@@ -1415,12 +1421,11 @@ export default function App() {
             Simple In-Home Move Pricing
           </h2>
           <p className="text-sm text-gray-700 mb-6 max-w-3xl">
-            For{" "}
-            <strong>in-home moves</strong> (like swapping rooms, moving
-            new appliances, or rearranging furniture), we keep it
+            For <strong>in-home moves</strong> (like swapping rooms,
+            moving new appliances, or rearranging furniture), we keep it
             simple. Full residential moves, long-distance jobs, and
-            commercial projects are quoted individually through the
-            free quote quiz and a quick call.
+            commercial projects are quoted individually through the Free
+            Quote and a quick call.
           </p>
           <div className="grid md:grid-cols-3 gap-6">
             <Card>
@@ -1462,8 +1467,8 @@ export default function App() {
           </div>
           <p className="mt-4 text-xs text-gray-600">
             Full residential and commercial move pricing depends on
-            distance, access, and inventory. Use the Free Quote section
-            above and we’ll confirm a custom quote.
+            distance, access, and inventory. Use the Free Quote above
+            and we’ll confirm a custom price.
           </p>
         </div>
       </section>
@@ -1540,67 +1545,76 @@ export default function App() {
         </div>
       </section>
 
-      {/* Gallery – slideshow with lightbox */}
+      {/* Gallery slideshow */}
       <section id="gallery" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold mb-6">
             Recent Jobs from the Krew
           </h2>
-          <div className="grid md:grid-cols-2 gap-6 items-start">
-            <Card>
-              <CardContent>
-                <div
-                  className="overflow-hidden rounded-xl border border-gray-200 cursor-pointer"
+          <div className="grid md:grid-cols-3 gap-6 items-start">
+            <div className="md:col-span-2">
+              <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-black/5">
+                <img
+                  src={currentGalleryImage}
+                  alt="Neighborhood Krew job"
+                  className="w-full h-64 md:h-80 object-cover cursor-pointer"
+                  onClick={() => setLightboxOpen(true)}
+                />
+                <button
+                  type="button"
+                  className="absolute bottom-3 right-3 rounded-full bg-black/60 text-white text-xs px-3 py-1"
                   onClick={() => setLightboxOpen(true)}
                 >
-                  <img
-                    src={currentGallery.src}
-                    alt={currentGallery.alt}
-                    className="w-full h-72 md:h-80 object-cover transition-transform duration-300 hover:scale-105"
-                  />
-                </div>
-                <p className="mt-3 text-sm text-gray-700">
-                  A rotating look at real moves, installs, and jobs
-                  completed by the Krew across Greater Philly and New
-                  Jersey.
-                </p>
-                <div className="mt-4 flex gap-1">
-                  {GALLERY_IMAGES.map((img, idx) => (
-                    <button
-                      key={img.src}
-                      onClick={() => setActiveGallery(idx)}
-                      className={`h-2 w-2 rounded-full ${
-                        idx === activeGallery
-                          ? "bg-lime-500"
-                          : "bg-gray-300"
-                      }`}
-                      aria-label={`Show gallery image ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-3 gap-3">
-              {GALLERY_IMAGES.slice(0, 6).map((img, idx) => (
-                <button
-                  key={img.src}
-                  onClick={() => {
-                    setActiveGallery(idx);
-                    setLightboxOpen(true);
-                  }}
-                  className="block"
-                >
-                  <img
-                    src={img.src}
-                    alt={img.alt}
-                    className="w-full h-24 md:h-28 rounded-lg border object-cover hover:opacity-90"
-                  />
+                  Tap to enlarge
                 </button>
-              ))}
+              </div>
+              <div className="mt-3 flex gap-1 justify-center">
+                {GALLERY_IMAGES.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveGalleryIndex(idx)}
+                    className={`h-2 w-2 rounded-full ${
+                      idx === activeGalleryIndex
+                        ? "bg-lime-500"
+                        : "bg-gray-300"
+                    }`}
+                    aria-label={`Show photo ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="space-y-3 text-sm text-gray-700">
+              <p>
+                A mix of residential homes, apartments, offices and
+                cleanouts the Krew has handled recently — packed tight,
+                labeled clearly, and delivered without drama.
+              </p>
+              <p>
+                From high-end living rooms and long-driveway load-outs
+                to fully packed 26&apos; trucks, every job gets the same
+                careful wrapping and stacking.
+              </p>
+              <p className="text-xs text-gray-500">
+                Want your move to look this clean? Start your Free Quote
+                above and we&apos;ll get you on the schedule.
+              </p>
             </div>
           </div>
         </div>
+
+        {/* Lightbox overlay */}
+        {lightboxOpen && (
+          <div
+            className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <img
+              src={currentGalleryImage}
+              alt="Neighborhood Krew job enlarged"
+              className="max-h-full max-w-full rounded-xl border border-white/20 object-contain"
+            />
+          </div>
+        )}
       </section>
 
       {/* Hiring */}
@@ -1776,35 +1790,6 @@ export default function App() {
                 className="text-sm text-gray-500 hover:text-gray-800"
               >
                 No thanks
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Gallery lightbox */}
-      {lightboxOpen && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-          onClick={() => setLightboxOpen(false)}
-        >
-          <div
-            className="max-w-3xl w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={currentGallery.src}
-              alt={currentGallery.alt}
-              className="w-full max-h-[80vh] object-contain rounded-xl shadow-xl bg-black"
-            />
-            <div className="mt-3 flex justify-between items-center text-gray-100 text-sm">
-              <span>{currentGallery.alt}</span>
-              <button
-                type="button"
-                onClick={() => setLightboxOpen(false)}
-                className="px-3 py-1 rounded-full bg-white/90 text-black text-xs font-semibold"
-              >
-                Close
               </button>
             </div>
           </div>
