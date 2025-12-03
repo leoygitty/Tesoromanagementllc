@@ -1,21 +1,24 @@
 // api/quote.ts
-import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { Resend } from "resend";
 
 const resendApiKey = process.env.RESEND_API_KEY;
-`
+
+// If your verified sending domain in Resend is "send.neighborhoodkrew.com",
+// set FROM_EMAIL to use that domain, e.g. quotes@send.neighborhoodkrew.com.
 const FROM_EMAIL = "Neighborhood Krew <quotes@neighborhoodkrew.com>";
 const OWNER_EMAIL = "Neighborhoodkrew@gmail.com";
 const FORWARD_EMAIL = "tesoromanagements@gmail.com";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
-    return res.status(405).json({ ok: false, error: "Method not allowed" });
+    res.setHeader("Allow", "POST");
+    return res
+      .status(405)
+      .json({ ok: false, error: "Method not allowed. Use POST." });
   }
 
   if (!resendApiKey) {
     console.error("RESEND_API_KEY is missing – set it in Vercel env vars.");
-    // Still send a clear 500 so the UI knows it failed
     return res
       .status(500)
       .json({ ok: false, error: "Email service not configured" });
@@ -35,6 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const subject = `New quote request – ${service}`;
   const metaLine = `From: ${name} <${email}> | Phone: ${phone || "N/A"}`;
 
+  // Email to owner + your copy
   const ownerText = [
     "New quote request from the website quiz:",
     "",
@@ -43,6 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     details,
   ].join("\n");
 
+  // Confirmation to customer
   const customerText = [
     `Hi ${name},`,
     "",
@@ -60,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   ].join("\n");
 
   try {
-    // 1) Email to owner + your forward address
+    // 1) Owner + your backup copy
     await resend.emails.send({
       from: FROM_EMAIL,
       to: [OWNER_EMAIL, FORWARD_EMAIL],
@@ -68,7 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       text: ownerText,
     });
 
-    // 2) Confirmation to the customer
+    // 2) Customer confirmation
     await resend.emails.send({
       from: FROM_EMAIL,
       to: email,
@@ -76,17 +81,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       text: customerText,
     });
 
+    // ✅ This is what makes your frontend show success instead of the error message
     return res.status(200).json({ ok: true });
   } catch (err: any) {
     console.error("Error sending quote emails via Resend:", err);
-    // If Resend returns a structured error, surface the message in logs
-    if (err?.name || err?.message) {
-      console.error("Resend error details:", {
-        name: err.name,
-        message: err.message,
-        statusCode: (err as any).statusCode,
-      });
-    }
     return res
       .status(500)
       .json({ ok: false, error: "Failed to send quote emails" });
