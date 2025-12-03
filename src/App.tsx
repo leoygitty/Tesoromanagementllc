@@ -998,6 +998,26 @@ const REVIEWS: Review[] = [
   },
 ];
 
+// --- Gallery data ---------------------------------------------------------
+
+type GalleryImage = {
+  src: string;
+  alt: string;
+};
+
+const GALLERY_IMAGES: GalleryImage[] = [
+  { src: "/gallery/krew1.jpg", alt: "Neighborhood Krew job 1" },
+  { src: "/gallery/krew2.jpg", alt: "Neighborhood Krew job 2" },
+  { src: "/gallery/krew3.jpg", alt: "Neighborhood Krew job 3" },
+  { src: "/gallery/krew4.jpg", alt: "Neighborhood Krew job 4" },
+  { src: "/gallery/krew5.jpg", alt: "Neighborhood Krew job 5" },
+  { src: "/gallery/krew6.jpg", alt: "Neighborhood Krew job 6" },
+  { src: "/featured/lux1.jpg", alt: "Premium client install" },
+  { src: "/featured/lux2.jpg", alt: "Gymshark buildout wall" },
+  { src: "/featured/lux3.jpg", alt: "Gym inventory move" },
+  { src: "/main2.jpg", alt: "Neighborhood Krew main truck shot" },
+];
+
 // --- Main App -------------------------------------------------------------
 
 export default function App() {
@@ -1006,6 +1026,8 @@ export default function App() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [activeReview, setActiveReview] = useState(0);
+  const [activeGallery, setActiveGallery] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
     const onMouseOut = (e: MouseEvent) => {
@@ -1034,6 +1056,13 @@ export default function App() {
     const id = setInterval(() => {
       setActiveReview((idx) => (idx + 1) % REVIEWS.length);
     }, 7000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setActiveGallery((idx) => (idx + 1) % GALLERY_IMAGES.length);
+    }, 6000);
     return () => clearInterval(id);
   }, []);
 
@@ -1068,6 +1097,7 @@ export default function App() {
   );
 
   const currentReview = REVIEWS[activeReview];
+  const currentGallery = GALLERY_IMAGES[activeGallery];
 
   return (
     <div id="top" className="min-h-screen bg-white text-slate-900">
@@ -1133,11 +1163,11 @@ export default function App() {
           </a>
 
           <nav className="hidden md:flex items-center gap-6 text-sm">
-            <a href="#quote" className="hover:text-lime-500">
-              Free Quote
-            </a>
             <a href="#services" className="hover:text-lime-500">
               Services
+            </a>
+            <a href="#quote" className="hover:text-lime-500">
+              Free Quote
             </a>
             <a href="#pricing" className="hover:text-lime-500">
               Pricing
@@ -1170,8 +1200,8 @@ export default function App() {
           <div className="md:hidden border-t bg-white">
             <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-2 text-sm">
               {[
-                ["#quote", "Free Quote"],
                 ["#services", "Services"],
+                ["#quote", "Free Quote"],
                 ["#pricing", "Pricing"],
                 ["#reviews", "Reviews"],
                 ["#gallery", "Gallery"],
@@ -1225,11 +1255,11 @@ export default function App() {
             <Button
               onClick={() =>
                 document
-                  .getElementById("quote")
+                  .getElementById("services")
                   ?.scrollIntoView({ behavior: "smooth" })
               }
             >
-              Start My Instant Estimate
+              Explore Services
             </Button>
             <a
               href="tel:+12155310907"
@@ -1259,38 +1289,6 @@ export default function App() {
               alt="Gym inventory move"
               className="rounded-lg border border-white/15 object-cover h-28 md:h-32 w-full"
             />
-          </div>
-        </div>
-      </section>
-
-      {/* Free quote / quiz funnel */}
-      <section id="quote" className="py-12 md:py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-5 gap-8 items-start">
-          <div className="md:col-span-3">
-            <QuoteWizard />
-          </div>
-          <div className="md:col-span-2 space-y-4 text-sm text-gray-700">
-            <h2 className="text-xl font-bold">How the quote works</h2>
-            <p>
-              This quiz gives you a quick free quote range based on
-              similar jobs we’ve completed. Your final price is
-              confirmed after we talk through the details and schedule.
-            </p>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Residential quotes typically fall between $1k–$12k.</li>
-              <li>
-                Commercial and specialty projects can be higher depending
-                on scope and access.
-              </li>
-              <li>
-                Junk removal pricing is based on volume, weight, and dump
-                fees.
-              </li>
-            </ul>
-            <p className="text-xs text-gray-500">
-              No spam — just a tailored quote and clear next steps from
-              a real person on the crew.
-            </p>
           </div>
         </div>
       </section>
@@ -1374,6 +1372,38 @@ export default function App() {
                 </Button>
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Free quote / quiz funnel (moved below Services) */}
+      <section id="quote" className="py-12 md:py-16 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-5 gap-8 items-start">
+          <div className="md:col-span-3">
+            <QuoteWizard />
+          </div>
+          <div className="md:col-span-2 space-y-4 text-sm text-gray-700">
+            <h2 className="text-xl font-bold">How the quote works</h2>
+            <p>
+              This quiz gives you a quick free quote range based on
+              similar jobs we’ve completed. Your final price is
+              confirmed after we talk through the details and schedule.
+            </p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Residential quotes typically fall between $1k–$12k.</li>
+              <li>
+                Commercial and specialty projects can be higher depending
+                on scope and access.
+              </li>
+              <li>
+                Junk removal pricing is based on volume, weight, and dump
+                fees.
+              </li>
+            </ul>
+            <p className="text-xs text-gray-500">
+              No spam — just a tailored quote and clear next steps from
+              a real person on the crew.
+            </p>
           </div>
         </div>
       </section>
@@ -1510,19 +1540,65 @@ export default function App() {
         </div>
       </section>
 
-      {/* Gallery */}
+      {/* Gallery – slideshow with lightbox */}
       <section id="gallery" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-6">Recent Jobs & Trucks</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <img
-                key={i}
-                src={`/gallery/krew${i + 1}.jpg`}
-                alt={`Neighborhood Krew job ${i + 1}`}
-                className="rounded-lg border object-cover w-full h-40"
-              />
-            ))}
+          <h2 className="text-2xl font-bold mb-6">
+            Recent Jobs from the Krew
+          </h2>
+          <div className="grid md:grid-cols-2 gap-6 items-start">
+            <Card>
+              <CardContent>
+                <div
+                  className="overflow-hidden rounded-xl border border-gray-200 cursor-pointer"
+                  onClick={() => setLightboxOpen(true)}
+                >
+                  <img
+                    src={currentGallery.src}
+                    alt={currentGallery.alt}
+                    className="w-full h-72 md:h-80 object-cover transition-transform duration-300 hover:scale-105"
+                  />
+                </div>
+                <p className="mt-3 text-sm text-gray-700">
+                  A rotating look at real moves, installs, and jobs
+                  completed by the Krew across Greater Philly and New
+                  Jersey.
+                </p>
+                <div className="mt-4 flex gap-1">
+                  {GALLERY_IMAGES.map((img, idx) => (
+                    <button
+                      key={img.src}
+                      onClick={() => setActiveGallery(idx)}
+                      className={`h-2 w-2 rounded-full ${
+                        idx === activeGallery
+                          ? "bg-lime-500"
+                          : "bg-gray-300"
+                      }`}
+                      aria-label={`Show gallery image ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-3 gap-3">
+              {GALLERY_IMAGES.slice(0, 6).map((img, idx) => (
+                <button
+                  key={img.src}
+                  onClick={() => {
+                    setActiveGallery(idx);
+                    setLightboxOpen(true);
+                  }}
+                  className="block"
+                >
+                  <img
+                    src={img.src}
+                    alt={img.alt}
+                    className="w-full h-24 md:h-28 rounded-lg border object-cover hover:opacity-90"
+                  />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -1700,6 +1776,35 @@ export default function App() {
                 className="text-sm text-gray-500 hover:text-gray-800"
               >
                 No thanks
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gallery lightbox */}
+      {lightboxOpen && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <div
+            className="max-w-3xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={currentGallery.src}
+              alt={currentGallery.alt}
+              className="w-full max-h-[80vh] object-contain rounded-xl shadow-xl bg-black"
+            />
+            <div className="mt-3 flex justify-between items-center text-gray-100 text-sm">
+              <span>{currentGallery.alt}</span>
+              <button
+                type="button"
+                onClick={() => setLightboxOpen(false)}
+                className="px-3 py-1 rounded-full bg-white/90 text-black text-xs font-semibold"
+              >
+                Close
               </button>
             </div>
           </div>
