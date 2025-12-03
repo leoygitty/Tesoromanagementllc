@@ -319,9 +319,7 @@ export function QuoteWizard() {
 
     if (state.jobType === "junk") {
       detailsLines.push(
-        `Estimated junk weight: ${
-          state.junkWeight || "not specified"
-        }`
+        `Estimated junk weight: ${state.junkWeight || "not specified"}`
       );
       detailsLines.push(
         `Junk description: ${
@@ -1121,9 +1119,9 @@ export default function App() {
             className="flex items-center gap-2 font-semibold text-sm sm:text-base"
           >
             <img
-              src="/logo-nk.png"
+              src="/official-krew-logo.png"
               alt="Neighborhood Krew Inc logo"
-              className="h-7 w-7 rounded-full border border-black/10 object-contain"
+              className="h-7 w-7 rounded-full border border-black/10 object-contain bg-white"
             />
             <span>Neighborhood Krew Inc</span>
           </a>
@@ -1203,7 +1201,14 @@ export default function App() {
         />
         <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24 text-white">
           <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">
-            Stress-free moves in Greater Philly & New Jersey
+            Fast, Careful,{" "}
+            <span
+              className="inline-block rounded-xl px-2"
+              style={{ backgroundColor: BRAND.lime, color: "#111" }}
+            >
+              Neighbor-Approved
+            </span>{" "}
+            Movers
           </h1>
           <p className="mt-4 text-white/85 text-lg max-w-2xl">
             Local and long-distance moves, commercial buildouts, gym
