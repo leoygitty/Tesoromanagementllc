@@ -1119,7 +1119,7 @@ export default function App() {
             className="flex items-center gap-2 font-semibold text-sm sm:text-base"
           >
             <img
-              src="/official-krew-logo.png"
+              src="/public/official-krew-logo.png"
               alt="Neighborhood Krew Inc logo"
               className="h-7 w-7 rounded-full border border-black/10 object-contain bg-white"
             />
