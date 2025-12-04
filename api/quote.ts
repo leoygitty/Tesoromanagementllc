@@ -3,8 +3,7 @@ import { Resend } from "resend";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 
-// If your verified sending domain in Resend is "send.neighborhoodkrew.com",
-// set FROM_EMAIL to use that domain, e.g. quotes@send.neighborhoodkrew.com.
+// Use a verified from-address from your Resend domain
 const FROM_EMAIL = "Neighborhood Krew <quotes@neighborhoodkrew.com>";
 const OWNER_EMAIL = "Neighborhoodkrew@gmail.com";
 const FORWARD_EMAIL = "tesoromanagements@gmail.com";
@@ -38,7 +37,6 @@ export default async function handler(req: any, res: any) {
   const subject = `New quote request – ${service}`;
   const metaLine = `From: ${name} <${email}> | Phone: ${phone || "N/A"}`;
 
-  // Email to owner + your copy
   const ownerText = [
     "New quote request from the website quiz:",
     "",
@@ -47,7 +45,6 @@ export default async function handler(req: any, res: any) {
     details,
   ].join("\n");
 
-  // Confirmation to customer
   const customerText = [
     `Hi ${name},`,
     "",
@@ -65,7 +62,7 @@ export default async function handler(req: any, res: any) {
   ].join("\n");
 
   try {
-    // 1) Owner + your backup copy
+    // Owner + your copy
     await resend.emails.send({
       from: FROM_EMAIL,
       to: [OWNER_EMAIL, FORWARD_EMAIL],
@@ -73,7 +70,7 @@ export default async function handler(req: any, res: any) {
       text: ownerText,
     });
 
-    // 2) Customer confirmation
+    // Customer confirmation
     await resend.emails.send({
       from: FROM_EMAIL,
       to: email,
@@ -81,9 +78,8 @@ export default async function handler(req: any, res: any) {
       text: customerText,
     });
 
-    // ✅ This is what makes your frontend show success instead of the error message
     return res.status(200).json({ ok: true });
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error sending quote emails via Resend:", err);
     return res
       .status(500)
