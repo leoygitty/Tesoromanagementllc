@@ -1,58 +1,103 @@
-// api/quote.js  (CommonJS for Vercel Node functions)
+// api/quote.js — Vercel Node serverless function (CommonJS)
 const { Resend } = require("resend");
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL;
-const QUOTE_TO_EMAIL = process.env.QUOTE_TO_EMAIL;
 
-// If RESEND_FROM_EMAIL is just "quotes@neighborhoodkrew.com" it's fine.
-// You can also store the full "Neighborhood Krew <quotes@neighborhoodkrew.com>" in the env var.
+// Fallback sender — guaranteed to work with Resend even if your own domain is weird
 const FROM_EMAIL =
-  RESEND_FROM_EMAIL || "Neighborhood Krew <quotes@neighborhoodkrew.com>";
+  RESEND_FROM_EMAIL || "Neighborhood Krew <onboarding@resend.dev>";
 
+// Admin recipients (you + owner)
 const ADMIN_RECIPIENTS = [
-  QUOTE_TO_EMAIL || "tesoromanagements@gmail.com",
+  "tesoromanagements@gmail.com",
   "neighborhoodkrew@gmail.com",
 ];
 
-module.exports = async (req, res) => {
-  console.log("📨 /api/quote hit", {
-    method: req.method,
-    hasBody: !!req.body,
+// Helper to read raw body on Node req
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk) => {
+      data += chunk;
+    });
+    req.on("end", () => resolve(data));
+    req.on("error", reject);
   });
+}
+
+module.exports = async (req, res) => {
+  console.log("📨 [/api/quote] invoked with method:", req.method);
+
+  // --- Simple GET test so you can confirm function is actually live ---
+  if (req.method === "GET") {
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "application/json");
+    res.end(
+      JSON.stringify({
+        ok: true,
+        message: "quote API alive – function is deployed",
+      })
+    );
+    return;
+  }
 
   if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return res
-      .status(405)
-      .json({ ok: false, error: "Method not allowed. Use POST." });
+    res.statusCode = 405;
+    res.setHeader("Content-Type", "application/json");
+    res.end(
+      JSON.stringify({ ok: false, error: "Method not allowed. Use POST." })
+    );
+    return;
   }
 
   if (!RESEND_API_KEY) {
     console.error("❌ RESEND_API_KEY is missing. Check Vercel env vars.");
-    return res
-      .status(500)
-      .json({ ok: false, error: "Email service not configured" });
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "application/json");
+    res.end(
+      JSON.stringify({ ok: false, error: "Email service not configured" })
+    );
+    return;
   }
 
-  let body = req.body || {};
-  if (typeof body === "string") {
-    try {
-      body = JSON.parse(body);
-    } catch (err) {
-      console.error("❌ Failed to parse JSON body:", err);
-      body = {};
-    }
+  // --- Read + parse JSON body ---
+  let rawBody = "";
+  try {
+    rawBody = await readBody(req);
+    console.log("📩 Raw request body:", rawBody);
+  } catch (err) {
+    console.error("❌ Error reading request body:", err);
+    res.statusCode = 400;
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify({ ok: false, error: "Invalid request body" }));
+    return;
+  }
+
+  let body = {};
+  try {
+    body = rawBody ? JSON.parse(rawBody) : {};
+  } catch (err) {
+    console.error("❌ Failed to parse JSON body:", err);
+    res.statusCode = 400;
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify({ ok: false, error: "Invalid JSON payload" }));
+    return;
   }
 
   const { name, email, phone, service, details, estimateRange } = body;
 
   if (!name || !email || !service || !details) {
-    console.error("❌ Missing required fields in /api/quote payload:", body);
-    return res.status(400).json({
-      ok: false,
-      error: "Missing required fields (name, email, service, details)",
-    });
+    console.error("❌ Missing required fields in payload:", body);
+    res.statusCode = 400;
+    res.setHeader("Content-Type", "application/json");
+    res.end(
+      JSON.stringify({
+        ok: false,
+        error: "Missing required fields (name, email, service, details)",
+      })
+    );
+    return;
   }
 
   const resend = new Resend(RESEND_API_KEY);
@@ -86,7 +131,7 @@ module.exports = async (req, res) => {
     "Details:",
     details,
     "",
-    "This range is an estimate only. A member of the Krew will review everything and reach out to lock in a firm quote and move date.",
+    "This range is an estimate only. A member of the Krew will review it and reach out to lock in a firm quote and move date.",
     "",
     "If anything changes, you can reply directly to this email.",
     "",
@@ -114,13 +159,19 @@ module.exports = async (req, res) => {
       text: customerText,
     });
 
-    console.log("✅ Quote emails sent successfully");
-    return res.status(200).json({ ok: true });
+    console.log("✅ All quote emails sent successfully");
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify({ ok: true }));
   } catch (error) {
     console.error("❌ Error sending quote emails via Resend:", error);
-    return res.status(500).json({
-      ok: false,
-      error: "Failed to send quote emails",
-    });
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "application/json");
+    res.end(
+      JSON.stringify({
+        ok: false,
+        error: "Failed to send quote emails",
+      })
+    );
   }
 };
