@@ -1,9 +1,13 @@
 // api/quote.ts
+
+// Let TypeScript know `process` exists in this serverless env
+declare const process: any;
+
 import { Resend } from "resend";
 
-const resendApiKey = process.env.RESEND_API_KEY;
+const resendApiKey: string | undefined = process.env.RESEND_API_KEY;
 
-// Use your Resend subdomain so it will always be allowed
+// Use your Resend subdomain as the from-address (fully verified by Resend)
 const FROM_EMAIL = "Neighborhood Krew <quotes@meibtro.resend.app>";
 
 // Internal notification emails
@@ -11,12 +15,12 @@ const OWNER_EMAIL = "Neighborhoodkrew@gmail.com";
 const FORWARD_EMAIL = "tesoromanagements@gmail.com";
 
 export default async function handler(req: any, res: any) {
+  // Always respond 200 so the frontend never shows the scary error
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
-    // Still return 200 so the frontend never shows the red error banner
     return res.status(200).json({
       ok: true,
-      warning: "invalid_method_but_not_user_facing",
+      warning: "invalid_method",
     });
   }
 
@@ -24,14 +28,12 @@ export default async function handler(req: any, res: any) {
 
   if (!name || !email || !service || !details) {
     console.error("Missing fields in /api/quote payload", req.body);
-    // Still return ok so user gets a success flow
     return res.status(200).json({
       ok: true,
       warning: "missing_fields",
     });
   }
 
-  // If API key is missing, don't block the user
   if (!resendApiKey) {
     console.error(
       "RESEND_API_KEY is missing – set it in Vercel env vars (Production)."
@@ -88,7 +90,6 @@ export default async function handler(req: any, res: any) {
       text: customerText,
     });
 
-    // Respond success no matter what – but include metadata for debugging
     return res.status(200).json({
       ok: true,
       ownerResult,
@@ -96,7 +97,7 @@ export default async function handler(req: any, res: any) {
     });
   } catch (err) {
     console.error("Error sending quote emails via Resend:", err);
-    // IMPORTANT: we *still* return 200 so your frontend doesn't show an error
+    // IMPORTANT: still return 200 so the user doesn’t see an error
     return res.status(200).json({
       ok: true,
       warning: "email_send_failed",
