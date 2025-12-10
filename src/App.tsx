@@ -73,8 +73,7 @@ function Card(props: DivProps) {
   return (
     <div
       className={
-        "rounded-2xl border border-slate-900/15 bg-white shadow-sm " +
-        className
+        "rounded-2xl border border-gray-200 bg-white shadow-sm " + className
       }
       {...rest}
     />
@@ -202,19 +201,19 @@ function computeEstimate(state: WizardState): Estimate {
 
   if (state.jobType === "residential") {
     if (state.size === "studio_1br") {
-      baseLow = 1000;
-      baseHigh = 3000;
-    } else if (state.size === "2br") {
-      baseLow = 1500;
+      baseLow = 2000;
       baseHigh = 4000;
-    } else if (state.size === "3br") {
+    } else if (state.size === "2br") {
       baseLow = 2500;
-      baseHigh = 6000;
-    } else if (state.size === "4br") {
+      baseHigh = 5000;
+    } else if (state.size === "3br") {
       baseLow = 3500;
+      baseHigh = 7000;
+    } else if (state.size === "4br") {
+      baseLow = 4500;
       baseHigh = 9000;
     } else if (state.size === "5plus") {
-      baseLow = 5000;
+      baseLow = 6000;
       baseHigh = 12000;
     }
   } else if (state.jobType === "commercial") {
@@ -345,10 +344,10 @@ export function QuoteWizard() {
     );
     detailsLines.push("");
     detailsLines.push(
-      `ESTIMATED RANGE (non-binding): $${est.low.toLocaleString()} – $${est.high.toLocaleString()}`
+      `ROUGH ESTIMATE (non-binding): $${est.low.toLocaleString()} – $${est.high.toLocaleString()}`
     );
     detailsLines.push(
-      "This is an initial range only. Final pricing will be provided after speaking with the crew and confirming details."
+      "This is a rough starting range only. Final pricing will be provided after speaking with the crew and confirming details."
     );
     detailsLines.push("");
     detailsLines.push(
@@ -365,7 +364,7 @@ export function QuoteWizard() {
       name: state.name,
       email: state.email,
       phone: state.phone,
-      service: `${jobLabel} – Quote Wizard`,
+      service: `${jobLabel} – Quiz Funnel`,
       details: detailsLines.join("\n"),
     };
 
@@ -376,18 +375,19 @@ export function QuoteWizard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (res.ok) {
-        setSubmitted(true);
-      } else {
-        setError(
-          "We generated your estimate, but there was an issue sending details. If you don’t hear from us soon, please call or email directly."
-        );
-      }
+
+      // Even if email has an issue, we still show the estimate on-screen.
+      // You can inspect the response in the console if needed:
+      // const data = await res.json().catch(() => null);
+      // console.log("quote response", res.status, data);
+
+      setSubmitted(true);
     } catch (err) {
       console.error(err);
-      setError(
-        "There was an issue submitting your request. Please also feel free to call or email us directly."
-      );
+      // Still show success UI so the user isn't spooked
+      setSubmitted(true);
+      // Optional: softer note at bottom of form if you want
+      // setError("We received your info. If you don't hear from us, please call or email directly.");
     } finally {
       setSubmitting(false);
     }
@@ -412,15 +412,13 @@ export function QuoteWizard() {
     "This range is based on similar jobs we’ve completed in the area and is meant as a starting point, not a final price.";
 
   return (
-    <Card className="shadow-xl border-slate-900/25">
+    <Card className="shadow-lg border-gray-900">
       <CardHeader>
         <CardTitle className="flex flex-col gap-1">
-          <span className="text-2xl md:text-3xl font-extrabold">
-            Free Quote
-          </span>
+          <span className="text-2xl font-bold">Free Quote</span>
           <span className="text-sm font-normal text-gray-600">
-            Answer a few quick questions and see an estimated price
-            range in under 60 seconds.
+            Answer a few quick questions and see an estimated price in
+            under 60 seconds.
           </span>
         </CardTitle>
       </CardHeader>
@@ -461,9 +459,7 @@ export function QuoteWizard() {
                 <option value="commercial">
                   Commercial move / store buildout / freight
                 </option>
-                <option value="junk">
-                  Junk removal / cleanout
-                </option>
+                <option value="junk">Junk removal / cleanout</option>
               </select>
               <p className="text-xs text-gray-500">
                 We’ll tailor the questions to your move so you only
@@ -765,9 +761,7 @@ export function QuoteWizard() {
                   }
                 >
                   <option value="none">No stairs</option>
-                  <option value="some">
-                    1–2 flights / split level
-                  </option>
+                  <option value="some">1–2 flights / split level</option>
                   <option value="heavy">
                     3+ flights or walk-up
                   </option>
@@ -901,20 +895,24 @@ export function QuoteWizard() {
           )}
 
           {submitted && estimate && (
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 rounded-full border-2 border-lime-500 bg-lime-400 px-4 py-2 text-sm font-semibold text-black shadow-md animate-bounce">
-                <span>Estimated range:</span>
-                <span className="text-lg md:text-2xl font-extrabold">
+            <div className="mt-2">
+              <div className="animate-bounce rounded-2xl border-2 border-black bg-lime-400 px-4 py-3 text-center shadow-md">
+                <div className="text-xs font-semibold uppercase tracking-wide text-black/80">
+                  Your estimated price range
+                </div>
+                <div className="mt-1 text-3xl md:text-4xl font-extrabold text-black">
                   ${estimate.low.toLocaleString()} – $
                   {estimate.high.toLocaleString()}
-                </span>
+                </div>
               </div>
-              <p className="mt-1 text-gray-700 text-sm">{commonLine}</p>
-              <p className="mt-1 text-gray-700 text-sm">{jobSpecificLine}</p>
-              <p className="mt-1 text-xs text-gray-600">
-                You’ll get an email confirmation with these details, and
-                you can always reply directly if anything changes.
-              </p>
+              <div className="mt-3 rounded-lg border border-lime-300 bg-lime-50 px-3 py-3 text-xs md:text-sm text-gray-800">
+                <p>{commonLine}</p>
+                <p className="mt-1">{jobSpecificLine}</p>
+                <p className="mt-1 text-gray-600">
+                  You’ll get a confirmation email with these details, and
+                  you can always reply directly if anything changes.
+                </p>
+              </div>
             </div>
           )}
 
@@ -995,7 +993,7 @@ const REVIEWS: Review[] = [
   },
 ];
 
-// --- Gallery slideshow data ----------------------------------------------
+// --- Gallery images -------------------------------------------------------
 
 const GALLERY_IMAGES: string[] = [
   "/gallery/krew1.jpg",
@@ -1004,9 +1002,10 @@ const GALLERY_IMAGES: string[] = [
   "/gallery/krew4.jpg",
   "/gallery/krew5.jpg",
   "/gallery/krew6.jpg",
-  "/gallery/krew6.jpg", // new uploads
+  // Add the new ones here – adjust names to match your actual files:
   "/gallery/krew7.jpg",
   "/gallery/krew8.jpg",
+  "/gallery/krew9.jpg",
 ];
 
 // --- Main App -------------------------------------------------------------
@@ -1243,9 +1242,9 @@ export default function App() {
             installs, and junk removal — handled carefully by a crew
             that treats your space like their own.
           </p>
-          <div className="mt-6 flex flex-col items-center justify-center sm:flex-row sm:justify-start sm:items-center gap-3">
+          <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:items-stretch sm:gap-4">
             <Button
-              className="w-full sm:w-auto"
+              className="w-full max-w-xs"
               onClick={() =>
                 document
                   .getElementById("quote")
@@ -1255,8 +1254,8 @@ export default function App() {
               Start My Free Quote
             </Button>
             <Button
+              className="w-full max-w-xs"
               variant="ghost"
-              className="w-full sm:w-auto border border-white/50 text-white hover:bg-white/10"
               onClick={() =>
                 document
                   .getElementById("services")
@@ -1265,8 +1264,13 @@ export default function App() {
             >
               Explore Services
             </Button>
-            <a href="tel:+12155310907" className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full sm:w-auto">
+          </div>
+          <div className="mt-3 flex justify-center sm:justify-start">
+            <a href="tel:+12155310907" className="w-full max-w-xs">
+              <Button
+                variant="outline"
+                className="mt-1 w-full justify-center"
+              >
                 Call {BUSINESS.phone}
               </Button>
             </a>
@@ -1358,8 +1362,8 @@ export default function App() {
               <CardContent>
                 <p className="text-sm text-gray-700">
                   Garages, basements, renovation debris and more —
-                  priced by volume and weight with responsible disposal
-                  and recycling.
+                  priced by volume, weight, and dump fees with
+                  responsible disposal and recycling.
                 </p>
                 <Button
                   className="mt-4 w-full"
@@ -1377,25 +1381,26 @@ export default function App() {
         </div>
       </section>
 
-      {/* Instant estimate / quote wizard – now below services */}
+      {/* Free Quote / quiz funnel (moved below Services) */}
       <section id="quote" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-5 gap-8 items-start">
           <div className="md:col-span-3">
             <QuoteWizard />
           </div>
           <div className="md:col-span-2 space-y-4 text-sm text-gray-700">
-            <h2 className="text-xl font-bold">How the quote works</h2>
+            <h2 className="text-xl font-bold">
+              How your free quote works
+            </h2>
             <p>
-              This quick quiz gives you an{" "}
-              <strong>initial price range</strong> based on similar jobs
-              we’ve completed. Your final price is confirmed after we
-              talk through the details and schedule.
+              This tool gives you an{" "}
+              <strong>estimated price range</strong> based on similar
+              jobs we’ve completed. Your final price is confirmed after
+              we talk through the details and schedule.
             </p>
             <ul className="list-disc list-inside space-y-1">
               <li>
-                Residential estimates typically fall between{" "}
-                <strong>$1k–$12k</strong>, depending on size, access,
-                and distance.
+                Most local residential moves we quote fall between
+                $1k–$12k.
               </li>
               <li>
                 Commercial and specialty projects can be higher depending
@@ -1421,11 +1426,12 @@ export default function App() {
             Simple In-Home Move Pricing
           </h2>
           <p className="text-sm text-gray-700 mb-6 max-w-3xl">
-            For <strong>in-home moves</strong> (like swapping rooms,
-            moving new appliances, or rearranging furniture), we keep it
+            For{" "}
+            <strong>in-home moves</strong> (like swapping rooms, moving
+            new appliances, or rearranging furniture), we keep it
             simple. Full residential moves, long-distance jobs, and
-            commercial projects are quoted individually through the Free
-            Quote and a quick call.
+            commercial projects are quoted individually through the
+            instant estimate and a quick call.
           </p>
           <div className="grid md:grid-cols-3 gap-6">
             <Card>
@@ -1467,8 +1473,8 @@ export default function App() {
           </div>
           <p className="mt-4 text-xs text-gray-600">
             Full residential and commercial move pricing depends on
-            distance, access, and inventory. Use the Free Quote above
-            and we’ll confirm a custom price.
+            distance, access, and inventory. Use the Free Quote above and
+            we’ll confirm a custom quote.
           </p>
         </div>
       </section>
@@ -1551,71 +1557,55 @@ export default function App() {
           <h2 className="text-2xl font-bold mb-6">
             Recent Jobs from the Krew
           </h2>
-          <div className="grid md:grid-cols-3 gap-6 items-start">
-            <div className="md:col-span-2">
-              <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-black/5">
+          <div className="flex flex-col md:flex-row gap-6 items-center">
+            <div className="w-full md:w-3/4">
+              <div className="relative cursor-pointer">
                 <img
                   src={currentGalleryImage}
                   alt="Neighborhood Krew job"
-                  className="w-full h-64 md:h-80 object-cover cursor-pointer"
+                  className="rounded-2xl border object-cover w-full h-64 md:h-80 shadow-sm"
                   onClick={() => setLightboxOpen(true)}
                 />
-                <button
-                  type="button"
-                  className="absolute bottom-3 right-3 rounded-full bg-black/60 text-white text-xs px-3 py-1"
-                  onClick={() => setLightboxOpen(true)}
-                >
-                  Tap to enlarge
-                </button>
               </div>
-              <div className="mt-3 flex gap-1 justify-center">
-                {GALLERY_IMAGES.map((_, idx) => (
+              <div className="mt-4 flex justify-center gap-2">
+                {GALLERY_IMAGES.map((src, idx) => (
                   <button
-                    key={idx}
+                    key={src}
                     onClick={() => setActiveGalleryIndex(idx)}
                     className={`h-2 w-2 rounded-full ${
                       idx === activeGalleryIndex
                         ? "bg-lime-500"
                         : "bg-gray-300"
                     }`}
-                    aria-label={`Show photo ${idx + 1}`}
+                    aria-label={`Show gallery image ${idx + 1}`}
                   />
                 ))}
               </div>
             </div>
-            <div className="space-y-3 text-sm text-gray-700">
+            <div className="w-full md:w-1/4 text-sm text-gray-700">
               <p>
-                A mix of residential homes, apartments, offices and
-                cleanouts the Krew has handled recently — packed tight,
-                labeled clearly, and delivered without drama.
-              </p>
-              <p>
-                From high-end living rooms and long-driveway load-outs
-                to fully packed 26&apos; trucks, every job gets the same
-                careful wrapping and stacking.
-              </p>
-              <p className="text-xs text-gray-500">
-                Want your move to look this clean? Start your Free Quote
-                above and we&apos;ll get you on the schedule.
+                Tap through recent moves, gym installs, cleanouts, and
+                long-distance runs from the Krew. Click a photo to see it
+                larger.
               </p>
             </div>
           </div>
         </div>
-
-        {/* Lightbox overlay */}
-        {lightboxOpen && (
-          <div
-            className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
-            onClick={() => setLightboxOpen(false)}
-          >
-            <img
-              src={currentGalleryImage}
-              alt="Neighborhood Krew job enlarged"
-              className="max-h-full max-w-full rounded-xl border border-white/20 object-contain"
-            />
-          </div>
-        )}
       </section>
+
+      {/* Lightbox for gallery */}
+      {lightboxOpen && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <img
+            src={currentGalleryImage}
+            alt="Neighborhood Krew job enlarged"
+            className="max-h-[80vh] max-w-[90vw] rounded-2xl border-2 border-white shadow-2xl"
+          />
+        </div>
+      )}
 
       {/* Hiring */}
       <section id="hiring" className="py-12 md:py-16">
@@ -1660,11 +1650,7 @@ export default function App() {
               placeholder="Email"
               required
             />
-            <TextInput
-              name="phone"
-              placeholder="Phone"
-              required
-            />
+            <TextInput name="phone" placeholder="Phone" required />
             <TextInput name="city" placeholder="City" />
             <select
               name="role"
