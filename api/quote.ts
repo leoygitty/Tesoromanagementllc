@@ -1,40 +1,29 @@
 // api/quote.ts
 import { Resend } from "resend";
 
-// Declare process so TypeScript doesn't require @types/node
-declare const process: {
-  env: Record<string, string | undefined>;
-};
-
-const resendApiKey = process.env.RESEND_API_KEY;
-
-// From-address MUST be on your verified Resend domain
-const FROM_EMAIL = "Neighborhood Krew <quotes@neighborhoodkrew.com>";
-const OWNER_EMAIL = "Neighborhoodkrew@gmail.com";
-const FORWARD_EMAIL = "tesoromanagements@gmail.com";
-
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return res
-      .status(405)
-      .json({ ok: false, error: "Method not allowed. Use POST." });
+    return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.RESEND_FROM_EMAIL; // uses env var
+  const forwardEmail = process.env.QUOTE_TO_EMAIL; // uses env var
+
   if (!resendApiKey) {
-    console.error("RESEND_API_KEY is missing – set it in Vercel env vars.");
-    return res
-      .status(500)
-      .json({ ok: false, error: "Email service not configured" });
+    console.error("Missing RESEND_API_KEY");
+    return res.status(500).json({ ok: false, error: "Email service not configured." });
+  }
+
+  if (!fromEmail) {
+    console.error("Missing RESEND_FROM_EMAIL");
+    return res.status(500).json({ ok: false, error: "Sender email not configured." });
   }
 
   const { name, email, phone, service, details } = req.body || {};
 
   if (!name || !email || !service || !details) {
-    console.error("Missing fields in /api/quote payload", req.body);
-    return res
-      .status(400)
-      .json({ ok: false, error: "Missing required quote fields" });
+    return res.status(400).json({ ok: false, error: "Missing required fields." });
   }
 
   const resend = new Resend(resendApiKey);
@@ -42,42 +31,42 @@ export default async function handler(req: any, res: any) {
   const subject = `New quote request – ${service}`;
   const metaLine = `From: ${name} <${email}> | Phone: ${phone || "N/A"}`;
 
-  const ownerText = [
-    "New quote request from the website quiz:",
-    "",
-    metaLine,
-    "",
-    details,
-  ].join("\n");
+  // Email to you (the owner)
+  const ownerText = `
+New quote request from the website:
 
-  const customerText = [
-    `Hi ${name},`,
-    "",
-    "Thanks for reaching out to Neighborhood Krew. Here’s a copy of the info you submitted so you can refer back to it:",
-    "",
-    metaLine,
-    "",
-    details,
-    "",
-    "This range is an estimate only. A member of the crew will review it and reach out to lock in a firm quote and move date.",
-    "",
-    "If anything changes, you can always reply directly to this email.",
-    "",
-    "— Neighborhood Krew Inc",
-  ].join("\n");
+${metaLine}
+
+${details}
+  `;
+
+  // Email to customer
+  const customerText = `
+Hi ${name},
+
+Thanks for reaching out to Neighborhood Krew! Here's a copy of your quote request:
+
+${metaLine}
+
+${details}
+
+We'll review this and reach out shortly with a firm estimate.
+
+— Neighborhood Krew Inc
+  `;
 
   try {
-    // Send to owner + your email
+    // Send internal notification
     await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [OWNER_EMAIL, FORWARD_EMAIL],
+      from: `Neighborhood Krew <${fromEmail}>`,
+      to: forwardEmail,
       subject,
       text: ownerText,
     });
 
-    // Send confirmation to customer
+    // Send copy to customer
     await resend.emails.send({
-      from: FROM_EMAIL,
+      from: `Neighborhood Krew <${fromEmail}>`,
       to: email,
       subject: "We received your quote request",
       text: customerText,
@@ -85,9 +74,7 @@ export default async function handler(req: any, res: any) {
 
     return res.status(200).json({ ok: true });
   } catch (err) {
-    console.error("Error sending quote emails via Resend:", err);
-    return res
-      .status(500)
-      .json({ ok: false, error: "Failed to send quote emails" });
+    console.error("Resend email error:", err);
+    return res.status(500).json({ ok: false, error: "Failed to send email." });
   }
 }
