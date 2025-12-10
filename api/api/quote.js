@@ -1,29 +1,21 @@
-// api/quote.ts
-import { Resend } from "resend";
-
-// Tiny shim so TypeScript stops complaining about "process" on Vercel
-declare const process: {
-  env: {
-    RESEND_API_KEY?: string;
-    RESEND_FROM_EMAIL?: string;
-    QUOTE_TO_EMAIL?: string;
-  };
-};
+// api/quote.js  (CommonJS for Vercel Node functions)
+const { Resend } = require("resend");
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL;
 const QUOTE_TO_EMAIL = process.env.QUOTE_TO_EMAIL;
 
-// Fallbacks – but ideally your env vars are all set correctly in Vercel
+// If RESEND_FROM_EMAIL is just "quotes@neighborhoodkrew.com" it's fine.
+// You can also store the full "Neighborhood Krew <quotes@neighborhoodkrew.com>" in the env var.
 const FROM_EMAIL =
   RESEND_FROM_EMAIL || "Neighborhood Krew <quotes@neighborhoodkrew.com>";
 
-const ADMIN_RECIPIENTS: string[] = [
+const ADMIN_RECIPIENTS = [
   QUOTE_TO_EMAIL || "tesoromanagements@gmail.com",
   "neighborhoodkrew@gmail.com",
 ];
 
-export default async function handler(req: any, res: any) {
+module.exports = async (req, res) => {
   console.log("📨 /api/quote hit", {
     method: req.method,
     hasBody: !!req.body,
@@ -43,16 +35,17 @@ export default async function handler(req: any, res: any) {
       .json({ ok: false, error: "Email service not configured" });
   }
 
-  let body = req.body;
+  let body = req.body || {};
   if (typeof body === "string") {
     try {
       body = JSON.parse(body);
-    } catch {
+    } catch (err) {
+      console.error("❌ Failed to parse JSON body:", err);
       body = {};
     }
   }
 
-  const { name, email, phone, service, details, estimateRange } = body || {};
+  const { name, email, phone, service, details, estimateRange } = body;
 
   if (!name || !email || !service || !details) {
     console.error("❌ Missing required fields in /api/quote payload:", body);
@@ -85,7 +78,7 @@ export default async function handler(req: any, res: any) {
   const customerText = [
     `Hi ${name},`,
     "",
-    "Thanks for reaching out to Neighborhood Krew! Here’s a copy of what you submitted so you can refer back to it:",
+    "Thanks for reaching out to Neighborhood Krew! Here’s a copy of what you submitted:",
     "",
     metaLine,
     estimateLine,
@@ -123,12 +116,11 @@ export default async function handler(req: any, res: any) {
 
     console.log("✅ Quote emails sent successfully");
     return res.status(200).json({ ok: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error("❌ Error sending quote emails via Resend:", error);
     return res.status(500).json({
       ok: false,
       error: "Failed to send quote emails",
-      detail: error?.message || String(error),
     });
   }
-}
+};
