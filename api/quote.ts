@@ -1,9 +1,14 @@
 // api/quote.ts
 import { Resend } from "resend";
 
+// Declare process so TypeScript doesn't require @types/node
+declare const process: {
+  env: Record<string, string | undefined>;
+};
+
 const resendApiKey = process.env.RESEND_API_KEY;
 
-// From address must be on your verified domain in Resend
+// From-address MUST be on your verified Resend domain
 const FROM_EMAIL = "Neighborhood Krew <quotes@neighborhoodkrew.com>";
 const OWNER_EMAIL = "Neighborhoodkrew@gmail.com";
 const FORWARD_EMAIL = "tesoromanagements@gmail.com";
