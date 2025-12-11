@@ -833,10 +833,8 @@ export function QuoteWizard() {
         {submitting ? "Submitting..." : "See My Estimate"}
       </Button>
     )}
-  </div>
-
-      </CardContent>
-    </Card>
+ 
+</div>
 
 export default function App() {
   const [navScrolled, setNavScrolled] = useState(false);
