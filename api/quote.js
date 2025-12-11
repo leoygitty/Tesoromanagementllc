@@ -1,12 +1,38 @@
 import { Resend } from "resend";
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+export const config = {
+  api: {
+    bodyParser: false, // Required for file uploads
+  },
+};
 
+const resend = new Resend(process.env.RESEND_API_KEY!);
+
+export default async function handler(req, res) {
   try {
-    console.info("[info] Incoming quote payload:", req.body);
+    if (req.method !== "POST") {
+      return res.status(405).json({ ok: false, message: "Method not allowed" });
+    }
+
+    // --- Parse incoming formdata (text + photos)
+    const formData = await new Promise((resolve, reject) => {
+      const chunks: any[] = [];
+      req.on("data", (chunk) => chunks.push(chunk));
+      req.on("end", () => {
+        try {
+          const buf = Buffer.concat(chunks);
+          const fd = new FormData();
+          fd.append("raw", buf); // temp workaround for Vercel
+          resolve(fd);
+        } catch (err) {
+          reject(err);
+        }
+      });
+    });
+
+    // We receive JSON in a field called `payload`
+    const payloadJSON = req.headers["x-payload"];
+    const payload = JSON.parse(payloadJSON);
 
     const {
       name,
@@ -14,89 +40,64 @@ export default async function handler(req, res) {
       phone,
       service,
       details,
-      attachments = []
-    } = req.body;
+    } = payload;
 
-    // Parse details block (sent from your quiz funnel already formatted)
-    const moveDetails = details || "No additional details provided.";
+    // --- HANDLE FILES FROM FRONTEND ---
+    let attachments: any[] = [];
 
-    // Build owner email HTML
-    const ownerHtml = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; padding: 20px;">
-        <h2>📦 New Moving Quote – ${name}</h2>
+    if (payload.photoFiles && Array.isArray(payload.photoFiles)) {
+      for (const file of payload.photoFiles) {
+        attachments.push({
+          filename: file.name,
+          content: file.base64.replace(/^data:image\/\w+;base64,/, ""),
+          encoding: "base64",
+        });
+      }
+    }
 
-        <h3>Customer Info</h3>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Phone:</strong> ${phone}</p>
-
-        <h3>Move Details</h3>
-        <pre style="background:#f6f6f6; padding:15px; border-radius:6px;">
-${moveDetails}
-        </pre>
-
-        ${
-          attachments.length > 0
-            ? `<h3>Photos Attached (${attachments.length})</h3>
-               <ul>${attachments
-                 .map(a => `<li>${a.filename}</li>`)
-                 .join("")}</ul>`
-            : "<p><em>No photos were uploaded.</em></p>"
-        }
-      </div>
+    // --- Build HTML email
+    const htmlBody = `
+      <h2>New Quote Request</h2>
+      <p><strong>Name:</strong> ${name}</p>
+      <p><strong>Email:</strong> ${email}</p>
+      <p><strong>Phone:</strong> ${phone}</p>
+      <p><strong>Service:</strong> ${service}</p>
+      <pre style="white-space:pre-wrap;font-size:14px;margin-top:20px;">
+${details}
+      </pre>
     `;
 
-    const resend = new Resend(process.env.RESEND_API_KEY);
-
-    const ownerEmails = [
-      "tesoromanagements@gmail.com",
-      "neighborhoodkrew@gmail.com"
-    ];
-
-    console.info("[info] Sending owner quote email to:", ownerEmails);
-
-    const ownerResult = await resend.emails.send({
-      from: `send@neighborhoodkrew.com`,
-      to: ownerEmails,
-      subject: `New Moving Quote – ${name}`,
-      html: ownerHtml,
-      attachments: attachments.map((file) => ({
-        filename: file.filename,
-        content: file.content, // base64
-      })),
+    // --- SEND EMAIL TO OWNER(S)
+    const ownerSend = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL!,
+      to: [
+        process.env.OWNER_EMAIL!,
+        process.env.OWNER_EMAIL_SECONDARY!,
+      ],
+      subject: "New Quote Request – Neighborhood Krew",
+      html: htmlBody,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
 
-    console.info("[info] Owner email result:", ownerResult);
-
-    // CUSTOMER CONFIRMATION EMAIL
-    const customerHtml = `
-      <div style="font-family: Arial; padding: 20px;">
-        <h2>Thank you, ${name}! 🎉</h2>
-        <p>Your moving request has been submitted successfully. A crew member will reach out shortly.</p>
-
-        <h3>Your Submitted Details</h3>
-        <pre style="background:#f6f6f6; padding:15px; border-radius:6px;">
-${moveDetails}
-        </pre>
-
-        <p style="margin-top: 20px;">We appreciate you choosing Neighborhood Krew!</p>
-      </div>
-    `;
-
-    console.info("[info] Sending confirmation to:", email);
-
-    const customerResult = await resend.emails.send({
-      from: `send@neighborhoodkrew.com`,
+    // --- SEND CONFIRMATION TO CUSTOMER
+    const confirmationSend = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL!,
       to: email,
-      subject: `We Received Your Moving Request!`,
-      html: customerHtml,
+      subject: "We received your quote request ✔️",
+      html: `
+        <h2>Thanks for reaching out!</h2>
+        <p>We've received your information and the crew will review it shortly.</p>
+        <p><strong>Here’s a copy of what you submitted:</strong></p>
+        <pre style="white-space:pre-wrap;font-size:14px;">
+${details}
+        </pre>
+      `,
     });
 
-    console.info("[info] Customer email result:", customerResult);
+    return res.status(200).json({ ok: true, ownerSend, confirmationSend });
 
-    return res.json({ ok: true, message: "Quote sent successfully." });
   } catch (err) {
-    console.error("[error] Quote handler failed:", err);
-    return res.status(500).json({ error: "Failed to send email." });
+    console.error("QUOTE API ERROR:", err);
+    return res.status(500).json({ ok: false, message: "Server error", err });
   }
 }
