@@ -783,25 +783,59 @@ export function QuoteWizard() {
         </form>
 
         {/* Results */}
-        {submittedData && (
-          <div className="mt-6 p-4 border rounded-xl bg-white shadow-sm">
-            <h3 className="text-lg font-semibold">Your estimated range</h3>
+     {submitted && estimate && (
+  <div className="mt-2">
 
-            <div className="mt-2 text-3xl font-extrabold text-lime-500">
-              {submittedData.estimate}
-            </div>
-
-            <p className="text-sm text-gray-700 mt-2">
-              A member of the Krew will text or email you shortly to confirm details
-              and give you a guaranteed quote.
-            </p>
-          </div>
-        )}
+    <div className="animate-bounce rounded-2xl border-2 border-black bg-lime-400 px-4 py-3 text-center shadow-md">
+      <div className="text-xs font-semibold uppercase tracking-wide text-black/80">
+        Your estimated price range
       </div>
-    </CardContent>
-  </Card>
-  );
-}
+      <div className="mt-1 text-3xl md:text-4xl font-extrabold text-black">
+        ${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}
+      </div>
+    </div>
+
+    <div className="mt-3 rounded-lg border border-lime-300 bg-lime-50 px-3 py-3 text-xs md:text-sm text-gray-800">
+      <p>{commonLine}</p>
+      <p className="mt-1">{jobSpecificLine}</p>
+      <p className="mt-1 text-gray-600">
+        You'll get a confirmation email with these details. You can reply directly
+        if anything changes.
+      </p>
+    </div>
+
+  </div>
+)}  {/* ✅ properly closes the conditional block */}
+
+{/* Navigation buttons */}
+<div className="flex items-center justify-between pt-2">
+
+  <button
+    type="button"
+    onClick={prevStep}
+    disabled={step === 0 || submitting}
+    className={`text-sm px-3 py-2 rounded-md border ${
+      step === 0 || submitting ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-50"
+    }`}
+  >
+    Back
+  </button>
+
+  <div className="flex items-center gap-3">
+    {!isLastStep && (
+      <Button type="button" onClick={nextStep} disabled={submitting}>
+        Next
+      </Button>
+    )}
+
+    {isLastStep && (
+      <Button type="submit" disabled={submitting}>
+        {submitting ? "Submitting..." : "See My Estimate"}
+      </Button>
+    )}
+  </div>
+
+</div>
 
 //
 // --------------------------------------------------
