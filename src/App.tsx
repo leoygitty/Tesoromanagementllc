@@ -1293,17 +1293,17 @@ export default function App() {
             >
               Start My Free Quote
             </Button>
-            <Button
-              className="w-full max-w-xs"
-              variant="ghost"
-              onClick={() =>
-                document
-                  .getElementById("services")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              Explore Services
-            </Button>
+<Button
+  className="w-full max-w-xs bg-white text-black hover:bg-gray-200"
+  variant="solid"
+  onClick={() =>
+    document
+      .getElementById("services")
+      ?.scrollIntoView({ behavior: "smooth" })
+  }
+>
+  Explore Services
+</Button>
           </div>
           <div className="mt-3 flex justify-center sm:justify-start">
             <a href="tel:+12155310907" className="w-full max-w-xs">
