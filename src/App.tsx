@@ -1131,9 +1131,8 @@ export default function App() {
   const currentGalleryImage = GALLERY_IMAGES[activeGalleryIndex];
 
   return (
-    <div id="top" className="min-h-screen bg-white text-slate-900">
-      {/* Top contact bar with centered tagline */}
-    <div className="bg-black text-white text-xs sm:text-sm">
+   {/* Top contact bar with centered tagline */}
+<div className="bg-black text-white text-xs sm:text-sm">
   <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between">
 
     {/* Centered tagline */}
@@ -1146,7 +1145,6 @@ export default function App() {
 
       {/* Location list */}
       <span className="flex items-center gap-1 text-white/90">
-        {/* Location icon */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="h-4 w-4 text-lime-400"
@@ -1167,13 +1165,13 @@ export default function App() {
         href="#reviews"
         className="flex items-center gap-1 text-white/90 hover:text-lime-400 transition"
       >
-        {/* Star icon */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="h-4 w-4 text-yellow-400"
           viewBox="0 0 20 20"
           fill="currentColor"
         >
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.105 3.405a1 1 0 00.95.69h3.584c.969 0 1.371 1.24.588 1.81l-2.9 2.107a1 1 0 00-.364 1.118l1.105 3.405c.3.921-.755 1.688-1.54 1.118l-2.9-2.107a1 1 0 00-1.175 0l-2.9 2.107c-.784.57-1.838-.197-1.539-1.118l1.105-3.405a1 1 0 00-.364-1.118L2.823 8.832c-.783-.57-.38-1.81.588-1.81h3.584a1 1 0 00.95-.69l1.105-3.405z" />
         </svg>
 
         437 Reviews
@@ -1181,8 +1179,7 @@ export default function App() {
     </div>
   </div>
 </div>
-              >
-
+    
       {/* Main nav */}
       <header
         className={`sticky top-0 z-40 border-b bg-white/80 backdrop-blur ${
