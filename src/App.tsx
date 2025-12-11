@@ -91,7 +91,12 @@ function CardContent(props: DivProps) {
 function CardTitle(props: DivProps) {
   const { className = "", ...rest } = props;
   return (
-    <h3 className={"text-lg md:text-xl font-semibold tracking-tight " + className} {...rest} />
+    <h3
+      className={
+        "text-lg md:text-xl font-semibold tracking-tight " + className
+      }
+      {...rest}
+    />
   );
 }
 
@@ -110,7 +115,8 @@ function Button({ variant = "solid", className = "", ...rest }: ButtonProps) {
     style =
       "border border-white/70 bg-transparent text-white hover:bg-white/10 focus:ring-white";
   } else {
-    style = "bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-300";
+    style =
+      "bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-300";
   }
 
   return <button className={`${base} ${style} ${className}`} {...rest} />;
@@ -143,7 +149,7 @@ function TextArea({ className = "", ...rest }: TextareaProps) {
     />
   );
 }
-// --- Quote Wizard / Quiz Funnel -----------------------------------------
+/* --- Quote Wizard / Quiz Funnel ----------------------------------------- */
 
 type JobType = "residential" | "commercial" | "junk";
 
@@ -240,7 +246,12 @@ async function filesToBase64List(files: File[]) {
         reader.onload = () => {
           const result = reader.result as string;
           const base64 = result.split(",")[1] || "";
-          resolve({ name: file.name, type: file.type, size: file.size, base64 });
+          resolve({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            base64,
+          });
         };
         reader.onerror = reject;
         reader.readAsDataURL(file);
@@ -250,6 +261,7 @@ async function filesToBase64List(files: File[]) {
   return Promise.all(files.map((f) => encodeOne(f)));
 }
 
+/* Quote Wizard Component */
 export function QuoteWizard() {
   const [step, setStep] = useState(0);
   const [state, setState] = useState<WizardState>({
@@ -306,7 +318,6 @@ export function QuoteWizard() {
       setError(null);
     }
   }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -419,6 +430,7 @@ export function QuoteWizard() {
 
   const commonLine =
     "This range is based on similar jobs we’ve completed in the area and is meant as a starting point, not a final price.";
+
   return (
     <Card className="shadow-lg border-gray-900">
       <CardHeader>
@@ -432,7 +444,6 @@ export function QuoteWizard() {
 
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-
           {/* Progress bar */}
           <div>
             <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2 overflow-hidden">
@@ -445,7 +456,6 @@ export function QuoteWizard() {
               Step {step + 1} of {totalSteps} · {currentStepLabel}
             </p>
           </div>
-
           {/* Step 0 – Choose job type */}
           {step === 0 && (
             <div className="space-y-3">
@@ -639,7 +649,6 @@ export function QuoteWizard() {
                   <option value="3000plus">3,000+ lbs</option>
                 </select>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium">Property ZIP</label>
@@ -844,7 +853,7 @@ export function QuoteWizard() {
     </Card>
   );
 }
-// --- Reviews data ---------------------------------------------------------
+/* --- Reviews data --------------------------------------------------------- */
 
 const REVIEWS = [
   {
@@ -869,7 +878,7 @@ const REVIEWS = [
   },
 ];
 
-// --- Gallery images --------------------------------------------------------
+/* --- Gallery images -------------------------------------------------------- */
 
 const GALLERY_IMAGES: string[] = [
   "/gallery/krew1.jpg",
@@ -886,7 +895,8 @@ const GALLERY_IMAGES: string[] = [
   "/gallery/krew12.jpg",
 ];
 
-// --- Main App Component ----------------------------------------------------
+/* --- Main App Component ---------------------------------------------------- */
+
 async function handlePromoSubmit(email: string) {
   try {
     const res = await fetch("/api/subscribe", {
@@ -900,16 +910,19 @@ async function handlePromoSubmit(email: string) {
     return { ok: false };
   }
 }
+
 export default function App() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [activeReview, setActiveReview] = useState(0);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
+
   // Exit-intent modal
   const [exitOpen, setExitOpen] = useState(false);
   const [exitEmail, setExitEmail] = useState("");
-  const [exitStatus, setExitStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
+  const [exitStatus, setExitStatus] =
+    useState<"idle" | "loading" | "sent" | "error">("idle");
 
   useEffect(() => {
     const onScroll = () => {
@@ -934,51 +947,61 @@ export default function App() {
     return () => document.removeEventListener("mouseleave", handler);
   }, []);
 
-  // ❗ FIXED TSX ROOT WRAPPER — REQUIRED FOR VALID REACT TSX
+  // ROOT WRAPPER
   return (
     <div className="font-sans text-gray-900 bg-white" id="top">
 
-     {/* Top Black Banner — OPTION A (Minimal) */}
-<div className="bg-black text-white text-xs sm:text-sm">
-  <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      {/* Top Black Banner */}
+      <div className="bg-black text-white text-xs sm:text-sm">
+        <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between">
 
-    {/* Location list */}
-    <div className="flex items-center gap-1 text-white/90">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-4 w-4 text-lime-400"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.341A8 8 0 105.58 15.28L12 22l7.428-6.659z" />
-      </svg>
+          {/* Location list */}
+          <div className="flex items-center gap-1 text-white/90">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 text-lime-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 
+                9 8s1.343 3 3 3z" />
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M19.428 15.341A8 8 0 105.58 15.28L12 22l7.428-6.659z" />
+            </svg>
 
-      Bucks County · Montco · Greater NJ · Philadelphia · Princeton
-    </div>
+            Bucks County · Montco · Greater NJ · Philadelphia · Princeton
+          </div>
 
-    {/* Reviews */}
-    <a
-      href="#reviews"
-      className="flex items-center gap-1 text-white/90 hover:text-lime-400 transition mt-1 sm:mt-0"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-4 w-4 text-yellow-400"
-        viewBox="0 0 20 20"
-        fill="currentColor"
-      >
-        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.105 3.405a1 1 0 00.95.69h3.584c.969 0 1.371 1.24.588 1.81l-2.9 2.107a1 1 0 00-.364 1.118l1.105 3.405c.3.921-.755 1.688-1.54 1.118l-2.9-2.107a1 1 0 00-1.175 0l-2.9 2.107c-.784.57-1.838-.197-1.539-1.118l1.105-3.405a1 1 0 00-.364-1.118L2.823 8.832c-.783-.57-.38-1.81.588-1.81h3.584a1 1 0 00.95-.69l1.105-3.405z" />
-      </svg>
+          {/* Reviews */}
+          <a
+            href="#reviews"
+            className="flex items-center gap-1 text-white/90 hover:text-lime-400 transition mt-1 sm:mt-0"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 text-yellow-400"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path d="M9.049 2.927c.3-.921 1.603-.921 
+              1.902 0l1.105 3.405a1 1 0 00.95.69h3.584c.969 
+              0 1.371 1.24.588 1.81l-2.9 2.107a1 1 0 
+              00-.364 1.118l1.105 3.405c.3.921-.755 
+              1.688-1.54 1.118l-2.9-2.107a1 1 0 
+              00-1.175 0l-2.9 2.107c-.784.57-1.838-.197-1.539-1.118
+              l1.105-3.405a1 1 0 00-.364-1.118L2.823 
+              8.832c-.783-.57-.38-1.81.588-1.81h3.584a1 1 0 
+              00.95-.69l1.105-3.405z" />
+            </svg>
 
-      437 Reviews
-    </a>
+            437 Reviews
+          </a>
 
-  </div>
-</div>
-
+        </div>
+      </div>
       {/* Main navigation header */}
       <header
         className={`sticky top-0 z-40 border-b bg-white/80 backdrop-blur ${
@@ -1050,6 +1073,7 @@ export default function App() {
           </div>
         )}
       </header>
+
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <img
@@ -1145,7 +1169,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
       {/* Services Section */}
       <section id="services" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
@@ -1271,6 +1294,7 @@ export default function App() {
           </div>
         </div>
       </section>
+
       {/* Pricing Section */}
       <section id="pricing" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
@@ -1332,7 +1356,6 @@ export default function App() {
           </p>
         </div>
       </section>
-
       {/* Reviews Section */}
       <section id="reviews" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
@@ -1447,57 +1470,21 @@ export default function App() {
             </div>
           </div>
         </div>
-    </section>
+      </section>
 
-{/* Wrap trailing siblings in a fragment so JSX stays valid */}
-<>
-
-  {/* Lightbox for gallery */}
-  {lightboxIndex !== null && (
-    <div
-      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4"
-      onClick={() => setLightboxIndex(null)}
-    >
-      <img
-        src={GALLERY_IMAGES[lightboxIndex]}
-        alt="Neighborhood Krew job enlarged"
-        className="max-h-[80vh] max-w-[90vw] rounded-2xl border-2 border-white shadow-2xl"
-      />
-    </div>
-  )}
-
-  {/* Hiring Section */}
-  <section id="hiring" className="py-12 md:py-16">
-    ...
-  </section>
-
-  {/* Newsletter Section */}
-  <section className="py-10 border-t bg-gray-900 text-gray-100">
-    ...
-  </section>
-
-  {/* Footer Section */}
-  <footer className="border-t">
-    ...
-  </footer>
-
-  {/* Floating Call Button */}
-  <a
-    href="tel:+12155310907"
-    className="fixed bottom-4 right-4 z-40 px-4 py-2 rounded-full bg-lime-400 text-xs font-semibold shadow-lg text-black sm:hidden"
-  >
-    Call now
-  </a>
-
-  {/* Exit Intent Modal */}
-  {exitOpen && (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm ...">
-      ...
-    </div>
-  )}
-
-</>
-
+      {/* Lightbox for gallery */}
+      {lightboxIndex !== null && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4"
+          onClick={() => setLightboxIndex(null)}
+        >
+          <img
+            src={GALLERY_IMAGES[lightboxIndex]}
+            alt="Neighborhood Krew job enlarged"
+            className="max-h-[80vh] max-w-[90vw] rounded-2xl border-2 border-white shadow-2xl"
+          />
+        </div>
+      )}
       {/* Hiring Section */}
       <section id="hiring" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
@@ -1629,6 +1616,7 @@ export default function App() {
       >
         Call now
       </a>
+
       {/* Exit-Intent Promo Modal */}
       {exitOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -1694,6 +1682,7 @@ export default function App() {
                 No thanks
               </button>
             </div>
+
           </div>
         </div>
       )}
