@@ -180,31 +180,14 @@ type WizardState = {
 
 type Estimate = { low: number; high: number };
 
-type AttachmentPayload = {
-  filename: string;
-  content: string; // base64
-};
-
-async function filesToBase64Attachments(files: File[]): Promise<AttachmentPayload[]> {
-  if (!files || files.length === 0) return [];
-
-  const attachments = await Promise.all(
-    files.map(async (file) => {
-      const buffer = await file.arrayBuffer();
-      const bytes = new Uint8Array(buffer);
-      let binary = "";
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      const base64 = btoa(binary);
-      return {
-        filename: file.name,
-        content: base64,
-      };
-    })
-  );
-
-  return attachments;
+// Helper: read a File as data URL (base64)
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 function computeEstimate(state: WizardState): Estimate {
@@ -336,16 +319,11 @@ export function QuoteWizard() {
         ? "Commercial move"
         : "Junk removal";
 
-    const detailsLines: string[] = [];
-
-    detailsLines.push(`SERVICE: ${jobLabel}`);
-    detailsLines.push("");
-    detailsLines.push("MOVE / PROJECT DETAILS");
-    detailsLines.push("──────────────────────");
+    const detailsLines: string[] = [`Job type: ${jobLabel}`];
 
     if (state.jobType === "commercial") {
       detailsLines.push(
-        `Business / project: ${state.businessType || "N/A"}`
+        `Business/project: ${state.businessType || "N/A"}`
       );
     }
 
@@ -367,60 +345,51 @@ export function QuoteWizard() {
       detailsLines.push(
         `Approx. distance: ${state.distance || "N/A"}`
       );
-      detailsLines.push(`From ZIP: ${state.fromZip || "N/A"}`);
       detailsLines.push(`To ZIP: ${state.toZip || "N/A"}`);
-      detailsLines.push(`Stairs: ${state.stairs || "N/A"}`);
-      detailsLines.push(
-        `Elevator access: ${
-          state.hasElevator === "unsure"
-            ? "Not sure yet"
-            : state.hasElevator
-        }`
-      );
     }
 
+    detailsLines.push(`From ZIP: ${state.fromZip || "N/A"}`);
     detailsLines.push(
       `Preferred date: ${state.moveDate || "Not specified"}`
     );
-
     detailsLines.push("");
-    detailsLines.push("CLIENT CONTACT");
-    detailsLines.push("──────────────");
-    detailsLines.push(`Name: ${state.name}`);
-    detailsLines.push(`Email: ${state.email}`);
-    detailsLines.push(`Phone: ${state.phone || "N/A"}`);
-
-    detailsLines.push("");
-    detailsLines.push("ESTIMATE RANGE (NON-BINDING)");
-    detailsLines.push("────────────────────────────");
     detailsLines.push(
-      `Rough estimate: $${est.low.toLocaleString()} – $${est.high.toLocaleString()}`
+      `ROUGH ESTIMATE (non-binding): $${est.low.toLocaleString()} – $${est.high.toLocaleString()}`
     );
     detailsLines.push(
       "This is a rough starting range only. Final pricing will be provided after speaking with the crew and confirming details."
     );
-
     detailsLines.push("");
-    detailsLines.push("NOTES / SPECIAL ITEMS");
-    detailsLines.push("─────────────────────");
     detailsLines.push(
-      state.specialItems || "(no special items noted)"
+      `Special items / notes: ${
+        state.specialItems || "(none provided)"
+      }`
     );
-
-    // Attachments + filenames
-    const attachments = await filesToBase64Attachments(state.photos);
-    detailsLines.push("");
-    detailsLines.push("PHOTOS");
-    detailsLines.push("──────");
     detailsLines.push(
       `Photo count (uploaded via quiz): ${state.photos.length}`
     );
+
+    // 🔥 Convert photos to base64 so the backend can attach them
+    let photoFilesPayload: {
+      name: string;
+      type: string;
+      dataUrl: string;
+    }[] = [];
+
     if (state.photos.length > 0) {
-      detailsLines.push("");
-      detailsLines.push("Attached filenames:");
-      state.photos.forEach((file, idx) => {
-        detailsLines.push(`  ${idx + 1}. ${file.name}`);
-      });
+      try {
+        photoFilesPayload = await Promise.all(
+          state.photos.map(async (file) => ({
+            name: file.name,
+            type: file.type,
+            dataUrl: await fileToDataUrl(file),
+          }))
+        );
+      } catch (err) {
+        console.error("Error reading photo files", err);
+        // If file reading fails, we still send the quote without photos
+        photoFilesPayload = [];
+      }
     }
 
     const payload = {
@@ -430,7 +399,7 @@ export function QuoteWizard() {
       phone: state.phone,
       service: `${jobLabel} – Quiz Funnel`,
       details: detailsLines.join("\n"),
-      attachments,
+      photoFiles: photoFilesPayload, // 👈 backend should use this for attachments
     };
 
     setSubmitting(true);
@@ -441,7 +410,7 @@ export function QuoteWizard() {
         body: JSON.stringify(payload),
       });
 
-      // You can inspect response if needed:
+      // If you want to debug:
       // const data = await res.json().catch(() => null);
       // console.log("quote response", res.status, data);
 
@@ -941,9 +910,9 @@ export function QuoteWizard() {
                   className="block w-full text-sm text-gray-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-lime-100 file:text-gray-900 hover:file:bg-lime-200"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Photos of rooms, stairs, elevators, and anything tricky
-                  are attached to your quote so the crew can dial in a
-                  more accurate estimate.
+                  Photos help us give a tighter quote. They’re attached
+                  privately to your quote so the crew can review them
+                  before calling you back.
                 </p>
               </div>
             </div>
