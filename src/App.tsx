@@ -1448,20 +1448,19 @@ export default function App() {
           </div>
         </div>
       </section>
-      {/* Lightbox for gallery */}
-      {lightboxIndex !== null && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4"
-          onClick={() => setLightboxIndex(null)}
-        >
-          <img
-            src={GALLERY_IMAGES[lightboxIndex]}
-            alt="Neighborhood Krew job enlarged"
-            className="max-h-[80vh] max-w-[90vw] rounded-2xl border-2 border-white shadow-2xl"
-          />
-        </div>
-      )}
-
+     {/* Lightbox for gallery */}
+{lightboxIndex !== null && (
+  <div
+    className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4"
+    onClick={() => setLightboxIndex(null)}
+  >
+    <img
+      src={GALLERY_IMAGES[lightboxIndex]}
+      alt="Neighborhood Krew job enlarged"
+      className="max-h-[80vh] max-w-[90vw] rounded-2xl border-2 border-white shadow-2xl"
+    />
+  </div>
+)}
       {/* Hiring Section */}
       <section id="hiring" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
