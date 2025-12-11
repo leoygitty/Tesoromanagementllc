@@ -1669,7 +1669,7 @@ export default function App() {
               </p>
             )}
 
-            {/* Close button */}
+                        {/* Close button */}
             <div className="mt-3 flex justify-end gap-3">
               <button
                 type="button"
@@ -1677,9 +1677,13 @@ export default function App() {
                   dismissExit(7);
                   setExitOpen(false);
                 }}
-                      {exitOpen && (
-        <div className="fixed inset-0 bg-black/50 ...">
-          ... modal content ...
+                className="text-sm text-gray-500 hover:text-gray-800"
+              >
+                No thanks
+              </button>
+            </div>
+
+          </div>
         </div>
       )}
 
