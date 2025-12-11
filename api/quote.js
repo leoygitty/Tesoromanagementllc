@@ -11,7 +11,6 @@ const RESEND_OWNER_EMAIL =
 const RESEND_FORWARD_EMAIL =
   process.env.RESEND_FORWARD_EMAIL || "tesoromanagements@gmail.com";
 
-// Vercel Node serverless function (CommonJS)
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -20,7 +19,6 @@ module.exports = async function handler(req, res) {
       .json({ ok: false, error: "Method not allowed. Use POST." });
   }
 
-  // Basic safety check – if env is missing, log loudly
   if (!RESEND_API_KEY) {
     console.log("[info] RESEND_API_KEY is missing in environment");
     return res
@@ -30,7 +28,6 @@ module.exports = async function handler(req, res) {
 
   const resend = new Resend(RESEND_API_KEY);
 
-  // Payload from the quiz funnel (App.tsx)
   const {
     type,
     name,
@@ -50,21 +47,36 @@ module.exports = async function handler(req, res) {
       .json({ ok: false, error: "Missing required quote fields" });
   }
 
-  // Build a nice summary of uploaded photos (filenames only)
-  let photoSummary = "Uploaded photos: none attached via quiz.";
+  // Build a human-readable summary of uploaded photos
+  let photoSummary = "Uploaded photos: none.";
+  let attachments = [];
+
   if (Array.isArray(photoFiles) && photoFiles.length > 0) {
-    const lines = photoFiles.map(
-      (f, idx) =>
-        `- ${f.name || `image-${idx + 1}`}${
-          f.type ? ` (${f.type})` : ""
-        }`
-    );
-    photoSummary = `Uploaded photos (${photoFiles.length}):\n${lines.join(
+    const lines = [];
+
+    attachments = photoFiles
+      .filter((p) => p && p.base64)
+      .map((p, idx) => {
+        const filename = p.name || `photo-${idx + 1}.jpg`;
+        const type = p.type || "image/jpeg";
+        const size = p.size || 0;
+
+        lines.push(
+          `- ${filename} (${type}, ${Math.round(size / 1024)} KB)`
+        );
+
+        return {
+          filename,
+          content: Buffer.from(p.base64, "base64"), // 🔥 actual binary
+          contentType: type,
+        };
+      });
+
+    photoSummary = `Uploaded photos (${attachments.length}):\n${lines.join(
       "\n"
-    )}`;
+    )}\n\n(Images are attached to this email.)`;
   }
 
-  // Owner / internal email body
   const ownerSubject = `New quote request – ${service}`;
   const ownerText = [
     "New quote request from NeighborhoodKrew.com",
@@ -82,7 +94,6 @@ module.exports = async function handler(req, res) {
     "— Automated lead from the website quiz",
   ].join("\n");
 
-  // Customer confirmation email body
   const customerSubject = "We received your quote request";
   const customerText = [
     `Hi ${name},`,
@@ -111,7 +122,6 @@ module.exports = async function handler(req, res) {
   ].join("\n");
 
   try {
-    // 1) Send to owner + forwarding email
     const toInternal = [RESEND_OWNER_EMAIL, RESEND_FORWARD_EMAIL].filter(
       Boolean
     );
@@ -122,11 +132,11 @@ module.exports = async function handler(req, res) {
       to: toInternal,
       subject: ownerSubject,
       text: ownerText,
+      attachments: attachments, // 🔥 photos attached here
     });
 
     console.log("[info] Owner email result:", ownerResult);
 
-    // 2) Send confirmation to customer
     console.log("[info] Sending confirmation to:", email);
 
     const customerResult = await resend.emails.send({
@@ -138,8 +148,6 @@ module.exports = async function handler(req, res) {
 
     console.log("[info] Customer email result:", customerResult);
 
-    // Even if one of them fails, we still tell the frontend "ok"
-    // so the user sees their estimate and doesn't get spooked.
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error("[error] Error sending quote emails:", err);
