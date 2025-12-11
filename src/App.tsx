@@ -1543,8 +1543,8 @@ export default function App() {
         Call now
       </a>
 
-      {/* Exit-Intent Promo Modal */}
-            {exitOpen && (
+            {/* Exit-Intent Promo Modal */}
+      {exitOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full p-6">
 
@@ -1588,6 +1588,7 @@ export default function App() {
                 Promo code sent! Check your inbox.
               </p>
             )}
+
             {exitStatus === "error" && (
               <p className="text-red-600 text-sm mt-2">
                 Something went wrong — but we saved your email. You'll still receive promos.
@@ -1610,15 +1611,8 @@ export default function App() {
           </div>
         </div>
       )}
-
     </div> 
   );
 }
-// --- SAFE FILE END (Required for Vercel parsing -- do not remove) ---
-export const __NK_FILE_END__ = true;
-export default App;
 
-// Padding (Vercel parser bug workaround)
-export const __NK_PADDING_1__ = 1;
-export const __NK_PADDING_2__ = 2;
-export const __NK_PADDING_3__ = 3;
+export default App;
