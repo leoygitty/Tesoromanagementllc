@@ -837,11 +837,6 @@ export function QuoteWizard() {
 
 </div>
 
-//
-// --------------------------------------------------
-// MAIN APP COMPONENT
-// --------------------------------------------------
-
 export default function App() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
