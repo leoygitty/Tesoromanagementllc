@@ -892,7 +892,8 @@ export default function App() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-
+  const [activeReview, setActiveReview] = useState(0);
+  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
   // Exit-intent modal
   const [exitOpen, setExitOpen] = useState(false);
   const [exitEmail, setExitEmail] = useState("");
