@@ -1044,7 +1044,9 @@ const GALLERY_IMAGES: string[] = [
   "/gallery/krew7.jpg",
   "/gallery/krew8.jpg",
   "/gallery/krew9.jpg",
-];
+  "/gallery/krew10.jpg",
+  "/gallery/krew11.jpg",
+  "/gallery/krew12.jpg"];
 
 // --- Main App -------------------------------------------------------------
 
