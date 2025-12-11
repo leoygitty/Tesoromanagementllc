@@ -5,7 +5,7 @@ const { Resend } = require("resend");
 // ENV VARS (set in Vercel → Settings → Environment Variables)
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const RESEND_FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL || "quotes@neighborhoodkrew.com";
+  process.env.RESEND_FROM_EMAIL || "send@neighborhoodkrew.com";
 const MAIN_OWNER_EMAIL =
   process.env.QUOTE_TO_EMAIL || "neighborhoodkrew@gmail.com";
 
