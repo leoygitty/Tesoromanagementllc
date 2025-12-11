@@ -180,6 +180,33 @@ type WizardState = {
 
 type Estimate = { low: number; high: number };
 
+type AttachmentPayload = {
+  filename: string;
+  content: string; // base64
+};
+
+async function filesToBase64Attachments(files: File[]): Promise<AttachmentPayload[]> {
+  if (!files || files.length === 0) return [];
+
+  const attachments = await Promise.all(
+    files.map(async (file) => {
+      const buffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64 = btoa(binary);
+      return {
+        filename: file.name,
+        content: base64,
+      };
+    })
+  );
+
+  return attachments;
+}
+
 function computeEstimate(state: WizardState): Estimate {
   if (state.jobType === "junk") {
     switch (state.junkWeight) {
@@ -309,11 +336,16 @@ export function QuoteWizard() {
         ? "Commercial move"
         : "Junk removal";
 
-    const detailsLines: string[] = [`Job type: ${jobLabel}`];
+    const detailsLines: string[] = [];
+
+    detailsLines.push(`SERVICE: ${jobLabel}`);
+    detailsLines.push("");
+    detailsLines.push("MOVE / PROJECT DETAILS");
+    detailsLines.push("──────────────────────");
 
     if (state.jobType === "commercial") {
       detailsLines.push(
-        `Business/project: ${state.businessType || "N/A"}`
+        `Business / project: ${state.businessType || "N/A"}`
       );
     }
 
@@ -335,29 +367,61 @@ export function QuoteWizard() {
       detailsLines.push(
         `Approx. distance: ${state.distance || "N/A"}`
       );
+      detailsLines.push(`From ZIP: ${state.fromZip || "N/A"}`);
       detailsLines.push(`To ZIP: ${state.toZip || "N/A"}`);
+      detailsLines.push(`Stairs: ${state.stairs || "N/A"}`);
+      detailsLines.push(
+        `Elevator access: ${
+          state.hasElevator === "unsure"
+            ? "Not sure yet"
+            : state.hasElevator
+        }`
+      );
     }
 
-    detailsLines.push(`From ZIP: ${state.fromZip || "N/A"}`);
     detailsLines.push(
       `Preferred date: ${state.moveDate || "Not specified"}`
     );
+
     detailsLines.push("");
+    detailsLines.push("CLIENT CONTACT");
+    detailsLines.push("──────────────");
+    detailsLines.push(`Name: ${state.name}`);
+    detailsLines.push(`Email: ${state.email}`);
+    detailsLines.push(`Phone: ${state.phone || "N/A"}`);
+
+    detailsLines.push("");
+    detailsLines.push("ESTIMATE RANGE (NON-BINDING)");
+    detailsLines.push("────────────────────────────");
     detailsLines.push(
-      `ROUGH ESTIMATE (non-binding): $${est.low.toLocaleString()} – $${est.high.toLocaleString()}`
+      `Rough estimate: $${est.low.toLocaleString()} – $${est.high.toLocaleString()}`
     );
     detailsLines.push(
       "This is a rough starting range only. Final pricing will be provided after speaking with the crew and confirming details."
     );
+
     detailsLines.push("");
+    detailsLines.push("NOTES / SPECIAL ITEMS");
+    detailsLines.push("─────────────────────");
     detailsLines.push(
-      `Special items / notes: ${
-        state.specialItems || "(none provided)"
-      }`
+      state.specialItems || "(no special items noted)"
     );
+
+    // Attachments + filenames
+    const attachments = await filesToBase64Attachments(state.photos);
+    detailsLines.push("");
+    detailsLines.push("PHOTOS");
+    detailsLines.push("──────");
     detailsLines.push(
       `Photo count (uploaded via quiz): ${state.photos.length}`
     );
+    if (state.photos.length > 0) {
+      detailsLines.push("");
+      detailsLines.push("Attached filenames:");
+      state.photos.forEach((file, idx) => {
+        detailsLines.push(`  ${idx + 1}. ${file.name}`);
+      });
+    }
 
     const payload = {
       type: "quote",
@@ -366,6 +430,7 @@ export function QuoteWizard() {
       phone: state.phone,
       service: `${jobLabel} – Quiz Funnel`,
       details: detailsLines.join("\n"),
+      attachments,
     };
 
     setSubmitting(true);
@@ -376,18 +441,14 @@ export function QuoteWizard() {
         body: JSON.stringify(payload),
       });
 
-      // Even if email has an issue, we still show the estimate on-screen.
-      // You can inspect the response in the console if needed:
+      // You can inspect response if needed:
       // const data = await res.json().catch(() => null);
       // console.log("quote response", res.status, data);
 
       setSubmitted(true);
     } catch (err) {
       console.error(err);
-      // Still show success UI so the user isn't spooked
       setSubmitted(true);
-      // Optional: softer note at bottom of form if you want
-      // setError("We received your info. If you don't hear from us, please call or email directly.");
     } finally {
       setSubmitting(false);
     }
@@ -880,9 +941,9 @@ export function QuoteWizard() {
                   className="block w-full text-sm text-gray-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-lime-100 file:text-gray-900 hover:file:bg-lime-200"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Photos help us give a tighter quote. They’re not
-                  attached to emails yet, but we see how many you
-                  uploaded.
+                  Photos of rooms, stairs, elevators, and anything tricky
+                  are attached to your quote so the crew can dial in a
+                  more accurate estimate.
                 </p>
               </div>
             </div>
@@ -1002,7 +1063,6 @@ const GALLERY_IMAGES: string[] = [
   "/gallery/krew4.jpg",
   "/gallery/krew5.jpg",
   "/gallery/krew6.jpg",
-  // Add the new ones here – adjust names to match your actual files:
   "/gallery/krew7.jpg",
   "/gallery/krew8.jpg",
   "/gallery/krew9.jpg",
@@ -1381,7 +1441,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* Free Quote / quiz funnel (moved below Services) */}
+      {/* Free Quote / quiz funnel */}
       <section id="quote" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-5 gap-8 items-start">
           <div className="md:col-span-3">
