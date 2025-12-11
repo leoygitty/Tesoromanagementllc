@@ -1677,17 +1677,12 @@ export default function App() {
                   dismissExit(7);
                   setExitOpen(false);
                 }}
-                className="text-sm text-gray-500 hover:text-gray-800"
-              >
-                No thanks
-              </button>
-            </div>
-
-          </div>
+                      {exitOpen && (
+        <div className="fixed inset-0 bg-black/50 ...">
+          ... modal content ...
         </div>
       )}
 
     </div> {/* END OF MAIN WRAPPER */}
   );
 } // END OF APP COMPONENT
-
