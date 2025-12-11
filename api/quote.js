@@ -1,105 +1,108 @@
 // api/quote.js
+
 const { Resend } = require("resend");
 
-module.exports = async (req, res) => {
-  // Simple health check for GET
+// ENV VARS (set in Vercel → Settings → Environment Variables)
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const RESEND_FROM_EMAIL =
+  process.env.RESEND_FROM_EMAIL || "quotes@neighborhoodkrew.com";
+const MAIN_OWNER_EMAIL =
+  process.env.QUOTE_TO_EMAIL || "neighborhoodkrew@gmail.com";
+
+// Second owner email is hard-coded per your request
+const SECOND_OWNER_EMAIL = "tesoromanagements@gmail.com";
+
+// Create client once (Vercel reuses the same Lambda between calls)
+const resend = new Resend(RESEND_API_KEY);
+
+module.exports = async function handler(req, res) {
+  // Simple health check so /api/quote in browser doesn’t error
   if (req.method === "GET") {
-    return res
-      .status(200)
-      .json({ ok: true, message: "quote API alive – function is deployed" });
+    return res.status(200).json({
+      ok: true,
+      message: "quote API alive – function is deployed",
+    });
   }
 
   if (req.method !== "POST") {
-    res.setHeader("Allow", "POST, GET");
-    return res
-      .status(405)
-      .json({ ok: false, error: "Method not allowed. Use POST." });
+    res.setHeader("Allow", "GET, POST");
+    return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("RESEND_API_KEY is missing in environment variables");
+  if (!RESEND_API_KEY) {
+    console.error("Missing RESEND_API_KEY env var");
     return res
       .status(500)
       .json({ ok: false, error: "Email service not configured" });
   }
 
-  const resend = new Resend(apiKey);
-
-  // Body comes from your quiz fetch('/api/quote', { method: 'POST', body: JSON.stringify(payload) })
+  // Vercel parses JSON body for us when content-type is application/json
   const { name, email, phone, service, details } = req.body || {};
 
-  console.log("Incoming quote payload:", { name, email, phone, service });
-
-  if (!name || !email || !service || !details) {
-    console.error("Missing required fields in /api/quote payload:", req.body);
+  if (!name || !email || !service) {
+    console.error("Missing required fields in quote request:", req.body);
     return res
       .status(400)
-      .json({ ok: false, error: "Missing required quote fields" });
+      .json({ ok: false, error: "Missing required fields" });
   }
 
-  // 👉 Make sure this matches your verified Resend domain.
-  // If your sending domain is neighborhoodkrew.com, this is fine.
-  // If it's something like mail.neighborhoodkrew.com, change the part after @.
-  const FROM_EMAIL = "Neighborhood Krew <quotes@neighborhoodkrew.com>";
-
-  const OWNER_EMAILS = [
-    "neighborhoodkrew@gmail.com",
-    "tesoromanagements@gmail.com",
-  ];
-
-  const subject = `New quote request – ${service}`;
-  const metaLine = `From: ${name} <${email}> | Phone: ${phone || "N/A"}`;
-
+  const ownerSubject = `New quote request – ${service}`;
   const ownerText = [
     "New quote request from the website quiz:",
     "",
-    metaLine,
+    `Name:  ${name}`,
+    `Email: ${email}`,
+    `Phone: ${phone || "N/A"}`,
+    `Service: ${service}`,
     "",
-    details,
+    "Details:",
+    details || "(no extra details provided)",
   ].join("\n");
 
+  const customerSubject = "We received your quote request";
   const customerText = [
     `Hi ${name},`,
     "",
-    "Thanks for reaching out to Neighborhood Krew. Here’s a copy of the info you submitted so you can refer back to it:",
+    "Thanks for reaching out to Neighborhood Krew. We’ve received your request and a crew member will reach out shortly.",
     "",
-    metaLine,
+    "Here’s what we got from you:",
+    `Service: ${service}`,
+    `Phone: ${phone || "N/A"}`,
     "",
-    details,
+    "Details:",
+    details || "(no extra details provided)",
     "",
-    "This range is an estimate only. A member of the crew will review it and reach out to lock in a firm quote and move date.",
+    "If anything looks off, you can reply directly to this email with corrections.",
     "",
-    "If anything changes, you can always reply directly to this email.",
-    "",
-    "— Neighborhood Krew Inc",
+    "— Neighborhood Krew",
   ].join("\n");
 
   try {
-    // 1) Email to you + the owner
+    const ownerRecipients = [MAIN_OWNER_EMAIL, SECOND_OWNER_EMAIL].filter(
+      Boolean
+    );
+
+    console.log("Sending owner quote email to:", ownerRecipients);
     const ownerResult = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: OWNER_EMAILS,
-      subject,
+      from: RESEND_FROM_EMAIL,
+      to: ownerRecipients,
+      subject: ownerSubject,
       text: ownerText,
     });
+    console.log("Owner email result:", ownerResult);
 
-    console.log("Owner email sent result:", ownerResult);
-
-    // 2) Confirmation to the customer
+    console.log("Sending customer confirmation email to:", email);
     const customerResult = await resend.emails.send({
-      from: FROM_EMAIL,
+      from: RESEND_FROM_EMAIL,
       to: email,
-      subject: "We received your quote request",
+      subject: customerSubject,
       text: customerText,
     });
+    console.log("Customer email result:", customerResult);
 
-    console.log("Customer email sent result:", customerResult);
-
-    // Success response for the frontend
     return res.status(200).json({ ok: true });
   } catch (error) {
-    console.error("Error sending quote emails via Resend:", error);
+    console.error("Error sending emails via Resend:", error);
     return res
       .status(500)
       .json({ ok: false, error: "Failed to send quote emails" });
