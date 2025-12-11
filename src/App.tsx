@@ -23,9 +23,7 @@ function shouldOpenExit() {
     if (sessionStorage.getItem(EXIT_SEEN_SESSION) === "1") return false;
     const until = Number(localStorage.getItem(EXIT_DISMISS_KEY) || 0);
     if (until && Date.now() < until) return false;
-  } catch {
-    // ignore
-  }
+  } catch {}
   return true;
 }
 
@@ -33,9 +31,7 @@ function markExitSeen() {
   try {
     if (typeof window === "undefined") return;
     sessionStorage.setItem(EXIT_SEEN_SESSION, "1");
-  } catch {
-    // ignore
-  }
+  } catch {}
 }
 
 function dismissExit(days: number) {
@@ -43,11 +39,9 @@ function dismissExit(days: number) {
     if (typeof window === "undefined") return;
     localStorage.setItem(
       EXIT_DISMISS_KEY,
-      String(Date.now() + days * 24 * 60 * 60 * 1000)
+      String(Date.now() + days * 86400000)
     );
-  } catch {
-    // ignore
-  }
+  } catch {}
 }
 
 async function subscribeAndSendPromo(email: string) {
@@ -97,12 +91,7 @@ function CardContent(props: DivProps) {
 function CardTitle(props: DivProps) {
   const { className = "", ...rest } = props;
   return (
-    <h3
-      className={
-        "text-lg md:text-xl font-semibold tracking-tight " + className
-      }
-      {...rest}
-    />
+    <h3 className={"text-lg md:text-xl font-semibold tracking-tight " + className} {...rest} />
   );
 }
 
@@ -113,6 +102,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 function Button({ variant = "solid", className = "", ...rest }: ButtonProps) {
   const base =
     "inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2";
+
   let style = "";
   if (variant === "solid") {
     style = "bg-lime-400 text-black hover:bg-lime-300 focus:ring-lime-400";
@@ -120,9 +110,9 @@ function Button({ variant = "solid", className = "", ...rest }: ButtonProps) {
     style =
       "border border-white/70 bg-transparent text-white hover:bg-white/10 focus:ring-white";
   } else {
-    style =
-      "bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-300";
+    style = "bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-300";
   }
+
   return <button className={`${base} ${style} ${className}`} {...rest} />;
 }
 
@@ -153,7 +143,6 @@ function TextArea({ className = "", ...rest }: TextareaProps) {
     />
   );
 }
-
 // --- Quote Wizard / Quiz Funnel -----------------------------------------
 
 type JobType = "residential" | "commercial" | "junk";
@@ -180,7 +169,7 @@ type WizardState = {
 
 type Estimate = { low: number; high: number };
 
-// Helper: read a File as data URL (base64)
+// Helper: convert File to base64 data URL
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -241,29 +230,26 @@ function computeEstimate(state: WizardState): Estimate {
 
   return { low: baseLow, high: baseHigh };
 }
-// Helper: convert File objects to base64 so we can send them to the API
+
+// Encode files to base64 for API
 async function filesToBase64List(files: File[]) {
   const encodeOne = (file: File) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        const base64 = result.split(",")[1] || "";
-        resolve({
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          base64,
-        });
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+    new Promise<{ name: string; type: string; size: number; base64: string }>(
+      (resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          const base64 = result.split(",")[1] || "";
+          resolve({ name: file.name, type: file.type, size: file.size, base64 });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      }
+    );
 
-  return Promise.all(files.map((f) => encodeOne(f))) as Promise<
-    { name: string; type: string; size: number; base64: string }[]
-  >;
+  return Promise.all(files.map((f) => encodeOne(f)));
 }
+
 export function QuoteWizard() {
   const [step, setStep] = useState(0);
   const [state, setState] = useState<WizardState>({
@@ -321,7 +307,7 @@ export function QuoteWizard() {
     }
   }
 
-   const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSubmitted(false);
@@ -344,9 +330,7 @@ export function QuoteWizard() {
     const detailsLines: string[] = [`Job type: ${jobLabel}`];
 
     if (state.jobType === "commercial") {
-      detailsLines.push(
-        `Business/project: ${state.businessType || "N/A"}`
-      );
+      detailsLines.push(`Business/project: ${state.businessType || "N/A"}`);
     }
 
     if (state.jobType === "junk") {
@@ -354,26 +338,20 @@ export function QuoteWizard() {
         `Estimated junk weight: ${state.junkWeight || "not specified"}`
       );
       detailsLines.push(
-        `Junk description: ${
-          state.junkDescription || "not specified"
-        }`
+        `Junk description: ${state.junkDescription || "not specified"}`
       );
     } else {
       detailsLines.push(
-        `Home size: ${
-          state.size || "not specified"
-        }, approx. square footage: ${state.sqft || "N/A"}`
+        `Home size: ${state.size || "not specified"}, approx. square footage: ${
+          state.sqft || "N/A"
+        }`
       );
-      detailsLines.push(
-        `Approx. distance: ${state.distance || "N/A"}`
-      );
+      detailsLines.push(`Approx. distance: ${state.distance || "N/A"}`);
       detailsLines.push(`To ZIP: ${state.toZip || "N/A"}`);
     }
 
     detailsLines.push(`From ZIP: ${state.fromZip || "N/A"}`);
-    detailsLines.push(
-      `Preferred date: ${state.moveDate || "Not specified"}`
-    );
+    detailsLines.push(`Preferred date: ${state.moveDate || "Not specified"}`);
     detailsLines.push("");
     detailsLines.push(
       `ROUGH ESTIMATE (non-binding): $${est.low.toLocaleString()} – $${est.high.toLocaleString()}`
@@ -382,24 +360,19 @@ export function QuoteWizard() {
       "This is a rough starting range only. Final pricing will be provided after speaking with the crew and confirming details."
     );
     detailsLines.push("");
-    detailsLines.push(
-      `Special items / notes: ${
-        state.specialItems || "(none provided)"
-      }`
-    );
+    detailsLines.push(`Special items / notes: ${state.specialItems || "(none)"}`);
     detailsLines.push(
       `Photo count (uploaded via quiz): ${state.photos.length}`
     );
 
-    // 🔥 NEW: encode selected photos to base64 so the API can attach them
     let photoFilesPayload: any[] = [];
+
     try {
       if (state.photos.length > 0) {
         photoFilesPayload = await filesToBase64List(state.photos);
       }
     } catch (err) {
       console.error("Error encoding photos:", err);
-      // keep going without images if encoding fails
     }
 
     const payload = {
@@ -409,20 +382,17 @@ export function QuoteWizard() {
       phone: state.phone,
       service: `${jobLabel} – Quiz Funnel`,
       details: detailsLines.join("\n"),
-      photoFiles: photoFilesPayload, // <-- sent to /api/quote
+      photoFiles: photoFilesPayload,
     };
 
     setSubmitting(true);
+
     try {
-      const res = await fetch("/api/quote", {
+      await fetch("/api/quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
-      // We don't block UI on email; estimate still shows even if email fails
-      // const data = await res.json().catch(() => null);
-      // console.log("quote response", res.status, data);
 
       setSubmitted(true);
     } catch (err) {
@@ -432,16 +402,16 @@ export function QuoteWizard() {
       setSubmitting(false);
     }
   };
+
   const currentStepLabel = steps[step];
 
-  // bespoke end copy per job type
   let jobSpecificLine = "";
   if (state.jobType === "residential") {
     jobSpecificLine =
       "A move coordinator will review your answers, confirm the crew size and trucks needed, and follow up with a firm quote.";
   } else if (state.jobType === "commercial") {
     jobSpecificLine =
-      "Our commercial team will look at your scope and schedule, then coordinate a detailed plan around access windows, freight elevators, and any build-out timelines.";
+      "Our commercial team will review your scope and schedule, then coordinate a detailed plan around access windows, freight elevators, and timelines.";
   } else {
     jobSpecificLine =
       "A junk removal dispatcher will match your estimate to the right truck size and reach out to lock in a time window.";
@@ -449,21 +419,21 @@ export function QuoteWizard() {
 
   const commonLine =
     "This range is based on similar jobs we’ve completed in the area and is meant as a starting point, not a final price.";
-
   return (
     <Card className="shadow-lg border-gray-900">
       <CardHeader>
         <CardTitle className="flex flex-col gap-1">
           <span className="text-2xl font-bold">Free Quote</span>
           <span className="text-sm font-normal text-gray-600">
-            Answer a few quick questions and see an estimated price in
-            under 60 seconds.
+            Answer a few quick questions and see an estimated price in under 60 seconds.
           </span>
         </CardTitle>
       </CardHeader>
+
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Progress */}
+
+          {/* Progress bar */}
           <div>
             <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2 overflow-hidden">
               <div
@@ -476,44 +446,36 @@ export function QuoteWizard() {
             </p>
           </div>
 
-          {/* Step 0 – job type */}
+          {/* Step 0 – Choose job type */}
           {step === 0 && (
             <div className="space-y-3">
-              <label className="block text-sm font-medium">
-                What kind of job is this?
-              </label>
+              <label className="block text-sm font-medium">What kind of job is this?</label>
+
               <select
                 className="border rounded-md px-3 py-2 w-full text-sm"
                 value={state.jobType}
                 onChange={(e) =>
-                  setState((s) => ({
-                    ...s,
-                    jobType: e.target.value as JobType,
-                  }))
+                  setState((s) => ({ ...s, jobType: e.target.value as JobType }))
                 }
               >
-                <option value="residential">
-                  Residential home / apartment move
-                </option>
-                <option value="commercial">
-                  Commercial move / store buildout / freight
-                </option>
+                <option value="residential">Residential home / apartment move</option>
+                <option value="commercial">Commercial move / store buildout / freight</option>
                 <option value="junk">Junk removal / cleanout</option>
               </select>
+
               <p className="text-xs text-gray-500">
-                We’ll tailor the questions to your move so you only
-                answer what matters.
+                We'll tailor the questions so you only answer what matters.
               </p>
             </div>
           )}
 
-          {/* Step 1 – residential */}
+          {/* Step 1 – Residential */}
           {step === 1 && state.jobType === "residential" && (
             <div className="space-y-4">
+
+              {/* Home size */}
               <div>
-                <label className="block text-sm font-medium">
-                  Home size
-                </label>
+                <label className="block text-sm font-medium">Home size</label>
                 <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
                   {[
                     { id: "studio_1br", label: "Studio / 1 BR" },
@@ -525,13 +487,9 @@ export function QuoteWizard() {
                     <button
                       key={opt.id}
                       type="button"
-                      onClick={() =>
-                        setState((s) => ({ ...s, size: opt.id }))
-                      }
+                      onClick={() => setState((s) => ({ ...s, size: opt.id }))}
                       className={`border rounded-md px-3 py-2 text-left ${
-                        state.size === opt.id
-                          ? "border-lime-400 bg-lime-50"
-                          : "border-gray-300"
+                        state.size === opt.id ? "border-lime-400 bg-lime-50" : "border-gray-300"
                       }`}
                     >
                       {opt.label}
@@ -540,183 +498,127 @@ export function QuoteWizard() {
                 </div>
               </div>
 
+              {/* Sqft + Distance */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium">
-                    Approx. square footage
-                  </label>
+                  <label className="block text-sm font-medium">Approx. square footage</label>
                   <TextInput
                     placeholder="e.g. 1,800"
                     value={state.sqft}
-                    onChange={(e) =>
-                      setState((s) => ({ ...s, sqft: e.target.value }))
-                    }
+                    onChange={(e) => setState((s) => ({ ...s, sqft: e.target.value }))}
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium">
-                    Approx. distance
-                  </label>
+                  <label className="block text-sm font-medium">Approx. distance</label>
                   <select
                     className="border rounded-md px-3 py-2 w-full text-sm"
                     value={state.distance}
-                    onChange={(e) =>
-                      setState((s) => ({
-                        ...s,
-                        distance: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setState((s) => ({ ...s, distance: e.target.value }))}
                   >
                     <option value="">Select</option>
                     <option value="under25">Under 25 miles</option>
                     <option value="25-75">25–75 miles</option>
                     <option value="75-150">75–150 miles</option>
-                    <option value="150plus">
-                      150+ miles / long-distance
-                    </option>
+                    <option value="150plus">150+ miles / long-distance</option>
                   </select>
                 </div>
               </div>
 
+              {/* Zips */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium">
-                    From ZIP
-                  </label>
+                  <label className="block text-sm font-medium">From ZIP</label>
                   <TextInput
                     value={state.fromZip}
-                    onChange={(e) =>
-                      setState((s) => ({
-                        ...s,
-                        fromZip: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setState((s) => ({ ...s, fromZip: e.target.value }))}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">
-                    To ZIP
-                  </label>
+                  <label className="block text-sm font-medium">To ZIP</label>
                   <TextInput
                     value={state.toZip}
-                    onChange={(e) =>
-                      setState((s) => ({
-                        ...s,
-                        toZip: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setState((s) => ({ ...s, toZip: e.target.value }))}
                   />
                 </div>
               </div>
+
             </div>
           )}
 
-          {/* Step 1 – commercial */}
+          {/* Step 1 – Commercial */}
           {step === 1 && state.jobType === "commercial" && (
             <div className="space-y-4">
+
               <div>
-                <label className="block text-sm font-medium">
-                  Business / project type
-                </label>
+                <label className="block text-sm font-medium">Business / project type</label>
                 <TextInput
                   placeholder="e.g. retail buildout, office move, gym install"
                   value={state.businessType}
                   onChange={(e) =>
-                    setState((s) => ({
-                      ...s,
-                      businessType: e.target.value,
-                    }))
+                    setState((s) => ({ ...s, businessType: e.target.value }))
                   }
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium">
-                    Approx. square footage
-                  </label>
+                  <label className="block text-sm font-medium">Approx. square footage</label>
                   <TextInput
                     placeholder="e.g. 3,500"
                     value={state.sqft}
-                    onChange={(e) =>
-                      setState((s) => ({ ...s, sqft: e.target.value }))
-                    }
+                    onChange={(e) => setState((s) => ({ ...s, sqft: e.target.value }))}
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium">
-                    Approx. distance
-                  </label>
+                  <label className="block text-sm font-medium">Approx. distance</label>
                   <select
                     className="border rounded-md px-3 py-2 w-full text-sm"
                     value={state.distance}
-                    onChange={(e) =>
-                      setState((s) => ({
-                        ...s,
-                        distance: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setState((s) => ({ ...s, distance: e.target.value }))}
                   >
                     <option value="">Select</option>
                     <option value="under25">Under 25 miles</option>
                     <option value="25-75">25–75 miles</option>
                     <option value="75-150">75–150 miles</option>
-                    <option value="150plus">
-                      150+ miles / long-distance
-                    </option>
+                    <option value="150plus">150+ miles / long-distance</option>
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium">
-                    From ZIP
-                  </label>
+                  <label className="block text-sm font-medium">From ZIP</label>
                   <TextInput
                     value={state.fromZip}
-                    onChange={(e) =>
-                      setState((s) => ({
-                        ...s,
-                        fromZip: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setState((s) => ({ ...s, fromZip: e.target.value }))}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">
-                    To ZIP
-                  </label>
+                  <label className="block text-sm font-medium">To ZIP</label>
                   <TextInput
                     value={state.toZip}
-                    onChange={(e) =>
-                      setState((s) => ({
-                        ...s,
-                        toZip: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setState((s) => ({ ...s, toZip: e.target.value }))}
                   />
                 </div>
               </div>
+
             </div>
           )}
 
-          {/* Step 1 – junk */}
+          {/* Step 1 – Junk */}
           {step === 1 && state.jobType === "junk" && (
             <div className="space-y-4">
+
               <div>
-                <label className="block text-sm font-medium">
-                  What are we hauling away?
-                </label>
+                <label className="block text-sm font-medium">What are we hauling away?</label>
                 <TextArea
                   rows={3}
                   placeholder="e.g. garage cleanout, basement furniture, renovation debris"
                   value={state.junkDescription}
                   onChange={(e) =>
-                    setState((s) => ({
-                      ...s,
-                      junkDescription: e.target.value,
-                    }))
+                    setState((s) => ({ ...s, junkDescription: e.target.value }))
                   }
                 />
               </div>
@@ -728,97 +630,64 @@ export function QuoteWizard() {
                 <select
                   className="border rounded-md px-3 py-2 w-full text-sm"
                   value={state.junkWeight}
-                  onChange={(e) =>
-                    setState((s) => ({
-                      ...s,
-                      junkWeight: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setState((s) => ({ ...s, junkWeight: e.target.value }))}
                 >
                   <option value="">Choose an estimate</option>
-                  <option value="under500">
-                    Under 500 lbs (small load)
-                  </option>
-                  <option value="500-1500">
-                    500–1,500 lbs (pickup / small trailer)
-                  </option>
-                  <option value="1500-3000">
-                    1,500–3,000 lbs (half box truck)
-                  </option>
-                  <option value="3000plus">
-                    3,000+ lbs (full truck / heavy debris)
-                  </option>
+                  <option value="under500">Under 500 lbs (small load)</option>
+                  <option value="500-1500">500–1,500 lbs</option>
+                  <option value="1500-3000">1,500–3,000 lbs</option>
+                  <option value="3000plus">3,000+ lbs</option>
                 </select>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium">
-                    Property ZIP
-                  </label>
+                  <label className="block text-sm font-medium">Property ZIP</label>
                   <TextInput
                     value={state.fromZip}
-                    onChange={(e) =>
-                      setState((s) => ({
-                        ...s,
-                        fromZip: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setState((s) => ({ ...s, fromZip: e.target.value }))}
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium">
-                    Preferred date
-                  </label>
+                  <label className="block text-sm font-medium">Preferred date</label>
                   <TextInput
                     type="date"
                     value={state.moveDate}
-                    onChange={(e) =>
-                      setState((s) => ({
-                        ...s,
-                        moveDate: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => setState((s) => ({ ...s, moveDate: e.target.value }))}
                   />
                 </div>
               </div>
+
             </div>
           )}
 
-          {/* Step 2 – logistics for non-junk */}
+          {/* Step 2 – Logistics (non-junk) */}
           {step === 2 && state.jobType !== "junk" && (
             <div className="space-y-4">
+
               <div>
-                <label className="block text-sm font-medium">
-                  Stairs at either location?
-                </label>
+                <label className="block text-sm font-medium">Stairs at either location?</label>
                 <select
                   className="border rounded-md px-3 py-2 w-full text-sm"
                   value={state.stairs}
-                  onChange={(e) =>
-                    setState((s) => ({ ...s, stairs: e.target.value }))
-                  }
+                  onChange={(e) => setState((s) => ({ ...s, stairs: e.target.value }))}
                 >
                   <option value="none">No stairs</option>
                   <option value="some">1–2 flights / split level</option>
-                  <option value="heavy">
-                    3+ flights or walk-up
-                  </option>
+                  <option value="heavy">3+ flights or walk-up</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium">
-                  Elevator access?
-                </label>
+                <label className="block text-sm font-medium">Elevator access?</label>
                 <select
                   className="border rounded-md px-3 py-2 w-full text-sm"
                   value={state.hasElevator}
                   onChange={(e) =>
                     setState((s) => ({
                       ...s,
-                      hasElevator: e.target
-                        .value as WizardState["hasElevator"],
+                      hasElevator: e.target.value as WizardState["hasElevator"],
                     }))
                   }
                 >
@@ -829,210 +698,178 @@ export function QuoteWizard() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium">
-                  Any special or heavy items?
-                </label>
+                <label className="block text-sm font-medium">Any special or heavy items?</label>
                 <TextArea
                   rows={3}
                   placeholder="Pianos, safes, gym equipment, pool tables, etc."
                   value={state.specialItems}
-                  onChange={(e) =>
-                    setState((s) => ({
-                      ...s,
-                      specialItems: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setState((s) => ({ ...s, specialItems: e.target.value }))}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium">
-                  Preferred move date
-                </label>
+                <label className="block text-sm font-medium">Preferred move date</label>
                 <TextInput
                   type="date"
                   value={state.moveDate}
-                  onChange={(e) =>
-                    setState((s) => ({
-                      ...s,
-                      moveDate: e.target.value,
-                    }))
-                  }
+                  onChange={(e) => setState((s) => ({ ...s, moveDate: e.target.value }))}
                 />
               </div>
+
             </div>
           )}
 
-          {/* Contact step – junk(step2) or others(step3) */}
-          {((step === 2 && state.jobType === "junk") ||
-            (step === 3 && state.jobType !== "junk")) && (
+          {/* Contact step */}
+          {(step === 2 && state.jobType === "junk") ||
+          (step === 3 && state.jobType !== "junk") ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
                 <div>
-                  <label className="block text-sm font-medium">
-                    Full name
-                  </label>
+                  <label className="block text-sm font-medium">Full name</label>
                   <TextInput
                     value={state.name}
-                    onChange={(e) =>
-                      setState((s) => ({ ...s, name: e.target.value }))
-                    }
+                    onChange={(e) => setState((s) => ({ ...s, name: e.target.value }))}
                     required
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium">
-                    Phone
-                  </label>
+                  <label className="block text-sm font-medium">Phone</label>
                   <TextInput
                     value={state.phone}
-                    onChange={(e) =>
-                      setState((s) => ({ ...s, phone: e.target.value }))
-                    }
+                    onChange={(e) => setState((s) => ({ ...s, phone: e.target.value }))}
                   />
                 </div>
+
               </div>
 
               <div>
-                <label className="block text-sm font-medium">
-                  Email address
-                </label>
+                <label className="block text-sm font-medium">Email address</label>
                 <TextInput
                   type="email"
                   value={state.email}
-                  onChange={(e) =>
-                    setState((s) => ({ ...s, email: e.target.value }))
-                  }
+                  onChange={(e) => setState((s) => ({ ...s, email: e.target.value }))}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium">
-                  Upload photos (optional)
-                </label>
+                <label className="block text-sm font-medium">Upload photos (optional)</label>
                 <input
                   type="file"
                   accept="image/*"
                   multiple
                   onChange={handlePhotoChange}
-                  className="block w-full text-sm text-gray-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-lime-100 file:text-gray-900 hover:file:bg-lime-200"
+                  className="block w-full text-sm text-gray-700 
+                  file:mr-3 file:py-1.5 file:px-3 file:rounded-md 
+                  file:border-0 file:text-sm file:font-medium 
+                  file:bg-lime-100 file:text-gray-900 
+                  hover:file:bg-lime-200"
                 />
+
                 <p className="text-xs text-gray-500 mt-1">
-                  Photos help us give a tighter quote. They’re attached
-                  privately to your quote so the crew can review them
-                  before calling you back.
+                  Photos help us give a tighter quote. They’re attached privately so the
+                  crew can review them before calling you back.
                 </p>
               </div>
-            </div>
-          )}
 
+            </div>
+          ) : null}
+
+          {/* Error message */}
           {error && (
             <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-md px-3 py-2">
               {error}
             </div>
           )}
 
+          {/* Estimate preview */}
           {submitted && estimate && (
             <div className="mt-2">
+
               <div className="animate-bounce rounded-2xl border-2 border-black bg-lime-400 px-4 py-3 text-center shadow-md">
                 <div className="text-xs font-semibold uppercase tracking-wide text-black/80">
                   Your estimated price range
                 </div>
                 <div className="mt-1 text-3xl md:text-4xl font-extrabold text-black">
-                  ${estimate.low.toLocaleString()} – $
-                  {estimate.high.toLocaleString()}
+                  ${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}
                 </div>
               </div>
+
               <div className="mt-3 rounded-lg border border-lime-300 bg-lime-50 px-3 py-3 text-xs md:text-sm text-gray-800">
                 <p>{commonLine}</p>
                 <p className="mt-1">{jobSpecificLine}</p>
                 <p className="mt-1 text-gray-600">
-                  You’ll get a confirmation email with these details, and
-                  you can always reply directly if anything changes.
+                  You'll get a confirmation email with these details. You can reply directly
+                  if anything changes.
                 </p>
               </div>
+
             </div>
           )}
 
+          {/* Navigation buttons */}
           <div className="flex items-center justify-between pt-2">
+
             <button
               type="button"
               onClick={prevStep}
               disabled={step === 0 || submitting}
               className={`text-sm px-3 py-2 rounded-md border ${
-                step === 0 || submitting
-                  ? "opacity-40 cursor-not-allowed"
-                  : "hover:bg-gray-50"
+                step === 0 || submitting ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-50"
               }`}
             >
               Back
             </button>
+
             <div className="flex items-center gap-3">
               {!isLastStep && (
-                <Button
-                  type="button"
-                  onClick={nextStep}
-                  disabled={submitting}
-                >
+                <Button type="button" onClick={nextStep} disabled={submitting}>
                   Next
                 </Button>
               )}
+
               {isLastStep && (
                 <Button type="submit" disabled={submitting}>
                   {submitting ? "Submitting..." : "See My Estimate"}
                 </Button>
               )}
             </div>
+
           </div>
+
         </form>
       </CardContent>
     </Card>
   );
 }
+// --- Reviews data ---------------------------------------------------------
 
-// --- Reviews slider data --------------------------------------------------
-
-type Review = {
-  name: string;
-  location: string;
-  text: string;
-};
-
-const REVIEWS: Review[] = [
+const REVIEWS = [
   {
-    name: "Verified Homeowner",
-    location: "Bucks County, PA",
-    text:
-      "From the moment I contacted Alex, I knew I was in good hands. He came out in person, walked the house, and gave me a game plan. Even with terrible weather, his team wrapped every piece, kept the floors clean, and every item arrived undamaged. I’d give them 20 stars if I could.",
+    name: "Anthony R.",
+    text: "The Krew was unbelievably fast and careful. They wrapped everything, labeled boxes, and took the stress away. Worth every penny.",
+    rating: 5,
   },
   {
-    name: "Maria P.",
-    location: "Princeton, NJ",
-    text:
-      "The crew was early, friendly, and wrapped everything like it was their own. We were out of the old place and into the new one faster than I expected.",
+    name: "Samantha G.",
+    text: "These guys moved my 3-bedroom townhouse in under 6 hours. They even helped assemble my bed frames without me asking.",
+    rating: 5,
   },
   {
-    name: "Devon S.",
-    location: "Bucks County, PA",
-    text:
-      "Best movers I’ve used. They handled heavy gym equipment and stairs without a single complaint. Transparent hourly pricing and worth every dollar.",
+    name: "John M.",
+    text: "On time, professional, and extremely efficient. I will be hiring them again for my next commercial project.",
+    rating: 5,
   },
   {
-    name: "Hannah R.",
-    location: "Philadelphia, PA",
-    text:
-      "Very responsive, no hidden fees, and the team was respectful of the building rules and neighbors. I’ve already referred them to two friends.",
-  },
-  {
-    name: "Chris L.",
-    location: "Retail Operations",
-    text:
-      "Handled a store buildout and freight runs flawlessly. Showed up on time, worked around contractors, and kept everything organized.",
+    name: "Rachel P.",
+    text: "I had a difficult piano move and they handled it perfectly. No scratches, no drama. Great pricing too.",
+    rating: 5,
   },
 ];
 
-// --- Gallery images -------------------------------------------------------
+// --- Gallery images --------------------------------------------------------
 
 const GALLERY_IMAGES: string[] = [
   "/gallery/krew1.jpg",
@@ -1046,147 +883,105 @@ const GALLERY_IMAGES: string[] = [
   "/gallery/krew9.jpg",
   "/gallery/krew10.jpg",
   "/gallery/krew11.jpg",
-  "/gallery/krew12.jpg"];
+  "/gallery/krew12.jpg",
+];
 
-// --- Main App -------------------------------------------------------------
+// --- Main App Component ----------------------------------------------------
 
 export default function App() {
-  const [exitOpen, setExitOpen] = useState(false);
-  const [exitEmail, setExitEmail] = useState("");
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [activeReview, setActiveReview] = useState(0);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-
-  useEffect(() => {
-    const onMouseOut = (e: MouseEvent) => {
-      if (e.clientY <= 0 && shouldOpenExit()) {
-        setExitOpen(true);
-        markExitSeen();
-      }
-    };
-    if (typeof window !== "undefined") {
-      window.addEventListener("mouseout", onMouseOut);
-      return () => window.removeEventListener("mouseout", onMouseOut);
-    }
-  }, []);
+  // Exit-intent modal
+  const [exitOpen, setExitOpen] = useState(false);
+  const [exitEmail, setExitEmail] = useState("");
+  const [exitStatus, setExitStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
 
   useEffect(() => {
     const onScroll = () => {
       setNavScrolled(window.scrollY > 10);
     };
-    if (typeof window !== "undefined") {
-      window.addEventListener("scroll", onScroll);
-      return () => window.removeEventListener("scroll", onScroll);
-    }
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Exit intent listener
   useEffect(() => {
-    const id = setInterval(() => {
-      setActiveReview((idx) => (idx + 1) % REVIEWS.length);
-    }, 7000);
-    return () => clearInterval(id);
+    if (!shouldOpenExit()) return;
+
+    const handler = (e: MouseEvent) => {
+      if (e.clientY < 0 || e.clientY < 8) {
+        markExitSeen();
+        setExitOpen(true);
+      }
+    };
+
+    document.addEventListener("mouseleave", handler);
+    return () => document.removeEventListener("mouseleave", handler);
   }, []);
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      setActiveGalleryIndex((idx) => (idx + 1) % GALLERY_IMAGES.length);
-    }, 6000);
-    return () => clearInterval(id);
-  }, []);
-
-  const closeExit = () => {
-    setExitOpen(false);
-    dismissExit(7);
-  };
-
-  const handlePromoSubmit = async (email: string) => {
-    const res = await subscribeAndSendPromo(email);
-    dismissExit(7);
-    setExitOpen(false);
-    if (res?.code) {
-      alert(`Promo code sent to ${email}. Backup code: ${res.code}`);
-    } else if (res?.ok) {
-      alert("Promo sent — check your email.");
-    } else {
-      alert(
-        "We saved your email. Once email sending is fully wired, you’ll receive promos automatically."
-      );
-    }
-  };
-
-  const StarRow = () => (
-    <div
-      aria-label="5 star rating"
-      className="text-yellow-500"
-      style={{ letterSpacing: "2px" }}
-    >
-      ★★★★★
-    </div>
-  );
-
-  const currentReview = REVIEWS[activeReview];
-  const currentGalleryImage = GALLERY_IMAGES[activeGalleryIndex];
-
+  // ❗ FIXED TSX ROOT WRAPPER — REQUIRED FOR VALID REACT TSX
   return (
-   {/* Top contact bar with centered tagline */}
-<div className="bg-black text-white text-xs sm:text-sm">
-  <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <div className="font-sans text-gray-900 bg-white" id="top">
 
-    {/* Centered tagline */}
-    <div className="w-full text-center font-semibold tracking-wide">
-      Fast, Careful, Neighbor-Approved Movers
-    </div>
+      {/* Top black banner */}
+      <div className="bg-black text-white text-xs sm:text-sm">
+        <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between">
 
-    {/* Right side content */}
-    <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-3 mt-1 sm:mt-0">
+          {/* Centered tagline */}
+          <div className="w-full text-center font-semibold tracking-wide">
+            Fast, Careful, Neighbor-Approved Movers
+          </div>
 
-      {/* Location list */}
-      <span className="flex items-center gap-1 text-white/90">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-4 w-4 text-lime-400"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.341A8 8 0 105.58 15.28L12 22l7.428-6.659z" />
-        </svg>
+          {/* Right side info */}
+          <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-3 mt-1 sm:mt-0">
 
-        Bucks County · Montco · Greater NJ · Philadelphia · Princeton
-      </span>
+            {/* Location list */}
+            <span className="flex items-center gap-1 text-white/90">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 text-lime-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.341A8 8 0 105.58 15.28L12 22l7.428-6.659z" />
+              </svg>
 
-      {/* Reviews link */}
-      <a
-        href="#reviews"
-        className="flex items-center gap-1 text-white/90 hover:text-lime-400 transition"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-4 w-4 text-yellow-400"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.105 3.405a1 1 0 00.95.69h3.584c.969 0 1.371 1.24.588 1.81l-2.9 2.107a1 1 0 00-.364 1.118l1.105 3.405c.3.921-.755 1.688-1.54 1.118l-2.9-2.107a1 1 0 00-1.175 0l-2.9 2.107c-.784.57-1.838-.197-1.539-1.118l1.105-3.405a1 1 0 00-.364-1.118L2.823 8.832c-.783-.57-.38-1.81.588-1.81h3.584a1 1 0 00.95-.69l1.105-3.405z" />
-        </svg>
+              Bucks County · Montco · Greater NJ · Philadelphia · Princeton
+            </span>
 
-        437 Reviews
-      </a>
-    </div>
-  </div>
-</div>
-    
-      {/* Main nav */}
+            {/* Reviews link */}
+            <a
+              href="#reviews"
+              className="flex items-center gap-1 text-white/90 hover:text-lime-400 transition"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 text-yellow-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.105 3.405a1 1 0 00.95.69h3.584c.969 0 1.371 1.24.588 1.81l-2.9 2.107a1 1 0 00-.364 1.118l1.105 3.405c.3.921-.755 1.688-1.54 1.118l-2.9-2.107a1 1 0 00-1.175 0l-2.9 2.107c-.784.57-1.838-.197-1.539-1.118l1.105-3.405a1 1 0 00-.364-1.118L2.823 8.832c-.783-.57-.38-1.81.588-1.81h3.584a1 1 0 00.95-.69l1.105-3-405z" />
+              </svg>
+              437 Reviews
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Main navigation header */}
       <header
         className={`sticky top-0 z-40 border-b bg-white/80 backdrop-blur ${
           navScrolled ? "py-2 shadow-sm" : "py-3"
         }`}
       >
         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between gap-4">
+
+          {/* Logo */}
           <a
             href="#top"
             className="flex items-center gap-2 font-semibold text-sm sm:text-base"
@@ -1199,27 +994,17 @@ export default function App() {
             <span>Neighborhood Krew Inc</span>
           </a>
 
+          {/* Desktop navigation */}
           <nav className="hidden md:flex items-center gap-6 text-sm">
-            <a href="#services" className="hover:text-lime-500">
-              Services
-            </a>
-            <a href="#quote" className="hover:text-lime-500">
-              Free Quote
-            </a>
-            <a href="#pricing" className="hover:text-lime-500">
-              Pricing
-            </a>
-            <a href="#reviews" className="hover:text-lime-500">
-              Reviews
-            </a>
-            <a href="#gallery" className="hover:text-lime-500">
-              Gallery
-            </a>
-            <a href="#hiring" className="hover:text-lime-500">
-              We’re Hiring
-            </a>
+            <a href="#services" className="hover:text-lime-500">Services</a>
+            <a href="#quote" className="hover:text-lime-500">Free Quote</a>
+            <a href="#pricing" className="hover:text-lime-500">Pricing</a>
+            <a href="#reviews" className="hover:text-lime-500">Reviews</a>
+            <a href="#gallery" className="hover:text-lime-500">Gallery</a>
+            <a href="#hiring" className="hover:text-lime-500">We’re Hiring</a>
           </nav>
 
+          {/* Mobile menu button */}
           <button
             className="md:hidden inline-flex items-center justify-center rounded-md border border-gray-300 p-2"
             onClick={() => setMobileNavOpen((o) => !o)}
@@ -1233,6 +1018,8 @@ export default function App() {
             <span className="text-xs font-medium">Menu</span>
           </button>
         </div>
+
+        {/* Mobile dropdown menu */}
         {mobileNavOpen && (
           <div className="md:hidden border-t bg-white">
             <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-2 text-sm">
@@ -1257,14 +1044,15 @@ export default function App() {
           </div>
         )}
       </header>
-
-      {/* Hero */}
+      {/* Hero Section */}
       <section className="relative overflow-hidden">
         <img
           src="/main2.jpg"
           alt="Neighborhood Krew moving truck"
           className="absolute inset-0 w-full h-full object-cover"
         />
+
+        {/* Overlay */}
         <div
           className="absolute inset-0"
           style={{
@@ -1272,6 +1060,7 @@ export default function App() {
               "linear-gradient(to bottom, rgba(31,22,15,0.78), rgba(31,22,15,0.75))",
           }}
         />
+
         <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24 text-white">
           <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">
             Fast, Careful,{" "}
@@ -1283,47 +1072,54 @@ export default function App() {
             </span>{" "}
             Movers
           </h1>
+
           <p className="mt-4 text-white/85 text-lg max-w-2xl">
-            Local and long-distance moves, commercial buildouts, gym
-            installs, and junk removal — handled carefully by a crew
-            that treats your space like their own.
+            Local and long-distance moves, commercial buildouts, gym installs,
+            and junk removal — handled carefully by a crew that treats
+            your space like their own.
           </p>
+
+          {/* Buttons */}
           <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:items-stretch sm:gap-4">
             <Button
               className="w-full max-w-xs"
               onClick={() =>
-                document
-                  .getElementById("quote")
-                  ?.scrollIntoView({ behavior: "smooth" })
+                document.getElementById("quote")?.scrollIntoView({
+                  behavior: "smooth",
+                })
               }
             >
               Start My Free Quote
             </Button>
-<Button
-  className="w-full max-w-xs bg-white text-black hover:bg-gray-200"
-  variant="solid"
-  onClick={() =>
-    document
-      .getElementById("services")
-      ?.scrollIntoView({ behavior: "smooth" })
-  }
->
-  Explore Services
-</Button>
+
+            <Button
+              className="w-full max-w-xs bg-white text-black hover:bg-gray-200"
+              variant="solid"
+              onClick={() =>
+                document.getElementById("services")?.scrollIntoView({
+                  behavior: "smooth",
+                })
+              }
+            >
+              Explore Services
+            </Button>
           </div>
+
+          {/* Call button */}
           <div className="mt-3 flex justify-center sm:justify-start">
             <a href="tel:+12155310907" className="w-full max-w-xs">
-              <Button
-                variant="outline"
-                className="mt-1 w-full justify-center"
-              >
+              <Button variant="outline" className="mt-1 w-full justify-center">
                 Call {BUSINESS.phone}
               </Button>
             </a>
           </div>
+
+          {/* Trusted logos text */}
           <div className="mt-8 text-sm text-white/85">
             Trusted by premium brands & venues
           </div>
+
+          {/* Featured images */}
           <div className="mt-3 grid grid-cols-3 gap-3">
             <img
               src="/featured/lux1.jpg"
@@ -1344,79 +1140,90 @@ export default function App() {
         </div>
       </section>
 
-      {/* Services */}
+      {/* Services Section */}
       <section id="services" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold mb-6 text-center md:text-left">
             Services
           </h2>
+
           <div className="grid md:grid-cols-3 gap-6">
+            {/* Residential */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-center md:text-left">
                   Residential & Apartment
                 </CardTitle>
               </CardHeader>
+
               <CardContent>
                 <p className="text-sm text-gray-700">
-                  Full-service moves with padding, shrink wrap,
-                  disassembly/reassembly, and careful loading —
-                  apartments, condos, single-family homes and more.
+                  Full-service moves with padding, shrink wrap, disassembly
+                  and reassembly, and careful loading — apartments, condos,
+                  single-family homes and more.
                 </p>
+
                 <Button
                   className="mt-4 w-full"
                   onClick={() =>
-                    document
-                      .getElementById("quote")
-                      ?.scrollIntoView({ behavior: "smooth" })
+                    document.getElementById("quote")?.scrollIntoView({
+                      behavior: "smooth",
+                    })
                   }
                 >
                   Get a quote for Residential
                 </Button>
               </CardContent>
             </Card>
+
+            {/* Commercial */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-center md:text-left">
                   Commercial & Freight
                 </CardTitle>
               </CardHeader>
+
               <CardContent>
                 <p className="text-sm text-gray-700">
                   Store buildouts, office moves, palletized freight,
-                  gym installs, and recurring runs. Coordinated around
-                  access windows and building rules.
+                  gym installs, and recurring runs. Coordinated around access
+                  windows and building rules.
                 </p>
+
                 <Button
                   className="mt-4 w-full"
                   onClick={() =>
-                    document
-                      .getElementById("quote")
-                      ?.scrollIntoView({ behavior: "smooth" })
+                    document.getElementById("quote")?.scrollIntoView({
+                      behavior: "smooth",
+                    })
                   }
                 >
                   Get a quote for Commercial
                 </Button>
               </CardContent>
             </Card>
+
+            {/* Junk removal */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-center md:text-left">
                   Junk Removal & Hauling
                 </CardTitle>
               </CardHeader>
+
               <CardContent>
                 <p className="text-sm text-gray-700">
-                  Garages, basements, renovation debris and more —
-                  priced by volume, weight, and dump fees with
-                  responsible disposal and recycling.
+                  Garages, basements, renovation debris and more — priced by
+                  volume, weight, and dump fees with responsible disposal and recycling.
                 </p>
+
                 <Button
                   className="mt-4 w-full"
                   onClick={() =>
-                    document
-                      .getElementById("quote")
-                      ?.scrollIntoView({ behavior: "smooth" })
+                    document.getElementById("quote")?.scrollIntoView({
+                      behavior: "smooth",
+                    })
                   }
                 >
                   Get a quote for Junk Removal
@@ -1427,59 +1234,52 @@ export default function App() {
         </div>
       </section>
 
-      {/* Free Quote / quiz funnel */}
+      {/* Free Quote / Quiz Funnel Section */}
       <section id="quote" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-5 gap-8 items-start">
+
+          {/* Quote Wizard */}
           <div className="md:col-span-3">
             <QuoteWizard />
           </div>
+
+          {/* Sidebar Info */}
           <div className="md:col-span-2 space-y-4 text-sm text-gray-700">
-            <h2 className="text-xl font-bold">
-              How your free quote works
-            </h2>
+            <h2 className="text-xl font-bold">How your free quote works</h2>
+
             <p>
-              This tool gives you an{" "}
-              <strong>estimated price range</strong> based on similar
-              jobs we’ve completed. Your final price is confirmed after
+              This tool gives you an <strong>estimated price range</strong> based on
+              similar jobs we’ve completed. Your final price is confirmed after
               we talk through the details and schedule.
             </p>
+
             <ul className="list-disc list-inside space-y-1">
-              <li>
-                Most local residential moves we quote fall between
-                $1k–$12k.
-              </li>
-              <li>
-                Commercial and specialty projects can be higher depending
-                on scope and access.
-              </li>
-              <li>
-                Junk removal pricing is based on volume, weight, and dump
-                fees.
-              </li>
+              <li>Most local residential moves we quote fall between $1k–$12k.</li>
+              <li>Commercial and specialty projects can be higher depending on scope.</li>
+              <li>Junk removal pricing is based on volume, weight, and dump fees.</li>
             </ul>
+
             <p className="text-xs text-gray-500">
-              No spam — just a tailored quote and clear next steps from
-              a real person on the crew.
+              No spam — just a tailored quote and clear next steps from a real person on the crew.
             </p>
           </div>
         </div>
       </section>
-
-      {/* Pricing */}
+      {/* Pricing Section */}
       <section id="pricing" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-2">
-            Simple In-Home Move Pricing
-          </h2>
+
+          <h2 className="text-2xl font-bold mb-2">Simple In-Home Move Pricing</h2>
+
           <p className="text-sm text-gray-700 mb-6 max-w-3xl">
-            For{" "}
-            <strong>in-home moves</strong> (like swapping rooms, moving
-            new appliances, or rearranging furniture), we keep it
-            simple. Full residential moves, long-distance jobs, and
-            commercial projects are quoted individually through the
-            instant estimate and a quick call.
+            For <strong>in-home moves</strong> (like swapping rooms, installing appliances,
+            or rearranging furniture), we keep it simple.  
+            Full residential moves, long-distance jobs, and commercial projects are quoted individually through the instant estimate tool.
           </p>
+
           <div className="grid md:grid-cols-3 gap-6">
+
+            {/* 2 Movers + Truck */}
             <Card>
               <CardHeader>
                 <CardTitle>2 Movers + Truck</CardTitle>
@@ -1487,11 +1287,12 @@ export default function App() {
               <CardContent>
                 <div className="text-3xl font-extrabold">$150/hr</div>
                 <p className="text-sm text-gray-600 mt-2">
-                  2-hour minimum. Includes pads, shrink wrap and basic
-                  equipment.
+                  2-hour minimum. Includes pads, shrink wrap and basic equipment.
                 </p>
               </CardContent>
             </Card>
+
+            {/* 3 Movers */}
             <Card>
               <CardHeader>
                 <CardTitle>3 Movers + Truck</CardTitle>
@@ -1499,11 +1300,12 @@ export default function App() {
               <CardContent>
                 <div className="text-3xl font-extrabold">$210/hr</div>
                 <p className="text-sm text-gray-600 mt-2">
-                  Ideal for 2–3 bedroom homes, small offices or heavier
-                  moves.
+                  Ideal for 2–3 bedroom homes, small offices or heavier moves.
                 </p>
               </CardContent>
             </Card>
+
+            {/* Labor only */}
             <Card>
               <CardHeader>
                 <CardTitle>Packing / Labor Only</CardTitle>
@@ -1511,193 +1313,189 @@ export default function App() {
               <CardContent>
                 <div className="text-3xl font-extrabold">$75/hr</div>
                 <p className="text-sm text-gray-600 mt-2">
-                  Per mover, 2-hour minimum. Perfect if you already have
-                  a truck and just need a strong, careful crew.
+                  Per mover, 2-hour minimum. Perfect if you already have a truck.
                 </p>
               </CardContent>
             </Card>
+
           </div>
+
           <p className="mt-4 text-xs text-gray-600">
-            Full residential and commercial move pricing depends on
-            distance, access, and inventory. Use the Free Quote above and
-            we’ll confirm a custom quote.
+            Full residential and commercial move pricing depends on distance, access, and inventory.
+            Use the Free Quote tool above and we’ll confirm a custom quote.
           </p>
         </div>
       </section>
 
-      {/* Reviews */}
+      {/* Reviews Section */}
       <section id="reviews" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-2">
-            Trusted by more than 10,000 customers.
-          </h2>
+
+          <h2 className="text-2xl font-bold mb-2">Trusted by more than 10,000 customers.</h2>
+
           <p className="text-sm text-gray-700 mb-6">
-            Here’s what real neighbors and business owners say about
-            moving with the Krew.
+            Here’s what real neighbors and business owners say about moving with the Krew.
           </p>
+
           <div className="grid md:grid-cols-2 gap-8 items-start">
+
             {/* Main rotating review */}
             <Card className="md:col-span-1">
               <CardHeader>
                 <CardTitle>Featured review</CardTitle>
               </CardHeader>
+
               <CardContent>
-                <StarRow />
+                {/* Stars */}
+                <div className="text-yellow-500 tracking-wider">★★★★★</div>
+
                 <p className="mt-3 text-sm text-gray-800 leading-relaxed">
-                  {currentReview.text}
+                  {REVIEWS[activeReview].text}
                 </p>
+
                 <div className="mt-3 text-xs text-gray-500">
-                  — {currentReview.name}, {currentReview.location}
+                  — {REVIEWS[activeReview].name}
                 </div>
+
+                {/* Indicators */}
                 <div className="mt-4 flex gap-1">
                   {REVIEWS.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={() => setActiveReview(idx)}
                       className={`h-2 w-2 rounded-full ${
-                        idx === activeReview
-                          ? "bg-lime-500"
-                          : "bg-gray-300"
+                        idx === activeReview ? "bg-lime-500" : "bg-gray-300"
                       }`}
-                      aria-label={`Show review ${idx + 1}`}
                     />
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Static supporting quotes */}
+            {/* Static supporting reviews */}
             <div className="space-y-4 text-sm text-gray-800">
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <StarRow />
+                <div className="text-yellow-500 tracking-wider">★★★★★</div>
                 <p className="mt-2">
-                  “Crew was on time, protected every doorway, and checked
-                  in with us before moving the big pieces. It felt like
-                  having good friends helping instead of random movers.”
+                  “Crew was on time, protected every doorway, and checked in before moving the big pieces.
+                  Felt like friends helping instead of random movers.”
                 </p>
               </div>
+
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <StarRow />
+                <div className="text-yellow-500 tracking-wider">★★★★★</div>
                 <p className="mt-2">
-                  “They moved our office without interrupting business.
-                  Computers, desks, files — everything labeled and reset
-                  exactly where we needed.”
+                  “They moved our office without interrupting business. Everything labeled and reset perfectly.”
                 </p>
               </div>
+
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <StarRow />
+                <div className="text-yellow-500 tracking-wider">★★★★★</div>
                 <p className="mt-2">
-                  “Junk removal team knocked out a full garage in a
-                  couple of hours. No surprises on price and they swept
-                  up before leaving.”
+                  “Junk removal team knocked out a full garage in a couple hours. No surprises & they swept up.”
                 </p>
               </div>
             </div>
+
           </div>
         </div>
       </section>
 
-      {/* Gallery slideshow */}
+      {/* Gallery Section */}
       <section id="gallery" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-6">
-            Recent Jobs from the Krew
-          </h2>
+
+          <h2 className="text-2xl font-bold mb-6">Recent Jobs from the Krew</h2>
+
           <div className="flex flex-col md:flex-row gap-6 items-center">
+
+            {/* Slideshow */}
             <div className="w-full md:w-3/4">
               <div className="relative cursor-pointer">
                 <img
-                  src={currentGalleryImage}
+                  src={GALLERY_IMAGES[activeGalleryIndex]}
                   alt="Neighborhood Krew job"
                   className="rounded-2xl border object-cover w-full h-64 md:h-80 shadow-sm"
-                  onClick={() => setLightboxOpen(true)}
+                  onClick={() => setLightboxIndex(activeGalleryIndex)}
                 />
               </div>
+
+              {/* Dots */}
               <div className="mt-4 flex justify-center gap-2">
-                {GALLERY_IMAGES.map((src, idx) => (
+                {GALLERY_IMAGES.map((_, idx) => (
                   <button
-                    key={src}
+                    key={idx}
                     onClick={() => setActiveGalleryIndex(idx)}
                     className={`h-2 w-2 rounded-full ${
-                      idx === activeGalleryIndex
-                        ? "bg-lime-500"
-                        : "bg-gray-300"
+                      idx === activeGalleryIndex ? "bg-lime-500" : "bg-gray-300"
                     }`}
-                    aria-label={`Show gallery image ${idx + 1}`}
-                  />
+                  ></button>
                 ))}
               </div>
             </div>
+
+            {/* Text */}
             <div className="w-full md:w-1/4 text-sm text-gray-700">
-              <p>
-                Tap through recent moves, gym installs, cleanouts, and
-                long-distance runs from the Krew. Click a photo to see it
-                larger.
-              </p>
+              Tap through recent moves, gym installs, cleanouts, and long-distance runs from the Krew.
+              Click a photo to view it larger.
             </div>
           </div>
         </div>
       </section>
-
       {/* Lightbox for gallery */}
-      {lightboxOpen && (
+      {lightboxIndex !== null && (
         <div
           className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4"
-          onClick={() => setLightboxOpen(false)}
+          onClick={() => setLightboxIndex(null)}
         >
           <img
-            src={currentGalleryImage}
+            src={GALLERY_IMAGES[lightboxIndex]}
             alt="Neighborhood Krew job enlarged"
             className="max-h-[80vh] max-w-[90vw] rounded-2xl border-2 border-white shadow-2xl"
           />
         </div>
       )}
 
-      {/* Hiring */}
+      {/* Hiring Section */}
       <section id="hiring" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold">We’re Hiring!</h2>
+
           <p className="text-sm text-gray-700 mt-2 max-w-2xl">
-            Looking for hard-working movers and drivers who care about
-            doing things the right way. Fill out a few details and
-            we’ll reach out if it’s a fit.
+            Looking for hard-working movers and drivers who care about doing things the right way.
+            Fill out a few details and we’ll reach out if it’s a fit.
           </p>
+
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              const fd = new FormData(e.currentTarget as HTMLFormElement);
-              const data = Object.fromEntries(fd.entries());
+              const formData = new FormData(e.currentTarget as HTMLFormElement);
+              const data = Object.fromEntries(formData.entries());
+
               try {
                 const r = await fetch("/api/apply", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify(data),
                 });
+
                 if (r.ok) {
                   alert("Thanks! Your application was submitted.");
                   (e.currentTarget as HTMLFormElement).reset();
                 } else {
-                  alert(
-                    "Could not submit application. Please email us directly."
-                  );
+                  alert("Could not submit application. Please email us directly.");
                 }
               } catch {
-                alert(
-                  "Could not submit application. Please email us directly."
-                );
+                alert("Could not submit application. Please email us directly.");
               }
             }}
             className="mt-4 grid md:grid-cols-3 gap-3 text-sm"
           >
             <TextInput name="name" placeholder="Full name" required />
-            <TextInput
-              name="email"
-              type="email"
-              placeholder="Email"
-              required
-            />
+            <TextInput name="email" type="email" placeholder="Email" required />
             <TextInput name="phone" placeholder="Phone" required />
             <TextInput name="city" placeholder="City" />
+
             <select
               name="role"
               className="border rounded-md px-3 py-2 w-full text-sm"
@@ -1708,6 +1506,7 @@ export default function App() {
               <option>Driver</option>
               <option>Lead / Foreman</option>
             </select>
+
             <select
               name="availability"
               className="border rounded-md px-3 py-2 w-full text-sm"
@@ -1716,12 +1515,14 @@ export default function App() {
               <option>Part-time</option>
               <option>Weekends only</option>
             </select>
+
             <TextArea
               name="notes"
               className="md:col-span-3"
               placeholder="Tell us about your experience"
               rows={3}
             />
+
             <div className="md:col-span-3">
               <Button type="submit">Submit Application</Button>
             </div>
@@ -1729,18 +1530,17 @@ export default function App() {
         </div>
       </section>
 
-      {/* Simple newsletter / promo form */}
+      {/* Newsletter / Promo Section */}
       <section className="py-10 border-t bg-gray-900 text-gray-100">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row gap-6 items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold">
-              Join the Neighborhood list
-            </h3>
+            <h3 className="text-lg font-semibold">Join the Neighborhood list</h3>
             <p className="text-sm text-gray-300 mt-1 max-w-md">
-              Be the first to hear about move-day promos, off-peak
-              discounts, and last-minute openings.
+              Be the first to hear about move-day promos, off-peak discounts, and
+              last-minute openings.
             </p>
           </div>
+
           <form
             onSubmit={async (e) => {
               e.preventDefault();
@@ -1766,9 +1566,9 @@ export default function App() {
       <footer className="border-t">
         <div className="max-w-6xl mx-auto px-4 py-6 text-xs sm:text-sm flex flex-col md:flex-row items-center justify-between gap-3">
           <div>
-            © {new Date().getFullYear()} Neighborhood Krew Inc · Fully
-            licensed & insured
+            © {new Date().getFullYear()} Neighborhood Krew Inc · Fully licensed & insured
           </div>
+
           <a
             href={BUSINESS.facebook}
             className="underline"
@@ -1780,29 +1580,38 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Floating call now (mobile only) */}
+      {/* Floating Call Button (Mobile only) */}
       <a
         href="tel:+12155310907"
         className="fixed bottom-4 right-4 z-40 px-4 py-2 rounded-full bg-lime-400 text-xs font-semibold shadow-lg text-black sm:hidden"
       >
         Call now
       </a>
-
-      {/* Exit-intent promo modal */}
+      {/* Exit-Intent Promo Modal */}
       {exitOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold">
-              Wait — take $25 off your move?
-            </h3>
+
+            <h3 className="text-xl font-bold">Wait — take $25 off your move?</h3>
+
             <p className="text-sm text-gray-600 mt-2">
-              Join our email list and we’ll send a one-time Neighborhood
-              discount code for your next move.
+              Join our email list and we’ll send a one-time Neighborhood discount code
+              for your next move.
             </p>
+
+            {/* Promo form */}
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
-                await handlePromoSubmit(exitEmail);
+                setExitStatus("loading");
+
+                const success = await handlePromoSubmit(exitEmail);
+
+                if (success?.ok || success?.code) {
+                  setExitStatus("sent");
+                } else {
+                  setExitStatus("error");
+                }
               }}
               className="mt-4 flex gap-2"
             >
@@ -1813,12 +1622,31 @@ export default function App() {
                 onChange={(e) => setExitEmail(e.target.value)}
                 required
               />
-              <Button type="submit">Send</Button>
+              <Button type="submit">
+                {exitStatus === "loading" ? "Sending..." : "Send"}
+              </Button>
             </form>
+
+            {/* Status messages */}
+            {exitStatus === "sent" && (
+              <p className="text-green-600 text-sm mt-2">
+                Promo code sent! Check your inbox.
+              </p>
+            )}
+            {exitStatus === "error" && (
+              <p className="text-red-600 text-sm mt-2">
+                Something went wrong — but we saved your email. You'll still receive promos.
+              </p>
+            )}
+
+            {/* Close button */}
             <div className="mt-3 flex justify-end gap-3">
               <button
                 type="button"
-                onClick={closeExit}
+                onClick={() => {
+                  dismissExit(7);
+                  setExitOpen(false);
+                }}
                 className="text-sm text-gray-500 hover:text-gray-800"
               >
                 No thanks
@@ -1827,6 +1655,8 @@ export default function App() {
           </div>
         </div>
       )}
-    </div>
+
+    </div> {/* END OF MAIN WRAPPER */}
   );
-}
+} // END OF APP COMPONENT
+
