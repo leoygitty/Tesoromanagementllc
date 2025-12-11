@@ -926,53 +926,44 @@ export default function App() {
   return (
     <div className="font-sans text-gray-900 bg-white" id="top">
 
-      {/* Top Black Banner */}
+     {/* Top Black Banner — OPTION A (Minimal) */}
 <div className="bg-black text-white text-xs sm:text-sm">
   <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between">
 
-    {/* Center tagline */}
-    <div className="w-full text-center font-semibold tracking-wide">
-      Fast, Careful, Neighbor-Approved Movers
-    </div>
-
-    {/* Right side: locations + reviews */}
-    <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-3 mt-1 sm:mt-0">
-
-      {/* Location list */}
-      <span className="flex items-center gap-1 text-white/90">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-4 w-4 text-lime-400"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.341A8 8 0 105.58 15.28L12 22l7.428-6.659z" />
-        </svg>
-
-        Bucks County · Montco · Greater NJ · Philadelphia · Princeton
-      </span>
-
-      {/* Reviews */}
-      <a
-        href="#reviews"
-        className="flex items-center gap-1 text-white/90 hover:text-lime-400 transition"
+    {/* Location list */}
+    <div className="flex items-center gap-1 text-white/90">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-4 w-4 text-lime-400"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth="2"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-4 w-4 text-yellow-400"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.105 3.405a1 1 0 00.95.69h3.584c.969 0 1.371 1.24.588 1.81l-2.9 2.107a1 1 0 00-.364 1.118l1.105 3.405c.3.921-.755 1.688-1.54 1.118l-2.9-2.107a1 1 0 00-1.175 0l-2.9 2.107c-.784.57-1.838-.197-1.539-1.118l1.105-3.405a1 1 0 00-.364-1.118L2.823 8.832c-.783-.57-.38-1.81.588-1.81h3.584a1 1 0 00.95-.69l1.105-3.405z" />
-        </svg>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.341A8 8 0 105.58 15.28L12 22l7.428-6.659z" />
+      </svg>
 
-        437 Reviews
-      </a>
-
+      Bucks County · Montco · Greater NJ · Philadelphia · Princeton
     </div>
+
+    {/* Reviews */}
+    <a
+      href="#reviews"
+      className="flex items-center gap-1 text-white/90 hover:text-lime-400 transition mt-1 sm:mt-0"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-4 w-4 text-yellow-400"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.105 3.405a1 1 0 00.95.69h3.584c.969 0 1.371 1.24.588 1.81l-2.9 2.107a1 1 0 00-.364 1.118l1.105 3.405c.3.921-.755 1.688-1.54 1.118l-2.9-2.107a1 1 0 00-1.175 0l-2.9 2.107c-.784.57-1.838-.197-1.539-1.118l1.105-3.405a1 1 0 00-.364-1.118L2.823 8.832c-.783-.57-.38-1.81.588-1.81h3.584a1 1 0 00.95-.69l1.105-3.405z" />
+      </svg>
+
+      437 Reviews
+    </a>
+
   </div>
 </div>
 
