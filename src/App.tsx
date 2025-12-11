@@ -1544,7 +1544,7 @@ export default function App() {
       </a>
 
       {/* Exit-Intent Promo Modal */}
-      {exitOpen && (
+            {exitOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full p-6">
 
@@ -1583,7 +1583,6 @@ export default function App() {
               </Button>
             </form>
 
-            {/* Status messages */}
             {exitStatus === "sent" && (
               <p className="text-green-600 text-sm mt-2">
                 Promo code sent! Check your inbox.
@@ -1595,7 +1594,6 @@ export default function App() {
               </p>
             )}
 
-            {/* Close button */}
             <div className="mt-3 flex justify-end gap-3">
               <button
                 type="button"
@@ -1608,33 +1606,11 @@ export default function App() {
                 No thanks
               </button>
             </div>
+
           </div>
         </div>
       )}
 
     </div> 
   );
-} // END OF APP COMPONENT
-// --- END OF FILE SAFETY PADDING ---
-// Vercel sometimes fails if a TSX file ends too abruptly after a component.
-// Adding harmless trailing exports + comments prevents parse edge-case issues.
-
-export const __NK_END_PADDING__ = true;
-
-// Nothing below this line is executed — it only ensures the file ends cleanly.
-// ---------------------------------------------------------------
-// ---------------------------------------------------------------
-// ---------------------------------------------------------------
-// ================================================================
-// END OF App.tsx
-// Extra padding lines intentionally added to avoid Vercel esbuild
-// edge-case parsing bugs when the file ends immediately after JSX.
-// ================================================================
-
-// These exports do nothing but ensure the file has a clean syntactic end.
-export const __NK_FILE_COMPLETE__ = true;
-export default App;
-
-// ---------------------------------------------------------------
-// ------------------------ END OF FILE --------------------------
-// ---------------------------------------------------------------
+}
