@@ -835,7 +835,8 @@ export function QuoteWizard() {
     )}
   </div>
 
-</div>
+      </CardContent>
+    </Card>
 
 export default function App() {
   const [navScrolled, setNavScrolled] = useState(false);
