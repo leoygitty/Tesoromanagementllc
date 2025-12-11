@@ -887,7 +887,19 @@ const GALLERY_IMAGES: string[] = [
 ];
 
 // --- Main App Component ----------------------------------------------------
-
+async function handlePromoSubmit(email: string) {
+  try {
+    const res = await fetch("/api/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json().catch(() => ({}));
+    return data;
+  } catch {
+    return { ok: false };
+  }
+}
 export default function App() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
