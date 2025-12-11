@@ -1614,3 +1614,11 @@ export default function App() {
     </div> 
   );
 }
+// --- SAFE FILE END (Required for Vercel parsing -- do not remove) ---
+export const __NK_FILE_END__ = true;
+export default App;
+
+// Padding (Vercel parser bug workaround)
+export const __NK_PADDING_1__ = 1;
+export const __NK_PADDING_2__ = 2;
+export const __NK_PADDING_3__ = 3;
