@@ -143,7 +143,6 @@ function TextArea({ className = "", ...rest }: TextareaProps) {
     />
   );
 }
-
 // --- Quote Wizard / Quiz Funnel -----------------------------------------
 
 type JobType = "residential" | "commercial" | "junk";
@@ -232,6 +231,7 @@ function computeEstimate(state: WizardState): Estimate {
   return { low: baseLow, high: baseHigh };
 }
 
+// Encode files to base64 for API
 async function filesToBase64List(files: File[]) {
   const encodeOne = (file: File) =>
     new Promise<{ name: string; type: string; size: number; base64: string }>(
@@ -249,6 +249,7 @@ async function filesToBase64List(files: File[]) {
 
   return Promise.all(files.map((f) => encodeOne(f)));
 }
+
 export function QuoteWizard() {
   const [step, setStep] = useState(0);
   const [state, setState] = useState<WizardState>({
@@ -418,7 +419,6 @@ export function QuoteWizard() {
 
   const commonLine =
     "This range is based on similar jobs we’ve completed in the area and is meant as a starting point, not a final price.";
-
   return (
     <Card className="shadow-lg border-gray-900">
       <CardHeader>
@@ -468,6 +468,7 @@ export function QuoteWizard() {
               </p>
             </div>
           )}
+
           {/* Step 1 – Residential */}
           {step === 1 && state.jobType === "residential" && (
             <div className="space-y-4">
@@ -717,137 +718,185 @@ export function QuoteWizard() {
 
             </div>
           )}
-          {/* Step 3 – Contact Info */}
-          {step === 3 && (
+
+          {/* Contact step */}
+          {(step === 2 && state.jobType === "junk") ||
+          (step === 3 && state.jobType !== "junk") ? (
             <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
-              <div>
-                <label className="block text-sm font-medium">Your name</label>
-                <TextInput
-                  placeholder="John Doe"
-                  value={state.name}
-                  onChange={(e) => setState((s) => ({ ...s, name: e.target.value }))}
-                  required
-                />
+                <div>
+                  <label className="block text-sm font-medium">Full name</label>
+                  <TextInput
+                    value={state.name}
+                    onChange={(e) => setState((s) => ({ ...s, name: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium">Phone</label>
+                  <TextInput
+                    value={state.phone}
+                    onChange={(e) => setState((s) => ({ ...s, phone: e.target.value }))}
+                  />
+                </div>
+
               </div>
 
               <div>
-                <label className="block text-sm font-medium">Phone</label>
-                <TextInput
-                  placeholder="(555) 123-4567"
-                  value={state.phone}
-                  onChange={(e) => setState((s) => ({ ...s, phone: e.target.value }))}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium">Email</label>
+                <label className="block text-sm font-medium">Email address</label>
                 <TextInput
                   type="email"
-                  placeholder="you@email.com"
                   value={state.email}
                   onChange={(e) => setState((s) => ({ ...s, email: e.target.value }))}
                   required
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium">Upload photos (optional)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoChange}
+                  className="block w-full text-sm text-gray-700 
+                  file:mr-3 file:py-1.5 file:px-3 file:rounded-md 
+                  file:border-0 file:text-sm file:font-medium 
+                  file:bg-lime-100 file:text-gray-900 
+                  hover:file:bg-lime-200"
+                />
+
+                <p className="text-xs text-gray-500 mt-1">
+                  Photos help us give a tighter quote. They’re attached privately so the
+                  crew can review them before calling you back.
+                </p>
+              </div>
+
+            </div>
+          ) : null}
+
+          {/* Error message */}
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-md px-3 py-2">
+              {error}
             </div>
           )}
 
-          {/* Step buttons */}
-          <div className="mt-6 flex justify-between">
-            {step > 0 ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setStep((s) => s - 1)}
-              >
-                Back
-              </Button>
-            ) : (
-              <span />
-            )}
+          {/* Estimate preview */}
+          {submitted && estimate && (
+            <div className="mt-2">
 
-            {step < 3 ? (
-              <Button
-                type="button"
-                onClick={() => setStep((s) => s + 1)}
-              >
-                Next
-              </Button>
-            ) : (
-              <Button type="submit">Get My Estimate</Button>
-            )}
+              <div className="animate-bounce rounded-2xl border-2 border-black bg-lime-400 px-4 py-3 text-center shadow-md">
+                <div className="text-xs font-semibold uppercase tracking-wide text-black/80">
+                  Your estimated price range
+                </div>
+                <div className="mt-1 text-3xl md:text-4xl font-extrabold text-black">
+                  ${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}
+                </div>
+              </div>
+
+              <div className="mt-3 rounded-lg border border-lime-300 bg-lime-50 px-3 py-3 text-xs md:text-sm text-gray-800">
+                <p>{commonLine}</p>
+                <p className="mt-1">{jobSpecificLine}</p>
+                <p className="mt-1 text-gray-600">
+                  You'll get a confirmation email with these details. You can reply directly
+                  if anything changes.
+                </p>
+              </div>
+
+            </div>
+          )}
+
+          {/* Navigation buttons */}
+          <div className="flex items-center justify-between pt-2">
+
+            <button
+              type="button"
+              onClick={prevStep}
+              disabled={step === 0 || submitting}
+              className={`text-sm px-3 py-2 rounded-md border ${
+                step === 0 || submitting ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-50"
+              }`}
+            >
+              Back
+            </button>
+
+            <div className="flex items-center gap-3">
+              {!isLastStep && (
+                <Button type="button" onClick={nextStep} disabled={submitting}>
+                  Next
+                </Button>
+              )}
+
+              {isLastStep && (
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? "Submitting..." : "See My Estimate"}
+                </Button>
+              )}
+            </div>
+
           </div>
+
         </form>
+      </CardContent>
+    </Card>
+  );
+}
+// --- Reviews data ---------------------------------------------------------
 
-        {/* Results */}
-     {submitted && estimate && (
-  <div className="mt-2">
+const REVIEWS = [
+  {
+    name: "Anthony R.",
+    text: "The Krew was unbelievably fast and careful. They wrapped everything, labeled boxes, and took the stress away. Worth every penny.",
+    rating: 5,
+  },
+  {
+    name: "Samantha G.",
+    text: "These guys moved my 3-bedroom townhouse in under 6 hours. They even helped assemble my bed frames without me asking.",
+    rating: 5,
+  },
+  {
+    name: "John M.",
+    text: "On time, professional, and extremely efficient. I will be hiring them again for my next commercial project.",
+    rating: 5,
+  },
+  {
+    name: "Rachel P.",
+    text: "I had a difficult piano move and they handled it perfectly. No scratches, no drama. Great pricing too.",
+    rating: 5,
+  },
+];
 
-    <div className="animate-bounce rounded-2xl border-2 border-black bg-lime-400 px-4 py-3 text-center shadow-md">
-      <div className="text-xs font-semibold uppercase tracking-wide text-black/80">
-        Your estimated price range
-      </div>
-      <div className="mt-1 text-3xl md:text-4xl font-extrabold text-black">
-        ${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}
-      </div>
-    </div>
+// --- Gallery images --------------------------------------------------------
 
-    <div className="mt-3 rounded-lg border border-lime-300 bg-lime-50 px-3 py-3 text-xs md:text-sm text-gray-800">
-      <p>{commonLine}</p>
-      <p className="mt-1">{jobSpecificLine}</p>
-      <p className="mt-1 text-gray-600">
-        You'll get a confirmation email with these details. You can reply directly
-        if anything changes.
-      </p>
-    </div>
+const GALLERY_IMAGES: string[] = [
+  "/gallery/krew1.jpg",
+  "/gallery/krew2.jpg",
+  "/gallery/krew3.jpg",
+  "/gallery/krew4.jpg",
+  "/gallery/krew5.jpg",
+  "/gallery/krew6.jpg",
+  "/gallery/krew7.jpg",
+  "/gallery/krew8.jpg",
+  "/gallery/krew9.jpg",
+  "/gallery/krew10.jpg",
+  "/gallery/krew11.jpg",
+  "/gallery/krew12.jpg",
+];
 
-  </div>
-)}  {/* ✅ properly closes the conditional block */}
-
-{/* Navigation buttons */}
-<div className="flex items-center justify-between pt-2">
-
-  <button
-    type="button"
-    onClick={prevStep}
-    disabled={step === 0 || submitting}
-    className={`text-sm px-3 py-2 rounded-md border ${
-      step === 0 || submitting ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-50"
-    }`}
-  >
-    Back
-  </button>
-
-  <div className="flex items-center gap-3">
-    {!isLastStep && (
-      <Button type="button" onClick={nextStep} disabled={submitting}>
-        Next
-      </Button>
-    )}
-
-    {isLastStep && (
-      <Button type="submit" disabled={submitting}>
-        {submitting ? "Submitting..." : "See My Estimate"}
-      </Button>
-    )}
- 
-</div>
+// --- Main App Component ----------------------------------------------------
 
 export default function App() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [activeReview, setActiveReview] = useState(0);
-  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
 
   // Exit-intent modal
   const [exitOpen, setExitOpen] = useState(false);
   const [exitEmail, setExitEmail] = useState("");
-  const [exitStatus, setExitStatus] =
-    useState<"idle" | "loading" | "sent" | "error">("idle");
+  const [exitStatus, setExitStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
 
   useEffect(() => {
     const onScroll = () => {
@@ -872,53 +921,55 @@ export default function App() {
     return () => document.removeEventListener("mouseleave", handler);
   }, []);
 
+  // ❗ FIXED TSX ROOT WRAPPER — REQUIRED FOR VALID REACT TSX
   return (
     <div className="font-sans text-gray-900 bg-white" id="top">
 
-      {/* Top Black Banner */}
+      {/* Top black banner */}
       <div className="bg-black text-white text-xs sm:text-sm">
         <div className="max-w-6xl mx-auto px-4 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between">
 
-          {/* Reviews — LEFT */}
-          <a
-            href="#reviews"
-            className="flex items-center gap-1 text-white/90 hover:text-lime-400 transition"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 text-yellow-400"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.105 3.405a1 1 0 00.95.69h3.584c.969 0 1.371 1.24.588 1.81l-2.9 2.107a1 1 0 00-.364 1.118l1.105 3.405c.3.921-.755 1.688-1.54 1.118l-2.9-2.107a1 1 0 00-1.175 0l-2.9 2.107c-.784.57-1.838-.197-1.539-1.118l1.105-3.405a1 1 0 00-.364-1.118L2.823 8.832c-.783-.57-.38-1.81.588-1.81h3.584a1 1 0 00.95-.69l1.105-3.405z" />
-            </svg>
-            437 Reviews
-          </a>
-
-          {/* Locations — MIDDLE */}
-          <div className="flex items-center gap-1 text-white/90 mt-1 sm:mt-0">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 text-lime-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.341A8 8 0 105.58 15.28L12 22l7.428-6.659z" />
-            </svg>
-            Bucks County · Montco · Greater NJ · Philadelphia · Princeton
+          {/* Centered tagline */}
+          <div className="w-full text-center font-semibold tracking-wide">
+            Fast, Careful, Neighbor-Approved Movers
           </div>
 
-          {/* Quote button — RIGHT */}
-          <a
-            href="#quote"
-            className="mt-1 sm:mt-0 inline-block px-3 py-1 rounded-md text-xs font-semibold bg-lime-400 text-black hover:bg-lime-300 transition"
-          >
-            Free Quote
-          </a>
+          {/* Right side info */}
+          <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-3 mt-1 sm:mt-0">
 
+            {/* Location list */}
+            <span className="flex items-center gap-1 text-white/90">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 text-lime-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.341A8 8 0 105.58 15.28L12 22l7.428-6.659z" />
+              </svg>
+
+              Bucks County · Montco · Greater NJ · Philadelphia · Princeton
+            </span>
+
+            {/* Reviews link */}
+            <a
+              href="#reviews"
+              className="flex items-center gap-1 text-white/90 hover:text-lime-400 transition"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 text-yellow-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.105 3.405a1 1 0 00.95.69h3.584c.969 0 1.371 1.24.588 1.81l-2.9 2.107a1 1 0 00-.364 1.118l1.105 3.405c.3.921-.755 1.688-1.54 1.118l-2.9-2.107a1 1 0 00-1.175 0l-2.9 2.107c-.784.57-1.838-.197-1.539-1.118l1.105-3.405a1 1 0 00-.364-1.118L2.823 8.832c-.783-.57-.38-1.81.588-1.81h3.584a1 1 0 00.95-.69l1.105-3-405z" />
+              </svg>
+              437 Reviews
+            </a>
+          </div>
         </div>
       </div>
 
@@ -942,6 +993,7 @@ export default function App() {
             />
             <span>Neighborhood Krew Inc</span>
           </a>
+
           {/* Desktop navigation */}
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <a href="#services" className="hover:text-lime-500">Services</a>
@@ -992,7 +1044,6 @@ export default function App() {
           </div>
         )}
       </header>
-
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <img
@@ -1179,10 +1230,10 @@ export default function App() {
                 </Button>
               </CardContent>
             </Card>
-
           </div>
         </div>
       </section>
+
       {/* Free Quote / Quiz Funnel Section */}
       <section id="quote" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-5 gap-8 items-start">
@@ -1214,7 +1265,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
       {/* Pricing Section */}
       <section id="pricing" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
@@ -1350,6 +1400,7 @@ export default function App() {
           </div>
         </div>
       </section>
+
       {/* Gallery Section */}
       <section id="gallery" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
@@ -1391,7 +1442,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
       {/* Lightbox for gallery */}
       {lightboxIndex !== null && (
         <div
@@ -1511,6 +1561,7 @@ export default function App() {
           </form>
         </div>
       </section>
+
       {/* Footer */}
       <footer className="border-t">
         <div className="max-w-6xl mx-auto px-4 py-6 text-xs sm:text-sm flex flex-col md:flex-row items-center justify-between gap-3">
@@ -1536,8 +1587,7 @@ export default function App() {
       >
         Call now
       </a>
-
-            {/* Exit-Intent Promo Modal */}
+      {/* Exit-Intent Promo Modal */}
       {exitOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full p-6">
@@ -1577,18 +1627,19 @@ export default function App() {
               </Button>
             </form>
 
+            {/* Status messages */}
             {exitStatus === "sent" && (
               <p className="text-green-600 text-sm mt-2">
                 Promo code sent! Check your inbox.
               </p>
             )}
-
             {exitStatus === "error" && (
               <p className="text-red-600 text-sm mt-2">
                 Something went wrong — but we saved your email. You'll still receive promos.
               </p>
             )}
 
+            {/* Close button */}
             <div className="mt-3 flex justify-end gap-3">
               <button
                 type="button"
@@ -1601,12 +1652,11 @@ export default function App() {
                 No thanks
               </button>
             </div>
-
           </div>
         </div>
       )}
-    </div> 
-  );
-}
 
-export default App;
+    </div> {/* END OF MAIN WRAPPER */}
+  );
+} // END OF APP COMPONENT
+
