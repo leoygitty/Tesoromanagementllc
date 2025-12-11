@@ -1447,20 +1447,57 @@ export default function App() {
             </div>
           </div>
         </div>
-      </section>
-     {/* Lightbox for gallery */}
-{lightboxIndex !== null && (
-  <div
-    className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4"
-    onClick={() => setLightboxIndex(null)}
+    </section>
+
+{/* Wrap trailing siblings in a fragment so JSX stays valid */}
+<>
+
+  {/* Lightbox for gallery */}
+  {lightboxIndex !== null && (
+    <div
+      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4"
+      onClick={() => setLightboxIndex(null)}
+    >
+      <img
+        src={GALLERY_IMAGES[lightboxIndex]}
+        alt="Neighborhood Krew job enlarged"
+        className="max-h-[80vh] max-w-[90vw] rounded-2xl border-2 border-white shadow-2xl"
+      />
+    </div>
+  )}
+
+  {/* Hiring Section */}
+  <section id="hiring" className="py-12 md:py-16">
+    ...
+  </section>
+
+  {/* Newsletter Section */}
+  <section className="py-10 border-t bg-gray-900 text-gray-100">
+    ...
+  </section>
+
+  {/* Footer Section */}
+  <footer className="border-t">
+    ...
+  </footer>
+
+  {/* Floating Call Button */}
+  <a
+    href="tel:+12155310907"
+    className="fixed bottom-4 right-4 z-40 px-4 py-2 rounded-full bg-lime-400 text-xs font-semibold shadow-lg text-black sm:hidden"
   >
-    <img
-      src={GALLERY_IMAGES[lightboxIndex]}
-      alt="Neighborhood Krew job enlarged"
-      className="max-h-[80vh] max-w-[90vw] rounded-2xl border-2 border-white shadow-2xl"
-    />
-  </div>
-)}
+    Call now
+  </a>
+
+  {/* Exit Intent Modal */}
+  {exitOpen && (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm ...">
+      ...
+    </div>
+  )}
+
+</>
+
       {/* Hiring Section */}
       <section id="hiring" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
