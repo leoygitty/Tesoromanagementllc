@@ -241,7 +241,29 @@ function computeEstimate(state: WizardState): Estimate {
 
   return { low: baseLow, high: baseHigh };
 }
+// Helper: convert File objects to base64 so we can send them to the API
+async function filesToBase64List(files: File[]) {
+  const encodeOne = (file: File) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.split(",")[1] || "";
+        resolve({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          base64,
+        });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
+  return Promise.all(files.map((f) => encodeOne(f))) as Promise<
+    { name: string; type: string; size: number; base64: string }[]
+  >;
+}
 export function QuoteWizard() {
   const [step, setStep] = useState(0);
   const [state, setState] = useState<WizardState>({
@@ -299,7 +321,7 @@ export function QuoteWizard() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSubmitted(false);
@@ -369,27 +391,15 @@ export function QuoteWizard() {
       `Photo count (uploaded via quiz): ${state.photos.length}`
     );
 
-    // 🔥 Convert photos to base64 so the backend can attach them
-    let photoFilesPayload: {
-      name: string;
-      type: string;
-      dataUrl: string;
-    }[] = [];
-
-    if (state.photos.length > 0) {
-      try {
-        photoFilesPayload = await Promise.all(
-          state.photos.map(async (file) => ({
-            name: file.name,
-            type: file.type,
-            dataUrl: await fileToDataUrl(file),
-          }))
-        );
-      } catch (err) {
-        console.error("Error reading photo files", err);
-        // If file reading fails, we still send the quote without photos
-        photoFilesPayload = [];
+    // 🔥 NEW: encode selected photos to base64 so the API can attach them
+    let photoFilesPayload: any[] = [];
+    try {
+      if (state.photos.length > 0) {
+        photoFilesPayload = await filesToBase64List(state.photos);
       }
+    } catch (err) {
+      console.error("Error encoding photos:", err);
+      // keep going without images if encoding fails
     }
 
     const payload = {
@@ -399,7 +409,7 @@ export function QuoteWizard() {
       phone: state.phone,
       service: `${jobLabel} – Quiz Funnel`,
       details: detailsLines.join("\n"),
-      photoFiles: photoFilesPayload, // 👈 backend should use this for attachments
+      photoFiles: photoFilesPayload, // <-- sent to /api/quote
     };
 
     setSubmitting(true);
@@ -410,7 +420,7 @@ export function QuoteWizard() {
         body: JSON.stringify(payload),
       });
 
-      // If you want to debug:
+      // We don't block UI on email; estimate still shows even if email fails
       // const data = await res.json().catch(() => null);
       // console.log("quote response", res.status, data);
 
@@ -422,7 +432,6 @@ export function QuoteWizard() {
       setSubmitting(false);
     }
   };
-
   const currentStepLabel = steps[step];
 
   // bespoke end copy per job type
