@@ -1656,7 +1656,6 @@ export default function App() {
         </div>
       )}
 
-    </div> {/* END OF MAIN WRAPPER */}
   );
 } // END OF APP COMPONENT
 
