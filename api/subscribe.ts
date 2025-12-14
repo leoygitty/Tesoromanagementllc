@@ -1,3 +1,7 @@
+export const config = {
+  runtime: "nodejs",
+};
+
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -16,14 +20,8 @@ export default async function handler(req: any, res: any) {
     }
 
     const recipients: string[] = [];
-
-    if (process.env.PROMO_OWNER_EMAIL) {
-      recipients.push(process.env.PROMO_OWNER_EMAIL);
-    }
-
-    if (process.env.PROMO_MANAGER_EMAIL) {
-      recipients.push(process.env.PROMO_MANAGER_EMAIL);
-    }
+    if (process.env.PROMO_OWNER_EMAIL) recipients.push(process.env.PROMO_OWNER_EMAIL);
+    if (process.env.PROMO_MANAGER_EMAIL) recipients.push(process.env.PROMO_MANAGER_EMAIL);
 
     await resend.emails.send({
       from: "Neighborhood Krew <quotes@neighborhoodkrew.com>",
