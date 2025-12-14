@@ -1005,7 +1005,6 @@ const GALLERY_IMAGES: string[] = [
 
 // --- Main App Component ----------------------------------------------------
 
-export default function App() {
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -1917,6 +1916,7 @@ const handlePromoSubmit = async (email: string) => {
 export default function App() {
   ...
 }
+
 
 
 
