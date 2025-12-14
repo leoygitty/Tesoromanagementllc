@@ -901,10 +901,11 @@ export default function App() {
   const [exitStatus, setExitStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
 
 // Promo submit helper (newsletter + exit-intent)
-const handlePromoSubmit = async (email: string) => {
+// Always return a boolean to keep UX flows consistent
+const handlePromoSubmit = async (email: string): Promise<boolean> => {
   try {
     const clean = String(email || "").trim();
-    if (!clean) return { ok: false };
+    if (!clean) return false;
 
     const res = await fetch("/api/subscribe", {
       method: "POST",
@@ -912,18 +913,33 @@ const handlePromoSubmit = async (email: string) => {
       body: JSON.stringify({ email: clean }),
     });
 
-    const data = await res.json().catch(() => ({} as any));
+    if (!res.ok) return false;
 
-    if (!res.ok) return { ok: false, ...data };
-    return { ok: true, ...data };
+    const data = await res.json().catch(() => null);
+    return Boolean((data as any)?.ok);
   } catch (err) {
     console.error(err);
-    return { ok: false };
+    return false;
   }
 };
 
 
   useEffect(() => {
+// Mobile promo trigger (time-delay)
+useEffect(() => {
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+  if (!isMobile) return;
+  if (sessionStorage.getItem("promo_shown")) return;
+
+  const timer = setTimeout(() => {
+    setExitOpen(true);
+    sessionStorage.setItem("promo_shown", "1");
+  }, 9000);
+
+  return () => clearTimeout(timer);
+}, []);
+
+
     const onScroll = () => {
       setNavScrolled(window.scrollY > 10);
     };
@@ -933,6 +949,21 @@ const handlePromoSubmit = async (email: string) => {
 
   // Exit intent listener
   useEffect(() => {
+// Mobile promo trigger (time-delay)
+useEffect(() => {
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+  if (!isMobile) return;
+  if (sessionStorage.getItem("promo_shown")) return;
+
+  const timer = setTimeout(() => {
+    setExitOpen(true);
+    sessionStorage.setItem("promo_shown", "1");
+  }, 9000);
+
+  return () => clearTimeout(timer);
+}, []);
+
+
     if (!shouldOpenExit()) return;
 
     const handler = (e: MouseEvent) => {
@@ -1616,7 +1647,7 @@ const handlePromoSubmit = async (email: string) => {
 
                 const success = await handlePromoSubmit(exitEmail);
 
-                if (success?.ok || success?.code) {
+                if (success) {
                   setExitStatus("sent");
                 } else {
                   setExitStatus("error");
