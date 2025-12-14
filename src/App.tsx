@@ -12,6 +12,9 @@ const BUSINESS = {
   facebook: "https://www.facebook.com/TheNeighborhoodKrew",
 };
 
+// Public checklist PDF (served from /public)
+const CHECKLIST_PDF_URL = "/NeighborhoodKrewMovingDayChecklist.pdf";
+
 // --- Exit-intent + promo helpers ----------------------------------------
 
 const EXIT_DISMISS_KEY = "nk_exit_dismissed_until";
@@ -64,25 +67,6 @@ type DivProps = React.HTMLAttributes<HTMLDivElement>;
 
 function Card(props: DivProps) {
   const { className = "", ...rest } = props;
-  // Mobile promo trigger (SAFE)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const isMobile =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(max-width: 768px)").matches;
-
-    if (!isMobile) return;
-    if (sessionStorage.getItem("promo_shown")) return;
-
-    const timer = window.setTimeout(() => {
-      setExitOpen(true);
-      sessionStorage.setItem("promo_shown", "1");
-    }, 9000);
-
-    return () => window.clearTimeout(timer);
-  }, []);
-
   return (
     <div
       className={
@@ -95,25 +79,6 @@ function Card(props: DivProps) {
 
 function CardHeader(props: DivProps) {
   const { className = "", ...rest } = props;
-  // Mobile promo trigger (SAFE)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const isMobile =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(max-width: 768px)").matches;
-
-    if (!isMobile) return;
-    if (sessionStorage.getItem("promo_shown")) return;
-
-    const timer = window.setTimeout(() => {
-      setExitOpen(true);
-      sessionStorage.setItem("promo_shown", "1");
-    }, 9000);
-
-    return () => window.clearTimeout(timer);
-  }, []);
-
   return (
     <div className={"px-4 pt-4 md:px-6 md:pt-5 " + className} {...rest} />
   );
@@ -121,25 +86,6 @@ function CardHeader(props: DivProps) {
 
 function CardContent(props: DivProps) {
   const { className = "", ...rest } = props;
-  // Mobile promo trigger (SAFE)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const isMobile =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(max-width: 768px)").matches;
-
-    if (!isMobile) return;
-    if (sessionStorage.getItem("promo_shown")) return;
-
-    const timer = window.setTimeout(() => {
-      setExitOpen(true);
-      sessionStorage.setItem("promo_shown", "1");
-    }, 9000);
-
-    return () => window.clearTimeout(timer);
-  }, []);
-
   return (
     <div className={"px-4 pb-4 md:px-6 md:pb-6 " + className} {...rest} />
   );
@@ -147,25 +93,6 @@ function CardContent(props: DivProps) {
 
 function CardTitle(props: DivProps) {
   const { className = "", ...rest } = props;
-  // Mobile promo trigger (SAFE)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const isMobile =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(max-width: 768px)").matches;
-
-    if (!isMobile) return;
-    if (sessionStorage.getItem("promo_shown")) return;
-
-    const timer = window.setTimeout(() => {
-      setExitOpen(true);
-      sessionStorage.setItem("promo_shown", "1");
-    }, 9000);
-
-    return () => window.clearTimeout(timer);
-  }, []);
-
   return (
     <h3 className={"text-lg md:text-xl font-semibold tracking-tight " + className} {...rest} />
   );
@@ -195,25 +122,6 @@ function Button({ variant = "solid", className = "", ...rest }: ButtonProps) {
 type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 function TextInput({ className = "", ...rest }: InputProps) {
-  // Mobile promo trigger (SAFE)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const isMobile =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(max-width: 768px)").matches;
-
-    if (!isMobile) return;
-    if (sessionStorage.getItem("promo_shown")) return;
-
-    const timer = window.setTimeout(() => {
-      setExitOpen(true);
-      sessionStorage.setItem("promo_shown", "1");
-    }, 9000);
-
-    return () => window.clearTimeout(timer);
-  }, []);
-
   return (
     <input
       className={
@@ -228,25 +136,6 @@ function TextInput({ className = "", ...rest }: InputProps) {
 type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
 function TextArea({ className = "", ...rest }: TextareaProps) {
-  // Mobile promo trigger (SAFE)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const isMobile =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(max-width: 768px)").matches;
-
-    if (!isMobile) return;
-    if (sessionStorage.getItem("promo_shown")) return;
-
-    const timer = window.setTimeout(() => {
-      setExitOpen(true);
-      sessionStorage.setItem("promo_shown", "1");
-    }, 9000);
-
-    return () => window.clearTimeout(timer);
-  }, []);
-
   return (
     <textarea
       className={
@@ -508,7 +397,27 @@ export function QuoteWizard() {
         body: JSON.stringify(payload),
       });
 
-      setSubmitted(true);
+      
+      // Auto-email the Moving Day Checklist after quote submission (optional endpoint)
+      // If you don't create /api/send-checklist, this fails silently and won't affect UX.
+      try {
+        const origin =
+          typeof window !== "undefined" ? window.location.origin : "";
+        const checklistUrl = `${origin}${CHECKLIST_PDF_URL}`;
+
+        await fetch("/api/send-checklist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: state.email,
+            name: state.name,
+            checklistUrl,
+            promoCode: "KREW25",
+          }),
+          keepalive: true,
+        }).catch(() => {});
+      } catch {}
+setSubmitted(true);
     } catch (err) {
       console.error(err);
       setSubmitted(true);
@@ -533,25 +442,6 @@ export function QuoteWizard() {
 
   const commonLine =
     "This range is based on similar jobs we’ve completed in the area and is meant as a starting point, not a final price.";
-  // Mobile promo trigger (SAFE)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const isMobile =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(max-width: 768px)").matches;
-
-    if (!isMobile) return;
-    if (sessionStorage.getItem("promo_shown")) return;
-
-    const timer = window.setTimeout(() => {
-      setExitOpen(true);
-      sessionStorage.setItem("promo_shown", "1");
-    }, 9000);
-
-    return () => window.clearTimeout(timer);
-  }, []);
-
   return (
     <Card className="shadow-lg border-gray-900">
       <CardHeader>
@@ -1022,14 +912,6 @@ const GALLERY_IMAGES: string[] = [
 // --- Main App Component ----------------------------------------------------
 
 export default function App() {
-  const trackChecklistDownload = (source: "button" | "image") => {
-    fetch("/api/track-checklist", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ source }),
-    }).catch(() => {});
-  };
-
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -1063,6 +945,27 @@ const handlePromoSubmit = async (email: string) => {
   }
 };
 
+  // Track checklist downloads (optional endpoint; fails silently)
+  const trackChecklistDownload = (source: "button" | "image") => {
+    try {
+      const payload = JSON.stringify({ source, ts: Date.now() });
+      // Prefer sendBeacon if available so downloads aren't blocked
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const nav: any = typeof navigator !== "undefined" ? navigator : null;
+      if (nav?.sendBeacon) {
+        const blob = new Blob([payload], { type: "application/json" });
+        nav.sendBeacon("/api/track-checklist", blob);
+        return;
+      }
+      fetch("/api/track-checklist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+        keepalive: true,
+      }).catch(() => {});
+    } catch {}
+  };
+
 
   useEffect(() => {
     const onScroll = () => {
@@ -1088,25 +991,6 @@ const handlePromoSubmit = async (email: string) => {
   }, []);
 
   // ❗ FIXED TSX ROOT WRAPPER — REQUIRED FOR VALID REACT TSX
-  // Mobile promo trigger (SAFE)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const isMobile =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(max-width: 768px)").matches;
-
-    if (!isMobile) return;
-    if (sessionStorage.getItem("promo_shown")) return;
-
-    const timer = window.setTimeout(() => {
-      setExitOpen(true);
-      sessionStorage.setItem("promo_shown", "1");
-    }, 9000);
-
-    return () => window.clearTimeout(timer);
-  }, []);
-
   return (
     <div className="font-sans text-gray-900 bg-white" id="top">
 
@@ -1167,7 +1051,8 @@ const handlePromoSubmit = async (email: string) => {
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <a href="#services" className="hover:text-lime-500">Services</a>
             <a href="#quote" className="hover:text-lime-500">Free Quote</a>
-            <a href="#pricing" className="hover:text-lime-500">Pricing</a>
+            <a href="#moving-checklist" className="hover:text-lime-500">Checklist</a>
+          <a href="#pricing" className="hover:text-lime-500">Pricing</a>
             <a href="#reviews" className="hover:text-lime-500">Reviews</a>
             <a href="#gallery" className="hover:text-lime-500">Gallery</a>
             <a href="#hiring" className="hover:text-lime-500">We’re Hiring</a>
@@ -1195,6 +1080,7 @@ const handlePromoSubmit = async (email: string) => {
               {[
                 ["#services", "Services"],
                 ["#quote", "Free Quote"],
+        ["#moving-checklist", "Moving Checklist"],
                 ["#pricing", "Pricing"],
                 ["#reviews", "Reviews"],
                 ["#gallery", "Gallery"],
@@ -1434,6 +1320,76 @@ const handlePromoSubmit = async (email: string) => {
           </div>
         </div>
       </section>
+      
+      {/* Moving Day Checklist Section */}
+      <section
+        id="moving-checklist"
+        className="py-12 md:py-16 bg-white border-t"
+      >
+        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
+
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+              Moving Day Checklist To-Go
+            </h2>
+
+            <p className="mt-4 text-gray-600 max-w-lg">
+              Download our professional, mover-approved checklist designed to help
+              your move go smoothly — whether you’re planning ahead or booking last-minute.
+            </p>
+
+            <ul className="mt-6 space-y-2 text-sm text-gray-700">
+              <li>✔ One-page, easy-to-follow format</li>
+              <li>✔ Parking & access reminders</li>
+              <li>✔ Item restrictions clearly outlined</li>
+              <li>✔ Helps avoid delays & surprise charges</li>
+              <li>✔ Includes exclusive promo code</li>
+            </ul>
+
+            <div className="mt-8 flex flex-wrap gap-4">
+              <a
+                href={CHECKLIST_PDF_URL}
+                download
+                onClick={() => trackChecklistDownload("button")}
+                className="inline-flex items-center justify-center rounded-full bg-lime-400 px-6 py-3 text-black font-semibold hover:bg-lime-300 transition"
+              >
+                Download Free Checklist
+              </a>
+
+              <button
+                onClick={() =>
+                  document.getElementById("quote")?.scrollIntoView({ behavior: "smooth" })
+                }
+                className="inline-flex items-center justify-center rounded-full border border-gray-300 px-6 py-3 text-sm font-semibold hover:bg-gray-100 transition"
+              >
+                Get a Free Quote
+              </button>
+            </div>
+          </div>
+
+          <div className="flex justify-center md:justify-end">
+            <a
+              href={CHECKLIST_PDF_URL}
+              download
+              onClick={() => trackChecklistDownload("image")}
+              className="group block"
+              aria-label="Download the Moving Day Checklist PDF"
+            >
+              <img
+                src="/checklist.jpg"
+                alt="Moving Day Checklist preview"
+                className="w-full max-w-md rounded-2xl border shadow-md
+                  transition-transform duration-300 ease-out
+                  group-hover:-translate-y-1 group-hover:scale-[1.02]
+                  motion-reduce:transition-none motion-reduce:transform-none"
+                loading="lazy"
+              />
+            </a>
+          </div>
+
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <section id="pricing" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
