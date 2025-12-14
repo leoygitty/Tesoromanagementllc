@@ -1177,25 +1177,62 @@ const handlePromoSubmit = async (email: string) => {
           </div>
 
           {/* Featured images */}
-          <div className="mt-3 grid grid-cols-3 gap-3">
-            <img
-              src="/featured/lux1.jpg"
-              alt="Premium client install"
-              className="rounded-lg border border-white/15 object-cover h-28 md:h-32 w-full"
-            />
-            <img
-              src="/featured/lux2.jpg"
-              alt="Gymshark buildout wall"
-              className="rounded-lg border border-white/15 object-cover h-28 md:h-32 w-full"
-            />
-            <img
-              src="/featured/lux3.jpg"
-              alt="Gym inventory move"
-              className="rounded-lg border border-white/15 object-cover h-28 md:h-32 w-full"
-            />
-          </div>
-        </div>
-      </section>
+         {/* Featured images with overlay CTAs (desktop only) */}
+<div className="mt-8 hidden md:grid grid-cols-3 gap-4">
+  {/* Image 1 */}
+  <div className="relative group">
+    <img
+      src="/featured/lux1.jpg"
+      alt="Premium residential move"
+      className="rounded-lg border border-white/15 object-cover h-32 w-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+
+    />
+    <Button
+      className="absolute inset-0 m-auto h-12 w-[85%] bg-lime-400 text-black font-semibold opacity-90 group-hover:opacity-100 transition"
+      onClick={() =>
+        document.getElementById("quote")?.scrollIntoView({ behavior: "smooth" })
+      }
+    >
+      Start My Free Quote
+    </Button>
+  </div>
+
+  {/* Image 2 */}
+  <div className="relative group">
+    <img
+      src="/featured/lux2.jpg"
+      alt="Commercial buildout move"
+      className="rounded-lg border border-white/15 object-cover h-32 w-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+
+    />
+    <Button
+      className="absolute inset-0 m-auto h-12 w-[85%] bg-white text-black font-semibold opacity-90 group-hover:opacity-100 transition"
+      onClick={() =>
+        document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })
+      }
+    >
+      Explore Services
+    </Button>
+  </div>
+
+  {/* Image 3 */}
+  <div className="relative group">
+    <img
+      src="/featured/lux3.jpg"
+      alt="Specialty item moving"
+      className="rounded-lg border border-white/15 object-cover h-32 w-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+
+    />
+    <a href="tel:+12155310907">
+      <Button
+        variant="outline"
+        className="absolute inset-0 m-auto h-12 w-[85%] bg-black/60 text-white border-white opacity-90 group-hover:opacity-100 transition"
+      >
+        Call (215) 531-0907
+      </Button>
+    </a>
+  </div>
+</div>
 
       {/* Services Section */}
       <section id="services" className="py-12 md:py-16">
@@ -1786,6 +1823,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 } // END OF APP COMPONENT
+
 
 
 
