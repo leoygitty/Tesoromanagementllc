@@ -1820,11 +1820,10 @@ const handlePromoSubmit = async (email: string) => {
 
     </div>
   );
-        {/* END OF PAGE CONTENT */}
-  );
 }
 
 export default App;
+
 
 
 
