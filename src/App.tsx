@@ -925,9 +925,14 @@ const handlePromoSubmit = async (email: string): Promise<boolean> => {
 
 
   useEffect(() => {
-// Mobile promo trigger (time-delay)
+// Mobile promo trigger (time-delay) — window-safe
 useEffect(() => {
-  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+  if (typeof window === "undefined") return;
+
+  const isMobile =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(max-width: 768px)").matches;
+
   if (!isMobile) return;
   if (sessionStorage.getItem("promo_shown")) return;
 
@@ -949,9 +954,14 @@ useEffect(() => {
 
   // Exit intent listener
   useEffect(() => {
-// Mobile promo trigger (time-delay)
+// Mobile promo trigger (time-delay) — window-safe
 useEffect(() => {
-  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+  if (typeof window === "undefined") return;
+
+  const isMobile =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(max-width: 768px)").matches;
+
   if (!isMobile) return;
   if (sessionStorage.getItem("promo_shown")) return;
 
