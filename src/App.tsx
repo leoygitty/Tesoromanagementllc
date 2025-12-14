@@ -1159,7 +1159,8 @@ const handlePromoSubmit = async (email: string) => {
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <a href="#services" className="hover:text-lime-500">Services</a>
             <a href="#quote" className="hover:text-lime-500">Free Quote</a>
-            <a href="#pricing" className="hover:text-lime-500">Pricing</a>
+            <a href="#moving-checklist" className="hover:text-lime-500">Checklist</a>
+          <a href="#pricing" className="hover:text-lime-500">Pricing</a>
             <a href="#reviews" className="hover:text-lime-500">Reviews</a>
             <a href="#gallery" className="hover:text-lime-500">Gallery</a>
             <a href="#hiring" className="hover:text-lime-500">We’re Hiring</a>
@@ -1187,6 +1188,7 @@ const handlePromoSubmit = async (email: string) => {
               {[
                 ["#services", "Services"],
                 ["#quote", "Free Quote"],
+        ["#moving-checklist", "Moving Checklist"],
                 ["#pricing", "Pricing"],
                 ["#reviews", "Reviews"],
                 ["#gallery", "Gallery"],
@@ -1426,6 +1428,78 @@ const handlePromoSubmit = async (email: string) => {
           </div>
         </div>
       </section>
+      
+      {/* Moving Day Checklist Section */}
+      <section
+        id="moving-checklist"
+        className="py-12 md:py-16 bg-white border-t"
+      >
+        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
+
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+              Moving Day Checklist To-Go
+            </h2>
+
+            <p className="mt-4 text-gray-600 max-w-lg">
+              Download our professional, mover-approved checklist designed to help
+              your move go smoothly — whether you’re planning ahead or booking last-minute.
+            </p>
+
+            <ul className="mt-6 space-y-2 text-sm text-gray-700">
+              <li>✔ One-page, easy-to-follow format</li>
+              <li>✔ Parking & access reminders</li>
+              <li>✔ Item restrictions clearly outlined</li>
+              <li>✔ Helps avoid delays & surprise charges</li>
+              <li>✔ Includes exclusive promo code</li>
+            </ul>
+
+            <div className="mt-8 flex flex-wrap gap-4">
+              <a
+                href="/Neighborhood_Krew_Moving_Day_Checklist.pdf"
+                download
+                className="inline-flex items-center justify-center rounded-full bg-lime-400 px-6 py-3 text-black font-semibold hover:bg-lime-300 transition"
+              >
+                Download Free Checklist
+              </a>
+
+              <button
+                onClick={() =>
+                  document.getElementById("quote")?.scrollIntoView({ behavior: "smooth" })
+                }
+                className="inline-flex items-center justify-center rounded-full border border-gray-300 px-6 py-3 text-sm font-semibold hover:bg-gray-100 transition"
+              >
+                Get a Free Quote
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6 shadow-sm">
+            <h3 className="text-lg font-semibold">What’s inside</h3>
+
+            <p className="mt-2 text-sm text-gray-600">
+              Built from real moving day experience to help protect your time,
+              belongings, and budget.
+            </p>
+
+            <div className="mt-4 space-y-1 text-sm text-gray-700">
+              <p>• Truck parking requirements</p>
+              <p>• Item disclosure reminders</p>
+              <p>• Restricted items list</p>
+              <p>• Same-day preparation steps</p>
+            </div>
+
+            <div className="mt-6 rounded-lg bg-white border px-4 py-3">
+              <p className="text-xs text-gray-500">Promo Code Inside</p>
+              <p className="text-2xl font-extrabold text-lime-500">
+                KREW25
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <section id="pricing" className="py-12 md:py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
