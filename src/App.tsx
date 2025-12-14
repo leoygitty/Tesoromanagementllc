@@ -1913,9 +1913,14 @@ const handlePromoSubmit = async (email: string) => {
   );
 }
 
-export default function App() {
-  ...
+function App() {
+  return (
+    ...
+  );
 }
+
+export default App;
+
 
 
 
