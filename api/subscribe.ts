@@ -3,31 +3,22 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export default async function handler(req: any, res: any) {
-  if (req.method !== "POST") {
-    res.status(405).json({ ok: false });
-    return;
-  }
-
   try {
-    const body =
-      typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    if (req.method !== "POST") {
+      return res.status(405).json({ ok: false });
+    }
 
-    const email = body?.email;
+    // Vercel already parses JSON bodies
+    const email = req.body?.email;
 
     if (!email || typeof email !== "string") {
-      res.status(200).json({ ok: false });
-      return;
+      console.error("INVALID BODY:", req.body);
+      return res.status(400).json({ ok: false });
     }
 
     const recipients: string[] = [];
-
-    if (process.env.PROMO_OWNER_EMAIL) {
-      recipients.push(process.env.PROMO_OWNER_EMAIL);
-    }
-
-    if (process.env.PROMO_MANAGER_EMAIL) {
-      recipients.push(process.env.PROMO_MANAGER_EMAIL);
-    }
+    if (process.env.PROMO_OWNER_EMAIL) recipients.push(process.env.PROMO_OWNER_EMAIL);
+    if (process.env.PROMO_MANAGER_EMAIL) recipients.push(process.env.PROMO_MANAGER_EMAIL);
 
     await resend.emails.send({
       from: "Neighborhood Krew <quotes@neighborhoodkrew.com>",
@@ -40,9 +31,7 @@ export default async function handler(req: any, res: any) {
       `,
     });
 
-    res.status(200).json({ ok: true });
+    return res.status(200).json({ ok: true });
   } catch (err) {
-    console.error("SUBSCRIBE ERROR:", err);
-    res.status(500).json({ ok: false });
-  }
-}
+    console.error("SUBSCRIBE FUNCTION CRASH:", err);
+    re
