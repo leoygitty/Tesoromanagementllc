@@ -1136,72 +1136,103 @@ const handlePromoSubmit = async (email: string) => {
             your space like their own.
           </p>
 
+          {/* Buttons */}
+          <div className="mt-6 grid grid-cols-1 gap-4 max-w-2xl md:hidden">
+  <Button
+    className="w-full h-12"
+    onClick={() =>
+      document.getElementById("quote")?.scrollIntoView({
+        behavior: "smooth",
+      })
+    }
+  >
+    Start My Free Quote
+  </Button>
+
+  <Button
+    className="w-full h-12 bg-white text-black hover:bg-gray-200"
+    variant="solid"
+    onClick={() =>
+      document.getElementById("services")?.scrollIntoView({
+        behavior: "smooth",
+      })
+    }
+  >
+    Explore Services
+  </Button>
+
+  <a href="tel:+12155310907" className="w-full">
+    <Button
+      variant="outline"
+      className="w-full h-12 justify-center"
+    >
+      Call (215) 531-0907
+    </Button>
+  </a>
+</div>
+
           {/* Trusted logos text */}
           <div className="mt-8 text-sm text-white/85">
             Trusted by premium brands & venues
           </div>
 
           {/* Featured images */}
-         {/* Featured images with overlay CTAs (desktop only) */}
-<div className="mt-8 hidden md:grid grid-cols-3 gap-4">
-  {/* Image 1 */}
-  <div className="relative group">
-    <img
-      src="/featured/lux1.jpg"
-      alt="Premium residential move"
-      className="rounded-lg border border-white/15 object-cover h-32 w-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+         {/* Featured CTAs + images (desktop only) */}
+          <div className="mt-8 hidden md:block">
+            <div className="grid grid-cols-3 gap-4">
+              <Button
+                className="h-12"
+                onClick={() =>
+                  document.getElementById("quote")?.scrollIntoView({
+                    behavior: "smooth",
+                  })
+                }
+              >
+                Start My Free Quote
+              </Button>
 
-    />
-    <Button
-      className="absolute inset-0 m-auto h-12 w-[85%] bg-lime-400 text-black font-semibold opacity-90 group-hover:opacity-100 transition"
-      onClick={() =>
-        document.getElementById("quote")?.scrollIntoView({ behavior: "smooth" })
-      }
-    >
-      Start My Free Quote
-    </Button>
-  </div>
+              <Button
+                className="h-12 bg-white text-black hover:bg-gray-200"
+                variant="solid"
+                onClick={() =>
+                  document.getElementById("services")?.scrollIntoView({
+                    behavior: "smooth",
+                  })
+                }
+              >
+                Explore Services
+              </Button>
 
-  {/* Image 2 */}
-  <div className="relative group">
-    <img
-      src="/featured/lux2.jpg"
-      alt="Commercial buildout move"
-      className="rounded-lg border border-white/15 object-cover h-32 w-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+              <a href="tel:+12155310907" className="w-full">
+                <Button
+                  variant="outline"
+                  className="h-12 w-full justify-center"
+                >
+                  Call (215) 531-0907
+                </Button>
+              </a>
+            </div>
 
-    />
-    <Button
-      className="absolute inset-0 m-auto h-12 w-[85%] bg-white text-black font-semibold opacity-90 group-hover:opacity-100 transition"
-      onClick={() =>
-        document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })
-      }
-    >
-      Explore Services
-    </Button>
-  </div>
+            <div className="mt-4 grid grid-cols-3 gap-4">
+              <img
+                src="/featured/lux1.jpg"
+                alt="Premium client install"
+                className="rounded-lg border border-white/15 object-cover h-32 w-full transition-transform duration-300 ease-out hover:-translate-y-1 hover:scale-[1.02]"
+              />
+              <img
+                src="/featured/lux2.jpg"
+                alt="Gymshark buildout wall"
+                className="rounded-lg border border-white/15 object-cover h-32 w-full transition-transform duration-300 ease-out hover:-translate-y-1 hover:scale-[1.02]"
+              />
+              <img
+                src="/featured/lux3.jpg"
+                alt="Gym inventory move"
+                className="rounded-lg border border-white/15 object-cover h-32 w-full transition-transform duration-300 ease-out hover:-translate-y-1 hover:scale-[1.02]"
+              />
+            </div>
+          </div>
 
-  {/* Image 3 */}
-  <div className="relative group">
-    <img
-      src="/featured/lux3.jpg"
-      alt="Specialty item moving"
-      className="rounded-lg border border-white/15 object-cover h-32 w-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-
-    />
-    <a href="tel:+12155310907">
-      <Button
-        variant="outline"
-        className="absolute inset-0 m-auto h-12 w-[85%] bg-black/60 text-white border-white opacity-90 group-hover:opacity-100 transition"
-      >
-        Call (215) 531-0907
-      </Button>
-    </a>
-  </div>
-</div>
-          
-</div>
-</section>     
-      {/* Services Section */}
+{/* Services Section */}
       <section id="services" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold mb-6 text-center md:text-left">
