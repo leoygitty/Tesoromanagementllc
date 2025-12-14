@@ -906,7 +906,7 @@ const handlePromoSubmit = async (email: string) => {
     const clean = String(email || "").trim();
     if (!clean) return { ok: false };
 
-    const res = await fetch("/api/promo", {
+    const res = await fetch("/api/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: clean }),
@@ -1668,6 +1668,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 } // END OF APP COMPONENT
+
 
 
 
