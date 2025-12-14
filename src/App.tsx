@@ -907,7 +907,9 @@ const GALLERY_IMAGES: string[] = [
   "/gallery/krew10.jpg",
   "/gallery/krew11.jpg",
   "/gallery/krew12.jpg",
-];
+  "/gallery/krew13.jpg",
+  "/gallery/krew14.jpg",
+  "/gallery/krew15.jpg",];
 
 // --- Main App Component ----------------------------------------------------
 
@@ -1784,6 +1786,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 } // END OF APP COMPONENT
+
 
 
 
