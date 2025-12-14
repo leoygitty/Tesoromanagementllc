@@ -1914,7 +1914,11 @@ const handlePromoSubmit = async (email: string) => {
   );
 }
 
-export default App;
+export default function App() {
+  ...
+}
+
+
 
 
 
