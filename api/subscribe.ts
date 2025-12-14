@@ -8,7 +8,6 @@ export default async function handler(req: any, res: any) {
       return res.status(405).json({ ok: false });
     }
 
-    // Vercel already parses JSON bodies
     const email = req.body?.email;
 
     if (!email || typeof email !== "string") {
@@ -17,8 +16,14 @@ export default async function handler(req: any, res: any) {
     }
 
     const recipients: string[] = [];
-    if (process.env.PROMO_OWNER_EMAIL) recipients.push(process.env.PROMO_OWNER_EMAIL);
-    if (process.env.PROMO_MANAGER_EMAIL) recipients.push(process.env.PROMO_MANAGER_EMAIL);
+
+    if (process.env.PROMO_OWNER_EMAIL) {
+      recipients.push(process.env.PROMO_OWNER_EMAIL);
+    }
+
+    if (process.env.PROMO_MANAGER_EMAIL) {
+      recipients.push(process.env.PROMO_MANAGER_EMAIL);
+    }
 
     await resend.emails.send({
       from: "Neighborhood Krew <quotes@neighborhoodkrew.com>",
@@ -33,5 +38,7 @@ export default async function handler(req: any, res: any) {
 
     return res.status(200).json({ ok: true });
   } catch (err) {
-    console.error("SUBSCRIBE FUNCTION CRASH:", err);
-    re
+    console.error("SUBSCRIBE FUNCTION ERROR:", err);
+    return res.status(500).json({ ok: false });
+  }
+}
