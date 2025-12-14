@@ -1,7 +1,2 @@
-<a
-  href="/NeighborhoodKrewMovingDayChecklist.pdf"
-  download
-  className="inline-flex items-center justify-center rounded-full bg-lime-400 px-6 py-3 text-black font-semibold hover:bg-lime-300 transition"
->
-  Download Free Checklist
-</a>
+public/
+└── NeighborhoodKrewMovingDayChecklist.pdf
