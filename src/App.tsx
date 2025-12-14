@@ -1912,25 +1912,5 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
-
-function App() {
-  return (
-    ...
-  );
-}
-
 export default App;
-
-
-
-
-
-
-
-
-
-
-
-
-
 
