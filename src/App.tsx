@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
 
+// Calendly widget typings (safe no-op if not used)
+declare global {
+  interface Window {
+    Calendly?: any;
+    gtag?: (...args: any[]) => void;
+  }
+}
+
 // Brand + business config
 const BRAND = {
   dark: "#1f160f",
@@ -280,6 +288,53 @@ export function QuoteWizard() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+
+// Load Calendly script only after the quote is submitted (keeps quiz fast).
+useEffect(() => {
+  if (!submitted) return;
+  if (typeof document === "undefined") return;
+
+  const scriptId = "calendly-widget-script";
+  if (!document.getElementById(scriptId)) {
+    const s = document.createElement("script");
+    s.id = scriptId;
+    s.src = "https://assets.calendly.com/assets/external/widget.js";
+    s.async = true;
+    document.body.appendChild(s);
+  }
+}, [submitted]);
+
+// Listen for Calendly booking events (for analytics + optional UI feedback).
+useEffect(() => {
+  const onMessage = (e: MessageEvent) => {
+    const data: any = (e as any).data;
+    if (!data || typeof data !== "object") return;
+    if (typeof data.event !== "string") return;
+    if (!data.event.startsWith("calendly.")) return;
+
+    // Fire GA4/Google Ads-friendly events (no-op if gtag isn't installed yet).
+    try {
+      window.gtag?.("event", "calendly_widget_event", { calendly_event: data.event });
+      if (data.event === "calendly.event_scheduled") {
+        window.gtag?.("event", "conversion", {
+          // If you later add a Google Ads AW- conversion ID, set it here.
+          // send_to: "AW-XXXXXXX/XXXXXXXXXXX",
+          event_category: "Calendly",
+          event_label: "Call Booked",
+        });
+        window.gtag?.("event", "booked_call", { method: "calendly" });
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }
+}, []);
+
   const stepsByJobType: Record<JobType, string[]> = {
     residential: ["Job Type", "Home & Distance", "Logistics", "Contact"],
     commercial: ["Job Type", "Scope & Distance", "Logistics", "Contact"],
@@ -418,9 +473,23 @@ export function QuoteWizard() {
         }).catch(() => {});
       } catch {}
 setSubmitted(true);
+      // Analytics: lead captured (safe no-op if gtag isn't installed)
+      try {
+        window.gtag?.('event', 'generate_lead', { method: 'quiz_funnel' });
+        window.gtag?.('event', 'quiz_submit', { method: 'quiz_funnel' });
+      } catch {
+        // ignore
+      }
     } catch (err) {
       console.error(err);
       setSubmitted(true);
+      // Analytics: lead captured (safe no-op if gtag isn't installed)
+      try {
+        window.gtag?.('event', 'generate_lead', { method: 'quiz_funnel' });
+        window.gtag?.('event', 'quiz_submit', { method: 'quiz_funnel' });
+      } catch {
+        // ignore
+      }
     } finally {
       setSubmitting(false);
     }
@@ -460,9 +529,12 @@ setSubmitted(true);
           <div>
             <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2 overflow-hidden">
               <div
-                className="h-full bg-lime-400 transition-all"
+                className="h-full bg-lime-400 transition-all duration-500 ease-out relative"
                 style={{ width: `${progress}%` }}
-              />
+              >
+                {/* Subtle pulse shimmer for a "dopamine hit" without looking gimmicky */}
+                <div className="absolute inset-0 bg-white/25 animate-pulse" />
+              </div>
             </div>
             <p className="text-xs text-gray-500">
               Step {step + 1} of {totalSteps} · {currentStepLabel}
@@ -832,6 +904,26 @@ setSubmitted(true);
             </div>
           )}
 
+
+
+{/* Calendly CTA (appears after submit on the final page) */}
+{submitted && (
+  <div className="mt-6 rounded-2xl border border-lime-300 bg-white p-4 shadow-sm">
+    <h3 className="text-lg font-bold text-center mb-2">
+      👉 Schedule a quick call to lock in your estimate faster
+    </h3>
+
+    <p className="text-sm text-gray-600 text-center mb-4">
+      A quick call lets us confirm details and secure your preferred move date.
+    </p>
+
+    <div
+      className="calendly-inline-widget"
+      data-url="https://calendly.com/tesoromanagements/call-the-neighborhood-krew"
+      style={{ minWidth: "320px", height: "700px" }}
+    />
+  </div>
+)}
           {/* Navigation buttons */}
           <div className="flex items-center justify-between pt-2">
 
