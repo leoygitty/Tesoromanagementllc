@@ -2,35 +2,43 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export default async function handler(req: any, res: any) {
+module.exports = async function (req: any, res: any) {
   if (req.method !== "POST") {
-    return res.status(405).send("Method Not Allowed");
+    res.statusCode = 405;
+    return res.end("Method Not Allowed");
   }
 
   try {
-    const { email } = req.body;
+    const body = typeof req.body === "string"
+      ? JSON.parse(req.body)
+      : req.body;
+
+    const email = body?.email;
 
     if (!email || typeof email !== "string") {
-      return res.status(200).json({ ok: false });
+      res.statusCode = 200;
+      return res.end(JSON.stringify({ ok: false }));
     }
 
     await resend.emails.send({
-      from: process.env.PROMO_FROM_EMAIL!, // quotes@neighborhoodkrew.com
+      from: process.env.PROMO_FROM_EMAIL || "Neighborhood Krew <onboarding@resend.dev>",
       to: [
-        process.env.PROMO_OWNER_EMAIL!,
-        process.env.PROMO_MANAGER_EMAIL!,
+        process.env.PROMO_OWNER_EMAIL,
+        process.env.PROMO_MANAGER_EMAIL,
       ].filter(Boolean),
-      subject: process.env.PROMO_SUBJECT!,
+      subject: process.env.PROMO_SUBJECT || "New Promo Signup",
       html: `
         <h2>New Promo Signup</h2>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Promo Code:</strong> ${process.env.PROMO_CODE}</p>
+        <p>Email: ${email}</p>
+        <p>Promo Code: ${process.env.PROMO_CODE || "N/A"}</p>
       `,
     });
 
-    return res.status(200).json({ ok: true });
+    res.statusCode = 200;
+    res.end(JSON.stringify({ ok: true }));
   } catch (err) {
-    console.error("SUBSCRIBE ERROR:", err);
-    return res.status(200).json({ ok: false });
+    console.error("PROMO SUBSCRIBE ERROR:", err);
+    res.statusCode = 200;
+    res.end(JSON.stringify({ ok: false }));
   }
-}
+};
