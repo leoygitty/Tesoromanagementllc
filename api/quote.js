@@ -1,8 +1,7 @@
 // /api/quote.js
-
 const { Resend } = require("resend");
 
-// Read config from environment variables set in Vercel
+// Environment variables (configured in Vercel)
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const RESEND_FROM_EMAIL =
   process.env.RESEND_FROM_EMAIL || "quotes@neighborhoodkrew.com";
@@ -14,145 +13,176 @@ const RESEND_FORWARD_EMAIL =
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
-    return res
-      .status(405)
-      .json({ ok: false, error: "Method not allowed. Use POST." });
+    return res.status(405).json({
+      ok: false,
+      error: "Method not allowed. Use POST.",
+    });
   }
 
   if (!RESEND_API_KEY) {
-    console.log("[info] RESEND_API_KEY is missing in environment");
-    return res
-      .status(500)
-      .json({ ok: false, error: "Email service not configured" });
+    console.error("[quote] RESEND_API_KEY missing");
+    return res.status(500).json({
+      ok: false,
+      error: "Email service not configured",
+    });
   }
 
   const resend = new Resend(RESEND_API_KEY);
 
   const {
-    type,
     name,
     email,
     phone,
     service,
     details,
-    photoFiles,
+    photoFiles = [],
   } = req.body || {};
 
-  console.log("[info] Incoming quote payload:", req.body);
-
   if (!name || !email || !service || !details) {
-    console.log("[info] Missing fields in quote payload");
-    return res
-      .status(400)
-      .json({ ok: false, error: "Missing required quote fields" });
+    return res.status(400).json({
+      ok: false,
+      error: "Missing required fields",
+    });
   }
 
-  // Build a human-readable summary of uploaded photos
-  let photoSummary = "Uploaded photos: none.";
+  /* ---------------------------
+     Build photo attachments
+  ---------------------------- */
   let attachments = [];
+  let photoSummary = "Uploaded photos: none.";
 
   if (Array.isArray(photoFiles) && photoFiles.length > 0) {
     const lines = [];
 
     attachments = photoFiles
-      .filter((p) => p && p.base64)
+      .filter((p) => p?.base64)
       .map((p, idx) => {
         const filename = p.name || `photo-${idx + 1}.jpg`;
         const type = p.type || "image/jpeg";
-        const size = p.size || 0;
 
-        lines.push(
-          `- ${filename} (${type}, ${Math.round(size / 1024)} KB)`
-        );
+        lines.push(`- ${filename}`);
 
         return {
           filename,
-          content: Buffer.from(p.base64, "base64"), // 🔥 actual binary
+          content: Buffer.from(p.base64, "base64"),
           contentType: type,
         };
       });
 
     photoSummary = `Uploaded photos (${attachments.length}):\n${lines.join(
       "\n"
-    )}\n\n(Images are attached to this email.)`;
+    )}\n\n(Photos attached to this email.)`;
   }
 
-  const ownerSubject = `New quote request – ${service}`;
+  /* ---------------------------
+     OWNER EMAIL
+  ---------------------------- */
+  const ownerSubject = `New Quote Request – ${service}`;
   const ownerText = [
     "New quote request from NeighborhoodKrew.com",
-    "",
-    `Customer: ${name} <${email}>`,
-    `Phone: ${phone || "N/A"}`,
-    `Service: ${service}`,
-    "",
-    "Customer responses:",
-    "-------------------",
-    details,
-    "",
-    photoSummary,
-    "",
-    "— Automated lead from the website quiz",
-  ].join("\n");
-
-  const customerSubject = "We received your quote request";
-  const customerText = [
-    `Hi ${name},`,
-    "",
-    "Thanks for reaching out to Neighborhood Krew.",
-    "",
-    "Here’s a copy of the details you submitted so you can refer back to it:",
     "",
     `Name: ${name}`,
     `Email: ${email}`,
     `Phone: ${phone || "N/A"}`,
     `Service: ${service}`,
     "",
-    "Your responses:",
+    "Customer details:",
     "----------------",
     details,
     "",
-    "This range is an estimate only. A member of the crew will review it,",
-    "match it to the right truck and team, and reach out to lock in a firm",
-    "quote and schedule.",
+    photoSummary,
     "",
-    "If anything changes, you can reply directly to this email or call:",
-    "Neighborhood Krew Inc",
-    "Phone: (215) 531-0907",
-    "Email: Neighborhoodkrew@gmail.com",
+    "— Automated website lead",
   ].join("\n");
 
-  try {
-    const toInternal = [RESEND_OWNER_EMAIL, RESEND_FORWARD_EMAIL].filter(
-      Boolean
-    );
-    console.log("[info] Sending owner quote email to:", toInternal);
+  /* ---------------------------
+     CUSTOMER CONFIRMATION
+  ---------------------------- */
+  const customerSubject = "We received your quote request";
+  const customerText = [
+    `Hi ${name},`,
+    "",
+    "Thanks for contacting Neighborhood Krew.",
+    "",
+    "We’ve received your quote request and a member of the crew",
+    "will review it shortly and follow up to finalize pricing and scheduling.",
+    "",
+    "Here’s what you submitted:",
+    "",
+    `Service: ${service}`,
+    `Phone: ${phone || "N/A"}`,
+    "",
+    details,
+    "",
+    "If anything changes, reply to this email or call us directly:",
+    "(215) 531-0907",
+    "",
+    "— Neighborhood Krew",
+  ].join("\n");
 
-    const ownerResult = await resend.emails.send({
+  /* ---------------------------
+     CHECKLIST EMAIL (HTML)
+  ---------------------------- */
+  const checklistSubject =
+    "Your Moving Day Checklist – Neighborhood Krew";
+
+  const checklistHtml = `
+    <p>Hi ${name},</p>
+
+    <p>
+      Thanks again for requesting a quote with
+      <strong>Neighborhood Krew</strong>.
+    </p>
+
+    <p>
+      To help your move go smoothly, here’s our professional
+      <strong>Moving Day Checklist</strong>:
+    </p>
+
+    <p>
+      👉
+      <a href="https://neighborhoodkrew.com/NeighborhoodKrewMovingDayChecklist.pdf">
+        Download Moving Day Checklist (PDF)
+      </a>
+    </p>
+
+    <p><strong>Important reminders:</strong></p>
+    <ul>
+      <li>Please ensure adequate parking for our box truck</li>
+      <li>Extra items not listed may result in additional charges</li>
+      <li>
+        We do not haul food trash, paint, oil, tires, or propane tanks
+        (must be removed from grills)
+      </li>
+    </ul>
+
+    <p>
+      <strong>Promo Code:</strong>
+      <span style="font-size:16px;">KREW25</span>
+    </p>
+
+    <p>
+      If you have questions or updates, reply to this email or call us at
+      <strong>(215) 531-0907</strong>.
+    </p>
+
+    <p>— Neighborhood Krew</p>
+  `;
+
+  /* ---------------------------
+     SEND EMAILS
+  ---------------------------- */
+  try {
+    const internalRecipients = [
+      RESEND_OWNER_EMAIL,
+      RESEND_FORWARD_EMAIL,
+    ].filter(Boolean);
+
+    // Owner / internal email
+    await resend.emails.send({
       from: `Neighborhood Krew <${RESEND_FROM_EMAIL}>`,
-      to: toInternal,
+      to: internalRecipients,
       subject: ownerSubject,
       text: ownerText,
-      attachments: attachments, // 🔥 photos attached here
+      attachments,
     });
-
-    console.log("[info] Owner email result:", ownerResult);
-
-    console.log("[info] Sending confirmation to:", email);
-
-    const customerResult = await resend.emails.send({
-      from: `Neighborhood Krew <${RESEND_FROM_EMAIL}>`,
-      to: email,
-      subject: customerSubject,
-      text: customerText,
-    });
-
-    console.log("[info] Customer email result:", customerResult);
-
-    return res.status(200).json({ ok: true });
-  } catch (err) {
-    console.error("[error] Error sending quote emails:", err);
-    return res
-      .status(500)
-      .json({ ok: false, error: "Failed to send quote emails" });
-  }
-};
