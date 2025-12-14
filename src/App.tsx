@@ -64,6 +64,25 @@ type DivProps = React.HTMLAttributes<HTMLDivElement>;
 
 function Card(props: DivProps) {
   const { className = "", ...rest } = props;
+  // Mobile promo trigger (SAFE)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isMobile =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 768px)").matches;
+
+    if (!isMobile) return;
+    if (sessionStorage.getItem("promo_shown")) return;
+
+    const timer = window.setTimeout(() => {
+      setExitOpen(true);
+      sessionStorage.setItem("promo_shown", "1");
+    }, 9000);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
     <div
       className={
@@ -76,6 +95,25 @@ function Card(props: DivProps) {
 
 function CardHeader(props: DivProps) {
   const { className = "", ...rest } = props;
+  // Mobile promo trigger (SAFE)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isMobile =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 768px)").matches;
+
+    if (!isMobile) return;
+    if (sessionStorage.getItem("promo_shown")) return;
+
+    const timer = window.setTimeout(() => {
+      setExitOpen(true);
+      sessionStorage.setItem("promo_shown", "1");
+    }, 9000);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
     <div className={"px-4 pt-4 md:px-6 md:pt-5 " + className} {...rest} />
   );
@@ -83,6 +121,25 @@ function CardHeader(props: DivProps) {
 
 function CardContent(props: DivProps) {
   const { className = "", ...rest } = props;
+  // Mobile promo trigger (SAFE)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isMobile =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 768px)").matches;
+
+    if (!isMobile) return;
+    if (sessionStorage.getItem("promo_shown")) return;
+
+    const timer = window.setTimeout(() => {
+      setExitOpen(true);
+      sessionStorage.setItem("promo_shown", "1");
+    }, 9000);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
     <div className={"px-4 pb-4 md:px-6 md:pb-6 " + className} {...rest} />
   );
@@ -90,6 +147,25 @@ function CardContent(props: DivProps) {
 
 function CardTitle(props: DivProps) {
   const { className = "", ...rest } = props;
+  // Mobile promo trigger (SAFE)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isMobile =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 768px)").matches;
+
+    if (!isMobile) return;
+    if (sessionStorage.getItem("promo_shown")) return;
+
+    const timer = window.setTimeout(() => {
+      setExitOpen(true);
+      sessionStorage.setItem("promo_shown", "1");
+    }, 9000);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
     <h3 className={"text-lg md:text-xl font-semibold tracking-tight " + className} {...rest} />
   );
@@ -119,6 +195,25 @@ function Button({ variant = "solid", className = "", ...rest }: ButtonProps) {
 type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 function TextInput({ className = "", ...rest }: InputProps) {
+  // Mobile promo trigger (SAFE)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isMobile =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 768px)").matches;
+
+    if (!isMobile) return;
+    if (sessionStorage.getItem("promo_shown")) return;
+
+    const timer = window.setTimeout(() => {
+      setExitOpen(true);
+      sessionStorage.setItem("promo_shown", "1");
+    }, 9000);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
     <input
       className={
@@ -133,6 +228,25 @@ function TextInput({ className = "", ...rest }: InputProps) {
 type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
 function TextArea({ className = "", ...rest }: TextareaProps) {
+  // Mobile promo trigger (SAFE)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isMobile =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 768px)").matches;
+
+    if (!isMobile) return;
+    if (sessionStorage.getItem("promo_shown")) return;
+
+    const timer = window.setTimeout(() => {
+      setExitOpen(true);
+      sessionStorage.setItem("promo_shown", "1");
+    }, 9000);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
     <textarea
       className={
@@ -419,6 +533,25 @@ export function QuoteWizard() {
 
   const commonLine =
     "This range is based on similar jobs we’ve completed in the area and is meant as a starting point, not a final price.";
+  // Mobile promo trigger (SAFE)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isMobile =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 768px)").matches;
+
+    if (!isMobile) return;
+    if (sessionStorage.getItem("promo_shown")) return;
+
+    const timer = window.setTimeout(() => {
+      setExitOpen(true);
+      sessionStorage.setItem("promo_shown", "1");
+    }, 9000);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
     <Card className="shadow-lg border-gray-900">
       <CardHeader>
@@ -901,11 +1034,10 @@ export default function App() {
   const [exitStatus, setExitStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
 
 // Promo submit helper (newsletter + exit-intent)
-// Always return a boolean to keep UX flows consistent
-const handlePromoSubmit = async (email: string): Promise<boolean> => {
+const handlePromoSubmit = async (email: string) => {
   try {
     const clean = String(email || "").trim();
-    if (!clean) return false;
+    if (!clean) return { ok: false };
 
     const res = await fetch("/api/subscribe", {
       method: "POST",
@@ -913,38 +1045,18 @@ const handlePromoSubmit = async (email: string): Promise<boolean> => {
       body: JSON.stringify({ email: clean }),
     });
 
-    if (!res.ok) return false;
+    const data = await res.json().catch(() => ({} as any));
 
-    const data = await res.json().catch(() => null);
-    return Boolean((data as any)?.ok);
+    if (!res.ok) return { ok: false, ...data };
+    return { ok: true, ...data };
   } catch (err) {
     console.error(err);
-    return false;
+    return { ok: false };
   }
 };
 
 
   useEffect(() => {
-// Mobile promo trigger (time-delay) — window-safe
-useEffect(() => {
-  if (typeof window === "undefined") return;
-
-  const isMobile =
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(max-width: 768px)").matches;
-
-  if (!isMobile) return;
-  if (sessionStorage.getItem("promo_shown")) return;
-
-  const timer = setTimeout(() => {
-    setExitOpen(true);
-    sessionStorage.setItem("promo_shown", "1");
-  }, 9000);
-
-  return () => clearTimeout(timer);
-}, []);
-
-
     const onScroll = () => {
       setNavScrolled(window.scrollY > 10);
     };
@@ -954,26 +1066,6 @@ useEffect(() => {
 
   // Exit intent listener
   useEffect(() => {
-// Mobile promo trigger (time-delay) — window-safe
-useEffect(() => {
-  if (typeof window === "undefined") return;
-
-  const isMobile =
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(max-width: 768px)").matches;
-
-  if (!isMobile) return;
-  if (sessionStorage.getItem("promo_shown")) return;
-
-  const timer = setTimeout(() => {
-    setExitOpen(true);
-    sessionStorage.setItem("promo_shown", "1");
-  }, 9000);
-
-  return () => clearTimeout(timer);
-}, []);
-
-
     if (!shouldOpenExit()) return;
 
     const handler = (e: MouseEvent) => {
@@ -988,6 +1080,25 @@ useEffect(() => {
   }, []);
 
   // ❗ FIXED TSX ROOT WRAPPER — REQUIRED FOR VALID REACT TSX
+  // Mobile promo trigger (SAFE)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isMobile =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 768px)").matches;
+
+    if (!isMobile) return;
+    if (sessionStorage.getItem("promo_shown")) return;
+
+    const timer = window.setTimeout(() => {
+      setExitOpen(true);
+      sessionStorage.setItem("promo_shown", "1");
+    }, 9000);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
     <div className="font-sans text-gray-900 bg-white" id="top">
 
@@ -1657,7 +1768,7 @@ useEffect(() => {
 
                 const success = await handlePromoSubmit(exitEmail);
 
-                if (success) {
+                if (success?.ok || success?.code) {
                   setExitStatus("sent");
                 } else {
                   setExitStatus("error");
