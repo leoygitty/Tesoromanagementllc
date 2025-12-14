@@ -46,7 +46,7 @@ function dismissExit(days: number) {
 
 async function subscribeAndSendPromo(email: string) {
   try {
-    const res = await fetch("/api/promo", {
+    const res = await fetch("/api/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
@@ -1668,5 +1668,6 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 } // END OF APP COMPONENT
+
 
 
