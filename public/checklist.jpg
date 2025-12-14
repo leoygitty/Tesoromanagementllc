@@ -1,0 +1,6 @@
+public/
+├── pdf/
+│   └── NeighborhoodKrewMovingDayChecklist.pdf
+├── checklist/
+│   └── moving-day-illustration.jpg   ← your image
+├── favicon.ico
