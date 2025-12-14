@@ -1136,41 +1136,6 @@ const handlePromoSubmit = async (email: string) => {
             your space like their own.
           </p>
 
-          {/* Buttons */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl">
-  <Button
-    className="w-full h-12"
-    onClick={() =>
-      document.getElementById("quote")?.scrollIntoView({
-        behavior: "smooth",
-      })
-    }
-  >
-    Start My Free Quote
-  </Button>
-
-  <Button
-    className="w-full h-12 bg-white text-black hover:bg-gray-200"
-    variant="solid"
-    onClick={() =>
-      document.getElementById("services")?.scrollIntoView({
-        behavior: "smooth",
-      })
-    }
-  >
-    Explore Services
-  </Button>
-
-  <a href="tel:+12155310907" className="w-full">
-    <Button
-      variant="outline"
-      className="w-full h-12 justify-center"
-    >
-      Call (215) 531-0907
-    </Button>
-  </a>
-</div>
-
           {/* Trusted logos text */}
           <div className="mt-8 text-sm text-white/85">
             Trusted by premium brands & venues
