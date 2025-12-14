@@ -96,22 +96,39 @@ module.exports = async function handler(req, res) {
   ].join("\n");
 
   /* ---------------------------
-     CUSTOMER CONFIRMATION
+     CUSTOMER CONFIRMATION (UPDATED)
+     - Subject uses optimized header
+     - Your intro placed at top of body
+     - Checklist link included above move details
   ---------------------------- */
-  const customerSubject = "We received your quote request";
+  const customerSubject =
+    "We received your quote — here’s your free Moving Day Checklist";
+
+  const checklistUrl =
+    "https://neighborhoodkrew.com/NeighborhoodKrewMovingDayChecklist.pdf";
+
   const customerText = [
-    `Hi ${name},`,
+    "Hello,",
     "",
-    "Thanks for contacting Neighborhood Krew.",
+    "We have recieved your quote request, a member of the Krew will reach out to you shortly.",
+    "Here is a free moving checklist that you can should download and look over.",
+    "We created this from real moves we’ve completed to help avoid delays, surprise charges, and day-of stress.",
     "",
-    "We’ve received your quote request and a member of the crew",
-    "will review it shortly and follow up to finalize pricing and scheduling.",
+    `Download your Moving Day Checklist: ${checklistUrl}`,
     "",
-    "Here’s what you submitted:",
+    "— Neighborhood Krew",
+    "Licensed & insured local movers",
     "",
-    `Service: ${service}`,
+    "--------------------------------",
+    "Move details you submitted:",
+    "",
+    `Name: ${name}`,
+    `Email: ${email}`,
     `Phone: ${phone || "N/A"}`,
+    `Service: ${service}`,
     "",
+    "Your responses:",
+    "----------------",
     details,
     "",
     "If anything changes, reply to this email or call us directly:",
@@ -119,55 +136,6 @@ module.exports = async function handler(req, res) {
     "",
     "— Neighborhood Krew",
   ].join("\n");
-
-  /* ---------------------------
-     CHECKLIST EMAIL (HTML)
-  ---------------------------- */
-  const checklistSubject =
-    "Your Moving Day Checklist – Neighborhood Krew";
-
-  const checklistHtml = `
-    <p>Hi ${name},</p>
-
-    <p>
-      Thanks again for requesting a quote with
-      <strong>Neighborhood Krew</strong>.
-    </p>
-
-    <p>
-      To help your move go smoothly, here’s our professional
-      <strong>Moving Day Checklist</strong>:
-    </p>
-
-    <p>
-      👉
-      <a href="https://neighborhoodkrew.com/NeighborhoodKrewMovingDayChecklist.pdf">
-        Download Moving Day Checklist (PDF)
-      </a>
-    </p>
-
-    <p><strong>Important reminders:</strong></p>
-    <ul>
-      <li>Please ensure adequate parking for our box truck</li>
-      <li>Extra items not listed may result in additional charges</li>
-      <li>
-        We do not haul food trash, paint, oil, tires, or propane tanks
-        (must be removed from grills)
-      </li>
-    </ul>
-
-    <p>
-      <strong>Promo Code:</strong>
-      <span style="font-size:16px;">KREW25</span>
-    </p>
-
-    <p>
-      If you have questions or updates, reply to this email or call us at
-      <strong>(215) 531-0907</strong>.
-    </p>
-
-    <p>— Neighborhood Krew</p>
-  `;
 
   /* ---------------------------
      SEND EMAILS
@@ -178,7 +146,7 @@ module.exports = async function handler(req, res) {
       RESEND_FORWARD_EMAIL,
     ].filter(Boolean);
 
-    // Owner / internal email
+    // Owner / internal email (includes attachments)
     await resend.emails.send({
       from: `Neighborhood Krew <${RESEND_FROM_EMAIL}>`,
       to: internalRecipients,
@@ -186,3 +154,21 @@ module.exports = async function handler(req, res) {
       text: ownerText,
       attachments,
     });
+
+    // Customer confirmation (NOW includes checklist link + intro at top)
+    await resend.emails.send({
+      from: `Neighborhood Krew <${RESEND_FROM_EMAIL}>`,
+      to: email,
+      subject: customerSubject,
+      text: customerText,
+    });
+
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error("[quote] Email error:", err);
+    return res.status(500).json({
+      ok: false,
+      error: "Failed to process quote",
+    });
+  }
+};
