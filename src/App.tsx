@@ -1456,7 +1456,7 @@ const handlePromoSubmit = async (email: string) => {
 
             <div className="mt-8 flex flex-wrap gap-4">
               <a
-                href="/Neighborhood_Krew_Moving_Day_Checklist.pdf"
+                href="/NeighborhoodKrewMovingDayChecklist.pdf"
                 download
                 className="inline-flex items-center justify-center rounded-full bg-lime-400 px-6 py-3 text-black font-semibold hover:bg-lime-300 transition"
               >
@@ -1894,6 +1894,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 } // END OF APP COMPONENT
+
 
 
 
