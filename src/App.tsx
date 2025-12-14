@@ -1233,7 +1233,9 @@ const handlePromoSubmit = async (email: string) => {
     </a>
   </div>
 </div>
-
+          
+</div>
+</section>     
       {/* Services Section */}
       <section id="services" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
@@ -1823,6 +1825,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 } // END OF APP COMPONENT
+
 
 
 
