@@ -1022,6 +1022,14 @@ const GALLERY_IMAGES: string[] = [
 // --- Main App Component ----------------------------------------------------
 
 export default function App() {
+  const trackChecklistDownload = (source: "button" | "image") => {
+    fetch("/api/track-checklist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source }),
+    }).catch(() => {});
+  };
+
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
