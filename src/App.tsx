@@ -1005,9 +1005,6 @@ const GALLERY_IMAGES: string[] = [
 
 // --- Main App Component ----------------------------------------------------
 
-function App() {
-
-
   const [navScrolled, setNavScrolled] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -1325,8 +1322,8 @@ const handlePromoSubmit = async (email: string) => {
               />
             </div>
           </div>
-</section>
-        {/* Services Section */}
+
+{/* Services Section */}
       <section id="services" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold mb-6 text-center md:text-left">
@@ -1912,9 +1909,10 @@ const handlePromoSubmit = async (email: string) => {
         </div>
       )}
 
+      </section>
+
     </div>
   );
 }
 export default App;
-
 
