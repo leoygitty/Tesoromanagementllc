@@ -1783,7 +1783,7 @@ const handlePromoSubmit = async (email: string) => {
         </div>
       </section>
 
-      {/* Newsletter / Promo Section */}
+           {/* Newsletter / Promo Section */}
       <section className="py-10 border-t bg-gray-900 text-gray-100">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row gap-6 items-center justify-between">
           <div>
@@ -1840,11 +1840,11 @@ const handlePromoSubmit = async (email: string) => {
       >
         Call now
       </a>
+
       {/* Exit-Intent Promo Modal */}
       {exitOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full p-6">
-
             <h3 className="text-xl font-bold">Wait — take $25 off your move?</h3>
 
             <p className="text-sm text-gray-600 mt-2">
@@ -1852,19 +1852,12 @@ const handlePromoSubmit = async (email: string) => {
               for your next move.
             </p>
 
-            {/* Promo form */}
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
                 setExitStatus("loading");
-
                 const success = await handlePromoSubmit(exitEmail);
-
-                if (success?.ok || success?.code) {
-                  setExitStatus("sent");
-                } else {
-                  setExitStatus("error");
-                }
+                setExitStatus(success?.ok || success?.code ? "sent" : "error");
               }}
               className="mt-4 flex gap-2"
             >
@@ -1880,20 +1873,19 @@ const handlePromoSubmit = async (email: string) => {
               </Button>
             </form>
 
-            {/* Status messages */}
             {exitStatus === "sent" && (
               <p className="text-green-600 text-sm mt-2">
                 Promo code sent! Check your inbox.
               </p>
             )}
+
             {exitStatus === "error" && (
               <p className="text-red-600 text-sm mt-2">
-                Something went wrong — but we saved your email. You'll still receive promos.
+                Something went wrong — but we saved your email.
               </p>
             )}
 
-            {/* Close button */}
-            <div className="mt-3 flex justify-end gap-3">
+            <div className="mt-3 flex justify-end">
               <button
                 type="button"
                 onClick={() => {
@@ -1908,11 +1900,8 @@ const handlePromoSubmit = async (email: string) => {
           </div>
         </div>
       )}
-
-      </section>
-
     </div>
   );
 }
-export default App;
 
+export default App;
