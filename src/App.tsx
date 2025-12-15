@@ -1231,8 +1231,9 @@ const handlePromoSubmit = async (email: string) => {
               />
             </div>
           </div>
-
-{/* Services Section */}
+        </section>
+        
+        {/* Services Section */}
       <section id="services" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold mb-6 text-center md:text-left">
@@ -1821,6 +1822,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
