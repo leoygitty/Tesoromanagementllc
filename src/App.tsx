@@ -15,6 +15,9 @@ const BUSINESS = {
 // Public checklist PDF (served from /public)
 const CHECKLIST_PDF_URL = "/NeighborhoodKrewMovingDayChecklist.pdf";
 
+// Calendly embed URL
+const CALENDLY_URL = "https://calendly.com/tesoromanagements/call-the-neighborhood-krew";
+
 // --- Exit-intent + promo helpers ----------------------------------------
 
 const EXIT_DISMISS_KEY = "nk_exit_dismissed_until";
@@ -146,6 +149,7 @@ function TextArea({ className = "", ...rest }: TextareaProps) {
     />
   );
 }
+
 // --- Quote Wizard / Quiz Funnel -----------------------------------------
 
 type JobType = "residential" | "commercial" | "junk";
@@ -171,16 +175,6 @@ type WizardState = {
 };
 
 type Estimate = { low: number; high: number };
-
-// Helper: convert File to base64 data URL
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 function computeEstimate(state: WizardState): Estimate {
   if (state.jobType === "junk") {
@@ -252,7 +246,6 @@ async function filesToBase64List(files: File[]) {
 
   return Promise.all(files.map((f) => encodeOne(f)));
 }
-
 export function QuoteWizard() {
   const [step, setStep] = useState(0);
   const [state, setState] = useState<WizardState>({
@@ -279,6 +272,7 @@ export function QuoteWizard() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [calendlyLoaded, setCalendlyLoaded] = useState(false);
 
   const stepsByJobType: Record<JobType, string[]> = {
     residential: ["Job Type", "Home & Distance", "Logistics", "Contact"],
@@ -397,9 +391,6 @@ export function QuoteWizard() {
         body: JSON.stringify(payload),
       });
 
-      
-      // Auto-email the Moving Day Checklist after quote submission (optional endpoint)
-      // If you don't create /api/send-checklist, this fails silently and won't affect UX.
       try {
         const origin =
           typeof window !== "undefined" ? window.location.origin : "";
@@ -417,7 +408,8 @@ export function QuoteWizard() {
           keepalive: true,
         }).catch(() => {});
       } catch {}
-setSubmitted(true);
+      
+      setSubmitted(true);
     } catch (err) {
       console.error(err);
       setSubmitted(true);
@@ -425,6 +417,21 @@ setSubmitted(true);
       setSubmitting(false);
     }
   };
+
+  // 🆕 Load Calendly script after submission
+  useEffect(() => {
+    if (submitted && !calendlyLoaded) {
+      const script = document.createElement("script");
+      script.src = "https://assets.calendly.com/assets/external/widget.js";
+      script.async = true;
+      script.onload = () => setCalendlyLoaded(true);
+      document.body.appendChild(script);
+
+      return () => {
+        document.body.removeChild(script);
+      };
+    }
+  }, [submitted, calendlyLoaded]);
 
   const currentStepLabel = steps[step];
 
@@ -441,7 +448,8 @@ setSubmitted(true);
   }
 
   const commonLine =
-    "This range is based on similar jobs we’ve completed in the area and is meant as a starting point, not a final price.";
+    "This range is based on similar jobs we've completed in the area and is meant as a starting point, not a final price.";
+  
   return (
     <Card className="shadow-lg border-gray-900">
       <CardHeader>
@@ -456,21 +464,33 @@ setSubmitted(true);
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
 
-          {/* Progress bar */}
-          <div>
-            <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2 overflow-hidden">
-              <div
-                className="h-full bg-lime-400 transition-all"
-                style={{ width: `${progress}%` }}
-              />
+          {/* 🆕 ENHANCED: Animated Progress bar with shimmer - Only show during quiz */}
+          {!submitted && (
+            <div>
+              <div className="w-full bg-gray-200 rounded-full h-2 mb-2 overflow-hidden relative">
+                <div
+                  className="h-full bg-gradient-to-r from-lime-400 to-lime-500 transition-all duration-700 ease-out relative overflow-hidden"
+                  style={{ width: `${progress}%` }}
+                >
+                  {/* Shimmer effect */}
+                  <div
+                    className="absolute inset-0 opacity-30"
+                    style={{
+                      background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)",
+                      animation: "shimmer 2s infinite",
+                      backgroundSize: "200% 100%",
+                    }}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-500">
+                Step {step + 1} of {totalSteps} · {currentStepLabel}
+              </p>
             </div>
-            <p className="text-xs text-gray-500">
-              Step {step + 1} of {totalSteps} · {currentStepLabel}
-            </p>
-          </div>
+          )}
 
           {/* Step 0 – Choose job type */}
-          {step === 0 && (
+          {step === 0 && !submitted && (
             <div className="space-y-3">
               <label className="block text-sm font-medium">What kind of job is this?</label>
 
@@ -493,7 +513,7 @@ setSubmitted(true);
           )}
 
           {/* Step 1 – Residential */}
-          {step === 1 && state.jobType === "residential" && (
+          {step === 1 && state.jobType === "residential" && !submitted && (
             <div className="space-y-4">
 
               {/* Home size */}
@@ -570,7 +590,7 @@ setSubmitted(true);
           )}
 
           {/* Step 1 – Commercial */}
-          {step === 1 && state.jobType === "commercial" && (
+          {step === 1 && state.jobType === "commercial" && !submitted && (
             <div className="space-y-4">
 
               <div>
@@ -631,7 +651,7 @@ setSubmitted(true);
           )}
 
           {/* Step 1 – Junk */}
-          {step === 1 && state.jobType === "junk" && (
+          {step === 1 && state.jobType === "junk" && !submitted && (
             <div className="space-y-4">
 
               <div>
@@ -686,7 +706,7 @@ setSubmitted(true);
           )}
 
           {/* Step 2 – Logistics (non-junk) */}
-          {step === 2 && state.jobType !== "junk" && (
+          {step === 2 && state.jobType !== "junk" && !submitted && (
             <div className="space-y-4">
 
               <div>
@@ -743,8 +763,8 @@ setSubmitted(true);
           )}
 
           {/* Contact step */}
-          {(step === 2 && state.jobType === "junk") ||
-          (step === 3 && state.jobType !== "junk") ? (
+          {((step === 2 && state.jobType === "junk") ||
+          (step === 3 && state.jobType !== "junk")) && !submitted ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
@@ -792,7 +812,7 @@ setSubmitted(true);
                 />
 
                 <p className="text-xs text-gray-500 mt-1">
-                  Photos help us give a tighter quote. They’re attached privately so the
+                  Photos help us give a tighter quote. They're attached privately so the
                   crew can review them before calling you back.
                 </p>
               </div>
@@ -807,9 +827,9 @@ setSubmitted(true);
             </div>
           )}
 
-          {/* Estimate preview */}
+          {/* 🆕 ENHANCED: Estimate preview + CTA + Calendly - Only shown after submission */}
           {submitted && estimate && (
-            <div className="mt-2">
+            <div className="mt-2 space-y-4">
 
               <div className="animate-bounce rounded-2xl border-2 border-black bg-lime-400 px-4 py-3 text-center shadow-md">
                 <div className="text-xs font-semibold uppercase tracking-wide text-black/80">
@@ -820,7 +840,7 @@ setSubmitted(true);
                 </div>
               </div>
 
-              <div className="mt-3 rounded-lg border border-lime-300 bg-lime-50 px-3 py-3 text-xs md:text-sm text-gray-800">
+              <div className="rounded-lg border border-lime-300 bg-lime-50 px-3 py-3 text-xs md:text-sm text-gray-800">
                 <p>{commonLine}</p>
                 <p className="mt-1">{jobSpecificLine}</p>
                 <p className="mt-1 text-gray-600">
@@ -829,44 +849,89 @@ setSubmitted(true);
                 </p>
               </div>
 
+              {/* 🆕 Post-submission CTA */}
+              <div className="rounded-xl border-2 border-lime-500 bg-gradient-to-r from-lime-50 to-lime-100 px-6 py-4 text-center shadow-lg">
+                <div className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+                  👉 Schedule a quick call to lock in your estimate faster
+                </div>
+                <p className="text-sm text-gray-700 mb-4">
+                  Book a 15-minute call with our team to confirm details and get priority scheduling.
+                </p>
+                <button
+                  onClick={() => {
+                    const calendlySection = document.getElementById("calendly-embed");
+                    if (calendlySection) {
+                      calendlySection.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                  }}
+                  className="inline-flex items-center justify-center rounded-full bg-lime-500 hover:bg-lime-600 text-black font-semibold px-6 py-3 text-sm transition-all transform hover:scale-105"
+                >
+                  Pick Your Time Now
+                </button>
+              </div>
+
+              {/* 🆕 Calendly Embed */}
+              <div id="calendly-embed" className="mt-6">
+                <div
+                  className="calendly-inline-widget"
+                  data-url={CALENDLY_URL}
+                  style={{ minWidth: "320px", height: "700px" }}
+                />
+              </div>
+
             </div>
           )}
 
-          {/* Navigation buttons */}
-          <div className="flex items-center justify-between pt-2">
+          {/* Navigation buttons - Only show during quiz */}
+          {!submitted && (
+            <div className="flex items-center justify-between pt-2">
 
-            <button
-              type="button"
-              onClick={prevStep}
-              disabled={step === 0 || submitting}
-              className={`text-sm px-3 py-2 rounded-md border ${
-                step === 0 || submitting ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-50"
-              }`}
-            >
-              Back
-            </button>
+              <button
+                type="button"
+                onClick={prevStep}
+                disabled={step === 0 || submitting}
+                className={`text-sm px-3 py-2 rounded-md border ${
+                  step === 0 || submitting ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-50"
+                }`}
+              >
+                Back
+              </button>
 
-            <div className="flex items-center gap-3">
-              {!isLastStep && (
-                <Button type="button" onClick={nextStep} disabled={submitting}>
-                  Next
-                </Button>
-              )}
+              <div className="flex items-center gap-3">
+                {!isLastStep && (
+                  <Button type="button" onClick={nextStep} disabled={submitting}>
+                    Next
+                  </Button>
+                )}
 
-              {isLastStep && (
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? "Submitting..." : "See My Estimate"}
-                </Button>
-              )}
+                {isLastStep && (
+                  <Button type="submit" disabled={submitting}>
+                    {submitting ? "Submitting..." : "See My Estimate"}
+                  </Button>
+                )}
+              </div>
+
             </div>
-
-          </div>
+          )}
 
         </form>
       </CardContent>
+
+      {/* 🆕 Shimmer animation keyframes */}
+      <style>{`
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+      `}</style>
     </Card>
   );
 }
+
 // --- Reviews data ---------------------------------------------------------
 
 const REVIEWS = [
@@ -909,7 +974,8 @@ const GALLERY_IMAGES: string[] = [
   "/gallery/krew12.jpg",
   "/gallery/krew13.jpg",
   "/gallery/krew14.jpg",
-  "/gallery/krew15.jpg",];
+  "/gallery/krew15.jpg",
+];
 
 // --- Main App Component ----------------------------------------------------
 
@@ -1822,7 +1888,6 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
-
 
 
 
