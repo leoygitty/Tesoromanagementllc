@@ -246,6 +246,7 @@ async function filesToBase64List(files: File[]) {
 
   return Promise.all(files.map((f) => encodeOne(f)));
 }
+
 export function QuoteWizard() {
   const [step, setStep] = useState(0);
   const [state, setState] = useState<WizardState>({
@@ -339,9 +340,7 @@ export function QuoteWizard() {
       );
     } else {
       detailsLines.push(
-        `Home size: ${state.size || "not specified"}, approx. square footage: ${
-          state.sqft || "N/A"
-        }`
+        `Home size: ${state.size || "not specified"}, approx. square footage: ${state.sqft || "N/A"}`
       );
       detailsLines.push(`Approx. distance: ${state.distance || "N/A"}`);
       detailsLines.push(`To ZIP: ${state.toZip || "N/A"}`);
@@ -408,7 +407,7 @@ export function QuoteWizard() {
           keepalive: true,
         }).catch(() => {});
       } catch {}
-      
+
       setSubmitted(true);
     } catch (err) {
       console.error(err);
@@ -418,7 +417,7 @@ export function QuoteWizard() {
     }
   };
 
-  // 🆕 Load Calendly script after submission
+  // Load Calendly script only after submission
   useEffect(() => {
     if (submitted && !calendlyLoaded) {
       const script = document.createElement("script");
@@ -428,7 +427,9 @@ export function QuoteWizard() {
       document.body.appendChild(script);
 
       return () => {
-        document.body.removeChild(script);
+        if (document.body.contains(script)) {
+          document.body.removeChild(script);
+        }
       };
     }
   }, [submitted, calendlyLoaded]);
@@ -449,7 +450,7 @@ export function QuoteWizard() {
 
   const commonLine =
     "This range is based on similar jobs we've completed in the area and is meant as a starting point, not a final price.";
-  
+
   return (
     <Card className="shadow-lg border-gray-900">
       <CardHeader>
@@ -464,27 +465,28 @@ export function QuoteWizard() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
 
-          {/* 🆕 ENHANCED: Animated Progress bar with shimmer - Only show during quiz */}
+          {/* Animated Progress Bar – visible only during quiz */}
           {!submitted && (
-            <div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mb-2 overflow-hidden relative">
+            <div className="space-y-2">
+              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden relative">
                 <div
-                  className="h-full bg-gradient-to-r from-lime-400 to-lime-500 transition-all duration-700 ease-out relative overflow-hidden"
+                  className="h-full bg-gradient-to-r from-lime-400 to-lime-500 transition-all duration-700 ease-out relative overflow-hidden shadow-md"
                   style={{ width: `${progress}%` }}
                 >
-                  {/* Shimmer effect */}
+                  {/* Subtle pulse + shimmer for dopamine hit */}
+                  <div className="absolute inset-0 animate-pulse bg-white opacity-20" />
                   <div
-                    className="absolute inset-0 opacity-30"
+                    className="absolute inset-0"
                     style={{
                       background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)",
-                      animation: "shimmer 2s infinite",
+                      animation: "shimmer 2.5s infinite",
                       backgroundSize: "200% 100%",
                     }}
                   />
                 </div>
               </div>
-              <p className="text-xs text-gray-500">
-                Step {step + 1} of {totalSteps} · {currentStepLabel}
+              <p className="text-sm text-gray-600 text-center">
+                Step {step + 1} of {totalSteps} — {currentStepLabel}
               </p>
             </div>
           )}
@@ -827,105 +829,90 @@ export function QuoteWizard() {
             </div>
           )}
 
-          {/* 🆕 ENHANCED: Estimate preview + CTA + Calendly - Only shown after submission */}
+          {/* Post-submission view */}
           {submitted && estimate && (
-            <div className="mt-2 space-y-4">
+            <div className="space-y-6">
 
-              <div className="animate-bounce rounded-2xl border-2 border-black bg-lime-400 px-4 py-3 text-center shadow-md">
-                <div className="text-xs font-semibold uppercase tracking-wide text-black/80">
-                  Your estimated price range
-                </div>
-                <div className="mt-1 text-3xl md:text-4xl font-extrabold text-black">
-                  ${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-lime-300 bg-lime-50 px-3 py-3 text-xs md:text-sm text-gray-800">
-                <p>{commonLine}</p>
-                <p className="mt-1">{jobSpecificLine}</p>
-                <p className="mt-1 text-gray-600">
-                  You'll get a confirmation email with these details. You can reply directly
-                  if anything changes.
-                </p>
-              </div>
-
-              {/* 🆕 Post-submission CTA */}
-              <div className="rounded-xl border-2 border-lime-500 bg-gradient-to-r from-lime-50 to-lime-100 px-6 py-4 text-center shadow-lg">
-                <div className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+              {/* Strong post-submission CTA */}
+              <div className="rounded-2xl bg-gradient-to-r from-lime-400 to-lime-500 p-6 text-center shadow-xl">
+                <p className="text-2xl font-bold text-black">
                   👉 Schedule a quick call to lock in your estimate faster
-                </div>
-                <p className="text-sm text-gray-700 mb-4">
-                  Book a 15-minute call with our team to confirm details and get priority scheduling.
                 </p>
-                <button
-                  onClick={() => {
-                    const calendlySection = document.getElementById("calendly-embed");
-                    if (calendlySection) {
-                      calendlySection.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }
-                  }}
-                  className="inline-flex items-center justify-center rounded-full bg-lime-500 hover:bg-lime-600 text-black font-semibold px-6 py-3 text-sm transition-all transform hover:scale-105"
-                >
-                  Pick Your Time Now
-                </button>
+                <p className="mt-3 text-sm text-black/80">
+                  Speak directly with the crew, confirm details, and get priority scheduling + a finalized price.
+                </p>
               </div>
 
-              {/* 🆕 Calendly Embed */}
-              <div id="calendly-embed" className="mt-6">
-                <div
-                  className="calendly-inline-widget"
-                  data-url={CALENDLY_URL}
-                  style={{ minWidth: "320px", height: "700px" }}
-                />
+              {/* Estimate display */}
+              <div className="rounded-2xl bg-lime-100 border-4 border-lime-500 p-6 text-center shadow-lg">
+                <p className="text-sm font-semibold uppercase tracking-wide text-black/70">
+                  Your estimated price range
+                </p>
+                <p className="mt-2 text-4xl md:text-5xl font-extrabold text-black">
+                  ${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}
+                </p>
               </div>
 
+              {/* Explanation text */}
+              <div className="space-y-3 text-sm text-gray-700 bg-gray-50 rounded-xl p-5">
+                <p>{commonLine}</p>
+                <p>{jobSpecificLine}</p>
+                <p className="text-gray-600">
+                  You'll receive a confirmation email shortly with all your details.
+                </p>
+              </div>
+
+              {/* Calendly inline widget – loads only after submission */}
+              {calendlyLoaded && (
+                <div className="mt-8">
+                  <div
+                    className="calendly-inline-widget"
+                    data-url={CALENDLY_URL}
+                    style={{ minWidth: "320px", height: "700px" }}
+                  />
+                </div>
+              )}
             </div>
           )}
 
-          {/* Navigation buttons - Only show during quiz */}
+          {/* Navigation buttons – only during quiz */}
           {!submitted && (
-            <div className="flex items-center justify-between pt-2">
-
+            <div className="flex items-center justify-between pt-4">
               <button
                 type="button"
                 onClick={prevStep}
                 disabled={step === 0 || submitting}
-                className={`text-sm px-3 py-2 rounded-md border ${
-                  step === 0 || submitting ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-50"
+                className={`text-sm px-4 py-2 rounded-md border ${
+                  step === 0 || submitting
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-gray-50"
                 }`}
               >
                 Back
               </button>
 
-              <div className="flex items-center gap-3">
+              <div className="flex gap-3">
                 {!isLastStep && (
                   <Button type="button" onClick={nextStep} disabled={submitting}>
                     Next
                   </Button>
                 )}
-
                 {isLastStep && (
                   <Button type="submit" disabled={submitting}>
                     {submitting ? "Submitting..." : "See My Estimate"}
                   </Button>
                 )}
               </div>
-
             </div>
           )}
-
         </form>
       </CardContent>
 
-      {/* 🆕 Shimmer animation keyframes */}
+      {/* Shimmer keyframe animation */}
       <style>{`
         @keyframes shimmer {
-          0% {
-            background-position: -200% 0;
-          }
-          100% {
-            background-position: 200% 0;
-          }
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
         }
       `}</style>
     </Card>
@@ -1063,42 +1050,40 @@ const handlePromoSubmit = async (email: string) => {
     <div className="font-sans text-gray-900 bg-white" id="top">
 
       {/* Top black banner */}
-<div className="bg-black text-white text-xs sm:text-sm">
-  <div className="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
+      <div className="bg-black text-white text-xs sm:text-sm">
+        <div className="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
 
-    {/* Reviews button (links to reviews section) */}
-    <a
-      href="#reviews"
-      className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1.5 font-semibold hover:bg-white/10 transition"
-    >
-      <span className="text-yellow-400 tracking-wider">★★★★★</span>
-      <span>Reviews</span>
-    </a>
+          {/* Reviews button (links to reviews section) */}
+          <a
+            href="#reviews"
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1.5 font-semibold hover:bg-white/10 transition"
+          >
+            <span className="text-yellow-400 tracking-wider">★★★★★</span>
+            <span>Reviews</span>
+          </a>
 
-    {/* Locations (not clickable) */}
-    <div className="hidden sm:block text-center text-white/90 font-medium">
-      Bucks County · Montco · Greater NJ · Philadelphia · Princeton
-    </div>
+          {/* Locations (not clickable) */}
+          <div className="hidden sm:block text-center text-white/90 font-medium">
+            Bucks County · Montco · Greater NJ · Philadelphia · Princeton
+          </div>
 
-    {/* Quote button (links to quote section) */}
-    <a
-      href="#quote"
-      className="inline-flex items-center justify-center rounded-full bg-lime-400 px-4 py-1.5 font-semibold text-black hover:bg-lime-300 transition"
-    >
-      Get Quote
-    </a>
-  </div>
+          {/* Quote button (links to quote section) */}
+          <a
+            href="#quote"
+            className="inline-flex items-center justify-center rounded-full bg-lime-400 px-4 py-1.5 font-semibold text-black hover:bg-lime-300 transition"
+          >
+            Get Quote
+          </a>
+        </div>
 
-  {/* Mobile locations line */}
-  <div className="sm:hidden px-4 pb-2 text-center text-white/90 font-medium">
-    Bucks County · Montco · Greater NJ · Philadelphia · Princeton
-  </div>
-</div>
+        {/* Mobile locations line */}
+        <div className="sm:hidden px-4 pb-2 text-center text-white/90 font-medium">
+          Bucks County · Montco · Greater NJ · Philadelphia · Princeton
+        </div>
+      </div>
       {/* Main navigation header */}
       <header
-        className={`sticky top-0 z-40 border-b bg-white/80 backdrop-blur ${
-          navScrolled ? "py-2 shadow-sm" : "py-3"
-        }`}
+        className={`sticky top-0 z-40 border-b bg-white/80 backdrop-blur ${navScrolled ? "py-2 shadow-sm" : "py-3"}`}
       >
         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between gap-4">
 
@@ -1120,7 +1105,7 @@ const handlePromoSubmit = async (email: string) => {
             <a href="#services" className="hover:text-lime-500">Services</a>
             <a href="#quote" className="hover:text-lime-500">Free Quote</a>
             <a href="#moving-checklist" className="hover:text-lime-500">Checklist</a>
-          <a href="#pricing" className="hover:text-lime-500">Pricing</a>
+            <a href="#pricing" className="hover:text-lime-500">Pricing</a>
             <a href="#reviews" className="hover:text-lime-500">Reviews</a>
             <a href="#gallery" className="hover:text-lime-500">Gallery</a>
             <a href="#hiring" className="hover:text-lime-500">We’re Hiring</a>
@@ -1148,7 +1133,7 @@ const handlePromoSubmit = async (email: string) => {
               {[
                 ["#services", "Services"],
                 ["#quote", "Free Quote"],
-        ["#moving-checklist", "Moving Checklist"],
+                ["#moving-checklist", "Moving Checklist"],
                 ["#pricing", "Pricing"],
                 ["#reviews", "Reviews"],
                 ["#gallery", "Gallery"],
@@ -1242,8 +1227,7 @@ const handlePromoSubmit = async (email: string) => {
             Trusted by premium brands & venues
           </div>
 
-          {/* Featured images */}
-         {/* Featured CTAs + images (desktop only) */}
+          {/* Featured CTAs + images (desktop only) */}
           <div className="mt-8 hidden md:block">
             <div className="grid grid-cols-3 gap-4">
               <Button
@@ -1297,9 +1281,10 @@ const handlePromoSubmit = async (email: string) => {
               />
             </div>
           </div>
-        </section>
+        </div>
+      </section>
         
-        {/* Services Section */}
+      {/* Services Section */}
       <section id="services" className="py-12 md:py-16">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl font-bold mb-6 text-center md:text-left">
@@ -1888,7 +1873,3 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
-
-
-
-
