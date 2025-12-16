@@ -1403,7 +1403,7 @@ const handlePromoSubmit = async (email: string) => {
             </ul>
 
             <p className="text-xs text-gray-500">
-              No spam — just a tailored quote and clear next steps from a real person on the crew. By completing this form, I acknowledge and agree that my information will be collected and processed in accordance with TWO MEN AND A TRUCK's Privacy Policy.            </p>
+              No spam — just a tailored quote and clear next steps from a real person on the crew. By completing this form, I acknowledge and agree that my information will be collected and processed in accordance with Neighborhood Krew Privacy Policy.            </p>
           </div>
         </div>
       </section>
@@ -1871,5 +1871,6 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
