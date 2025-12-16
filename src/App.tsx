@@ -1398,7 +1398,6 @@ const handlePromoSubmit = async (email: string) => {
             </p>
 
             <ul className="list-disc list-inside space-y-1">
-              <li>Most local residential moves need to be discussed further after we receive your job details.</li>
               <li>Commercial and specialty projects can be higher depending on scope.</li>
               <li>Junk removal pricing is based on volume, weight, and dump fees.</li>
             </ul>
@@ -1872,4 +1871,5 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
