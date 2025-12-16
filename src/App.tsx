@@ -1398,14 +1398,13 @@ const handlePromoSubmit = async (email: string) => {
             </p>
 
             <ul className="list-disc list-inside space-y-1">
-              <li>Most local residential moves we quote fall between $1k–$12k.</li>
+              <li>Most local residential moves need to be discussed further after we receive your job details.</li>
               <li>Commercial and specialty projects can be higher depending on scope.</li>
               <li>Junk removal pricing is based on volume, weight, and dump fees.</li>
             </ul>
 
             <p className="text-xs text-gray-500">
-              No spam — just a tailored quote and clear next steps from a real person on the crew.
-            </p>
+              No spam — just a tailored quote and clear next steps from a real person on the crew. By completing this form, I acknowledge and agree that my information will be collected and processed in accordance with TWO MEN AND A TRUCK's Privacy Policy.            </p>
           </div>
         </div>
       </section>
@@ -1873,3 +1872,4 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
