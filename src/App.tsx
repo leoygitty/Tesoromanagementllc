@@ -1410,111 +1410,123 @@ const handlePromoSubmit = async (email: string) => {
         </div>
       </section>
       
-      {/* Moving Day Checklist Section */}
-      <section
-        id="moving-checklist"
-        className="py-12 md:py-16 bg-white border-t"
-      >
-        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
+    {/* Moving Day Checklist Section */}
+<section
+  id="moving-checklist"
+  className="py-12 md:py-16 bg-white border-t"
+>
+  <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
 
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-              Moving Day Checklist To-Go
-            </h2>
+    <div>
+      <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+        Moving Day Checklist To-Go
+      </h2>
 
-            <p className="mt-4 text-gray-600 max-w-lg">
-              Download our professional, mover-approved checklist designed to help
-              your move go smoothly — whether you’re planning ahead or booking last-minute.
-            </p>
+      <p className="mt-4 text-gray-600 max-w-lg">
+        Get our professional, mover-approved checklist designed to help
+        your move go smoothly — whether you’re planning ahead or booking last-minute.
+      </p>
 
-            <ul className="mt-6 space-y-2 text-sm text-gray-700">
-              <li>✔ One-page, easy-to-follow format</li>
-              <li>✔ Parking & access reminders</li>
-              <li>✔ Item restrictions clearly outlined</li>
-              <li>✔ Helps avoid delays & surprise charges</li>
-              <li>✔ Includes exclusive promo code</li>
-            </ul>
+      <ul className="mt-6 space-y-2 text-sm text-gray-700">
+        <li>✔ One-page, easy-to-follow format</li>
+        <li>✔ Parking & access reminders</li>
+        <li>✔ Item restrictions clearly outlined</li>
+        <li>✔ Helps avoid delays & surprise charges</li>
+        <li>✔ Includes exclusive promo code</li>
+      </ul>
 
-           <div className="mt-8 flex flex-wrap gap-4">
+      <div className="mt-8 flex flex-wrap gap-4">
 
-  {/* Desktop: direct download (unchanged behavior) */}
-  {!isMobile && (
-    <a
-      href={CHECKLIST_PDF_URL}
-      download
-      onClick={() => trackChecklistDownload("button")}
-      className="inline-flex items-center justify-center rounded-full bg-lime-400 px-6 py-3 text-black font-semibold hover:bg-lime-300 transition"
-    >
-      Download Free Checklist
-    </a>
-  )}
+        {/* Desktop: direct download (unchanged behavior) */}
+        {!isMobile && (
+          <a
+            href={CHECKLIST_PDF_URL}
+            download
+            onClick={() => trackChecklistDownload("button")}
+            className="inline-flex items-center justify-center rounded-full bg-lime-400 px-6 py-3 text-black font-semibold hover:bg-lime-300 transition"
+          >
+            Download Free Checklist
+          </a>
+        )}
 
-  {/* Mobile: email-gated checklist (lead magnet) */}
-  {isMobile && (
-    <form
-      onSubmit={async (e) => {
-        e.preventDefault();
-        if (!exitEmail) return;
+        {/* Mobile: email-gated checklist (lead magnet) */}
+        {isMobile && (
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!checklistEmail) return;
 
-        await fetch("/api/send-checklist", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: exitEmail,
-            source: "mobile_checklist",
-          }),
-        });
+              await fetch("/api/send-checklist", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  email: checklistEmail,
+                  source: "mobile_checklist",
+                }),
+              });
 
-        trackChecklistDownload("button");
-        alert("Check your email! We just sent you the checklist.");
-        setExitEmail("");
-      }}
-      className="flex flex-col gap-3 max-w-sm"
-    >
-      <TextInput
-        type="email"
-        placeholder="Enter your email to receive the checklist"
-        value={exitEmail}
-        onChange={(e) => setExitEmail(e.target.value)}
-        required
-      />
-      <Button type="submit">Send Me the Checklist</Button>
-    </form>
-  )}
+              trackChecklistDownload("button");
+              alert("Check your email! We just sent you the checklist.");
+              setChecklistEmail("");
+            }}
+            className="flex flex-col gap-3 max-w-sm"
+          >
+            <TextInput
+              type="email"
+              placeholder="Enter your email to receive the checklist"
+              value={checklistEmail}
+              onChange={(e) => setChecklistEmail(e.target.value)}
+              required
+            />
+            <Button type="submit">Send Me the Checklist</Button>
+          </form>
+        )}
 
-  {/* Secondary CTA stays unchanged */}
-  <button
-    onClick={() =>
-      document.getElementById("quote")?.scrollIntoView({ behavior: "smooth" })
-    }
-    className="inline-flex items-center justify-center rounded-full border border-gray-300 px-6 py-3 text-sm font-semibold hover:bg-gray-100 transition"
-  >
-    Get a Free Quote
-  </button>
-</div>
+        {/* Secondary CTA stays unchanged */}
+        <button
+          onClick={() =>
+            document.getElementById("quote")?.scrollIntoView({ behavior: "smooth" })
+          }
+          className="inline-flex items-center justify-center rounded-full border border-gray-300 px-6 py-3 text-sm font-semibold hover:bg-gray-100 transition"
+        >
+          Get a Free Quote
+        </button>
+      </div>
+    </div>
 
-          <div className="flex justify-center md:justify-end">
-            <a
-              href={CHECKLIST_PDF_URL}
-              download
-              onClick={() => trackChecklistDownload("image")}
-              className="group block"
-              aria-label="Download the Moving Day Checklist PDF"
-            >
-              <img
-                src="/checklist.jpg"
-                alt="Moving Day Checklist preview"
-                className="w-full max-w-md rounded-2xl border shadow-md
-                  transition-transform duration-300 ease-out
-                  group-hover:-translate-y-1 group-hover:scale-[1.02]
-                  motion-reduce:transition-none motion-reduce:transform-none"
-                loading="lazy"
-              />
-            </a>
-          </div>
-
+    {/* Checklist image */}
+    <div className="flex justify-center md:justify-end">
+      {!isMobile ? (
+        <a
+          href={CHECKLIST_PDF_URL}
+          download
+          onClick={() => trackChecklistDownload("image")}
+          className="group block"
+          aria-label="Download the Moving Day Checklist PDF"
+        >
+          <img
+            src="/checklist.jpg"
+            alt="Moving Day Checklist preview"
+            className="w-full max-w-md rounded-2xl border shadow-md
+              transition-transform duration-300 ease-out
+              group-hover:-translate-y-1 group-hover:scale-[1.02]"
+            loading="lazy"
+          />
+        </a>
+      ) : (
+        <div className="group block opacity-90">
+          <img
+            src="/checklist.jpg"
+            alt="Moving Day Checklist preview"
+            className="w-full max-w-md rounded-2xl border shadow-md"
+            loading="lazy"
+          />
         </div>
-      </section>
+      )}
+    </div>
+
+  </div>
+</section>
 
       {/* Pricing Section */}
       <section id="pricing" className="py-12 md:py-16 bg-gray-50">
@@ -1910,6 +1922,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
