@@ -19,7 +19,7 @@ export default async function handler(req: any, res: any) {
       "https://neighborhoodkrew.com/NeighborhoodKrewMovingDayChecklist.pdf";
 
     await resend.emails.send({
-      from: "Neighborhood Krew <no-reply@neighborhoodkrew.com>",
+      from: "Neighborhood Krew <quotes@neighborhoodkrew.com>",
       to: email,
       subject: "Your Moving Day Checklist 🏠",
       html: `
