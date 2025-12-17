@@ -26,7 +26,7 @@ export default async function handler(
 
     const result = await resend.emails.send({
       from: "Neighborhood Krew <quote@neighborhoodkrew.com>",
-      to: email,
+      to: [email], // ✅ MUST be an array
       subject: "Your Moving Day Checklist 🏠",
       html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.5;">
@@ -38,7 +38,7 @@ export default async function handler(
           </p>
 
           <p>
-            👉 <a href="${checklistUrl}" target="_blank">
+            👉 <a href="${checklistUrl}" target="_blank" rel="noopener noreferrer">
               Click here to download your checklist
             </a>
           </p>
@@ -57,13 +57,7 @@ export default async function handler(
       `,
     });
 
-    // IMPORTANT: confirm Resend actually accepted it
-    if (!result || result.error) {
-      console.error("Resend error:", result?.error);
-      return res.status(500).json({ error: "Email failed to send" });
-    }
-
-    return res.status(200).json({ ok: true });
+    return res.status(200).json({ ok: true, id: result.id });
   } catch (err) {
     console.error("Checklist email failed:", err);
     return res.status(500).json({ error: "Email failed to send" });
