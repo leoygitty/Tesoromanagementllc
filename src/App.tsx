@@ -977,6 +977,8 @@ export default function App() {
   const [exitOpen, setExitOpen] = useState(false);
   const [exitEmail, setExitEmail] = useState("");
   const [exitStatus, setExitStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
+  // Checklist lead magnet (mobile)
+  const [checklistEmail, setChecklistEmail] = useState("");
 
 // Promo submit helper (newsletter + exit-intent)
 const handlePromoSubmit = async (email: string) => {
@@ -1908,6 +1910,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
