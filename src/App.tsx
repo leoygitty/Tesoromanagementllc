@@ -973,13 +973,29 @@ export default function App() {
 
   const [activeReview, setActiveReview] = useState(0);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
+
   // Exit-intent modal
   const [exitOpen, setExitOpen] = useState(false);
   const [exitEmail, setExitEmail] = useState("");
-  const [exitStatus, setExitStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
+  const [exitStatus, setExitStatus] =
+    useState<"idle" | "loading" | "sent" | "error">("idle");
+
   // Checklist lead magnet (mobile)
   const [checklistEmail, setChecklistEmail] = useState("");
 
+  // Mobile detection (safe + reactive)
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const updateIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    updateIsMobile();
+    window.addEventListener("resize", updateIsMobile);
+    return () => window.removeEventListener("resize", updateIsMobile);
+  }, []);
+  
 // Promo submit helper (newsletter + exit-intent)
 const handlePromoSubmit = async (email: string) => {
   try {
@@ -1922,6 +1938,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
