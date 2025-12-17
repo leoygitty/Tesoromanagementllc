@@ -25,7 +25,7 @@ export default async function handler(
       "https://neighborhoodkrew.com/NeighborhoodKrewMovingDayChecklist.pdf";
 
     const result = await resend.emails.send({
-      from: "Neighborhood Krew <no-reply@neighborhoodkrew.com>",
+      from: "Neighborhood Krew <quote@neighborhoodkrew.com>",
       to: [email], // REQUIRED
       subject: "Your Moving Day Checklist 🏠",
       html: `
