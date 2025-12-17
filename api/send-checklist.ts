@@ -8,15 +8,41 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { email, source } = req.body;
+    const { email, source, utm } = req.body;
 
     if (!email) {
       return res.status(400).json({ error: "Missing email" });
     }
 
+    // Normalize UTM data (safe defaults)
+    const utmData = {
+      utm_source: utm?.utm_source || "",
+      utm_medium: utm?.utm_medium || "",
+      utm_campaign: utm?.utm_campaign || "",
+      utm_term: utm?.utm_term || "",
+      utm_content: utm?.utm_content || "",
+    };
+
+    // Build lead record (for logs / future DB)
+    const leadRecord = {
+      email,
+      source: source || "unknown",
+      ...utmData,
+      timestamp: new Date().toISOString(),
+      ip:
+        req.headers["x-forwarded-for"] ||
+        req.socket?.remoteAddress ||
+        "",
+      userAgent: req.headers["user-agent"] || "",
+    };
+
+    // 🔍 Log for verification (Vercel → Functions → Logs)
+    console.log("Checklist lead captured:", leadRecord);
+
     const checklistUrl =
       "https://neighborhoodkrew.com/NeighborhoodKrewMovingDayChecklist.pdf";
 
+    // Send email
     await resend.emails.send({
       from: "Neighborhood Krew <no-reply@neighborhoodkrew.com>",
       to: email,
@@ -37,7 +63,8 @@ export default async function handler(req, res) {
           </p>
 
           <p style="margin-top:16px; font-size:13px; color:#666;">
-            Source: ${source || "unknown"}
+            Source: ${source || "unknown"}<br/>
+            Campaign: ${utmData.utm_campaign || "n/a"}
           </p>
 
           <hr style="margin:24px 0;" />
