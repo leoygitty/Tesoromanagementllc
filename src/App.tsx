@@ -1433,26 +1433,63 @@ const handlePromoSubmit = async (email: string) => {
               <li>✔ Includes exclusive promo code</li>
             </ul>
 
-            <div className="mt-8 flex flex-wrap gap-4">
-              <a
-                href={CHECKLIST_PDF_URL}
-                download
-                onClick={() => trackChecklistDownload("button")}
-                className="inline-flex items-center justify-center rounded-full bg-lime-400 px-6 py-3 text-black font-semibold hover:bg-lime-300 transition"
-              >
-                Download Free Checklist
-              </a>
+           <div className="mt-8 flex flex-wrap gap-4">
 
-              <button
-                onClick={() =>
-                  document.getElementById("quote")?.scrollIntoView({ behavior: "smooth" })
-                }
-                className="inline-flex items-center justify-center rounded-full border border-gray-300 px-6 py-3 text-sm font-semibold hover:bg-gray-100 transition"
-              >
-                Get a Free Quote
-              </button>
-            </div>
-          </div>
+  {/* Desktop: direct download (unchanged behavior) */}
+  {!isMobile && (
+    <a
+      href={CHECKLIST_PDF_URL}
+      download
+      onClick={() => trackChecklistDownload("button")}
+      className="inline-flex items-center justify-center rounded-full bg-lime-400 px-6 py-3 text-black font-semibold hover:bg-lime-300 transition"
+    >
+      Download Free Checklist
+    </a>
+  )}
+
+  {/* Mobile: email-gated checklist (lead magnet) */}
+  {isMobile && (
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!exitEmail) return;
+
+        await fetch("/api/send-checklist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: exitEmail,
+            source: "mobile_checklist",
+          }),
+        });
+
+        trackChecklistDownload("button");
+        alert("Check your email! We just sent you the checklist.");
+        setExitEmail("");
+      }}
+      className="flex flex-col gap-3 max-w-sm"
+    >
+      <TextInput
+        type="email"
+        placeholder="Enter your email to receive the checklist"
+        value={exitEmail}
+        onChange={(e) => setExitEmail(e.target.value)}
+        required
+      />
+      <Button type="submit">Send Me the Checklist</Button>
+    </form>
+  )}
+
+  {/* Secondary CTA stays unchanged */}
+  <button
+    onClick={() =>
+      document.getElementById("quote")?.scrollIntoView({ behavior: "smooth" })
+    }
+    className="inline-flex items-center justify-center rounded-full border border-gray-300 px-6 py-3 text-sm font-semibold hover:bg-gray-100 transition"
+  >
+    Get a Free Quote
+  </button>
+</div>
 
           <div className="flex justify-center md:justify-end">
             <a
@@ -1871,6 +1908,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
