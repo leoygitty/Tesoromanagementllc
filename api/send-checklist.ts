@@ -1,50 +1,31 @@
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export default async function handler(req, res) {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const { email, source, utm } = req.body;
+    const { email, source } = req.body as {
+      email?: string;
+      source?: string;
+    };
 
     if (!email) {
       return res.status(400).json({ error: "Missing email" });
     }
 
-    // Normalize UTM data (safe defaults)
-    const utmData = {
-      utm_source: utm?.utm_source || "",
-      utm_medium: utm?.utm_medium || "",
-      utm_campaign: utm?.utm_campaign || "",
-      utm_term: utm?.utm_term || "",
-      utm_content: utm?.utm_content || "",
-    };
-
-    // Build lead record (for logs / future DB)
-    const leadRecord = {
-      email,
-      source: source || "unknown",
-      ...utmData,
-      timestamp: new Date().toISOString(),
-      ip:
-        req.headers["x-forwarded-for"] ||
-        req.socket?.remoteAddress ||
-        "",
-      userAgent: req.headers["user-agent"] || "",
-    };
-
-    // 🔍 Log for verification (Vercel → Functions → Logs)
-    console.log("Checklist lead captured:", leadRecord);
-
     const checklistUrl =
       "https://neighborhoodkrew.com/NeighborhoodKrewMovingDayChecklist.pdf";
 
-    // Send email
-    await resend.emails.send({
-      from: "Neighborhood Krew <quotes@neighborhoodkrew.com>",
+    const result = await resend.emails.send({
+      from: "Neighborhood Krew <quote@neighborhoodkrew.com>",
       to: email,
       subject: "Your Moving Day Checklist 🏠",
       html: `
@@ -63,8 +44,7 @@ export default async function handler(req, res) {
           </p>
 
           <p style="margin-top:16px; font-size:13px; color:#666;">
-            Source: ${source || "unknown"}<br/>
-            Campaign: ${utmData.utm_campaign || "n/a"}
+            Source: ${source || "unknown"}
           </p>
 
           <hr style="margin:24px 0;" />
@@ -76,6 +56,12 @@ export default async function handler(req, res) {
         </div>
       `,
     });
+
+    // IMPORTANT: confirm Resend actually accepted it
+    if (!result || result.error) {
+      console.error("Resend error:", result?.error);
+      return res.status(500).json({ error: "Email failed to send" });
+    }
 
     return res.status(200).json({ ok: true });
   } catch (err) {
