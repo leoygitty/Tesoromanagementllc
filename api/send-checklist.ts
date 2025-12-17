@@ -15,10 +15,10 @@ export default async function handler(req, res) {
     }
 
     const checklistUrl =
-      "https://YOUR_DOMAIN_HERE/NeighborhoodKrewMovingDayChecklist.pdf";
+      "https://neighborhoodkrew.com/NeighborhoodKrewMovingDayChecklist.pdf";
 
     await resend.emails.send({
-      from: "Neighborhood Krew <no-reply@yourdomain.com>",
+      from: "Neighborhood Krew <no-reply@neighborhoodkrew.com>",
       to: email,
       subject: "Your Moving Day Checklist 🏠",
       html: `
