@@ -44,7 +44,7 @@ export default async function handler(req, res) {
 
     // Send email
     await resend.emails.send({
-      from: "Neighborhood Krew <no-reply@neighborhoodkrew.com>",
+      from: "Neighborhood Krew <@neighborhoodkrew.com>",
       to: email,
       subject: "Your Moving Day Checklist 🏠",
       html: `
