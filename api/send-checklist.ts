@@ -2,10 +2,7 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export default async function handler(
-  req: any,
-  res: any
-) {
+export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -25,15 +22,32 @@ export default async function handler(
       to: email,
       subject: "Your Moving Day Checklist 🏠",
       html: `
-        <h2>Your Moving Day Checklist</h2>
-        <p>
-          👉 <a href="${checklistUrl}" target="_blank">
-            Click here to download your checklist
-          </a>
-        </p>
-        <p style="font-size:12px;color:#666;">
-          Source: ${source || "unknown"}
-        </p>
+        <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+          <h2>Your Moving Day Checklist</h2>
+
+          <p>
+            Thanks for requesting our professional, mover-approved checklist.
+            This guide helps prevent delays, damage, and surprise charges.
+          </p>
+
+          <p>
+            👉 <a href="${checklistUrl}" target="_blank">
+              Click here to download your checklist
+            </a>
+          </p>
+
+          <p style="margin-top:16px; font-size:12px; color:#666;">
+            Source: ${source || "unknown"}<br/>
+            Campaign: ${utm?.campaign || "n/a"}
+          </p>
+
+          <hr style="margin:24px 0;" />
+
+          <p style="font-size:13px; color:#666;">
+            Neighborhood Krew Inc<br/>
+            Licensed & Insured Movers
+          </p>
+        </div>
       `,
     });
 
