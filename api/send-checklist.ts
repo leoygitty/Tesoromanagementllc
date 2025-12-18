@@ -1,24 +1,21 @@
-const { Resend } = require("resend");
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-module.exports = async function handler(req, res) {
-  try {
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
-    }
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-    const body = req.body || {};
-    const email = body.email;
-    const source = body.source || "unknown";
+  try {
+    const { email, source, utm } = req.body;
 
     if (!email) {
-      return res.status(400).json({ error: "Email required" });
-    }
-
-    if (!process.env.RESEND_API_KEY) {
-      console.error("RESEND_API_KEY missing");
-      return res.status(500).json({ error: "Email service not configured" });
+      return res.status(400).json({ error: "Missing email" });
     }
 
     const checklistUrl =
@@ -27,24 +24,40 @@ module.exports = async function handler(req, res) {
     await resend.emails.send({
       from: "Neighborhood Krew <no-reply@neighborhoodkrew.com>",
       to: email,
-      subject: "Your Moving Day Checklist",
+      subject: "Your Moving Day Checklist 🏠",
       html: `
-        <h2>Your Moving Day Checklist</h2>
-        <p>Thanks for requesting our professional, mover-approved checklist.</p>
-        <p>
-          <a href="${checklistUrl}" target="_blank">
-            Click here to download your checklist
-          </a>
-        </p>
-        <p style="font-size:12px;color:#666;">
-          Source: ${source}
-        </p>
+        <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+          <h2>Your Moving Day Checklist</h2>
+
+          <p>
+            Thanks for requesting our professional, mover-approved checklist.
+            This guide helps prevent delays, damage, and surprise charges.
+          </p>
+
+          <p>
+            👉 <a href="${checklistUrl}" target="_blank">
+              Click here to download your checklist
+            </a>
+          </p>
+
+          <p style="margin-top:16px; font-size:13px; color:#666;">
+            Source: ${source || "unknown"}<br/>
+            Campaign: ${utm?.campaign || "n/a"}
+          </p>
+
+          <hr style="margin:24px 0;" />
+
+          <p style="font-size:13px; color:#666;">
+            Neighborhood Krew Inc<br/>
+            Licensed & Insured Movers
+          </p>
+        </div>
       `,
     });
 
     return res.status(200).json({ ok: true });
   } catch (err) {
-    console.error("SEND CHECKLIST ERROR:", err);
-    return res.status(500).json({ error: "Failed to send checklist" });
+    console.error("Checklist email failed:", err);
+    return res.status(500).json({ error: "Email failed to send" });
   }
-};
+}
