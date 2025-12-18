@@ -1479,18 +1479,26 @@ const handlePromoSubmit = async (email: string) => {
               e.preventDefault();
               if (!checklistEmail) return;
 
-              await fetch("/api/send-checklist", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  email: checklistEmail,
-                  source: "mobile_checklist",
-                }),
-              });
+const res = await fetch("/api/send-checklist", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: checklistEmail,
+    source: "mobile_checklist",
+    utm: utmData,
+  }),
+});
 
-              trackChecklistDownload("mobile_email_submit");
-              alert("Check your email! We just sent you the checklist.");
-              setChecklistEmail("");
+const data = await res.json();
+
+if (!res.ok) {
+  alert("Email failed to send. Please try again.");
+  return;
+}
+
+trackChecklistDownload("button");
+alert("Check your email! We just sent you the checklist.");
+setChecklistEmail("");
             }}
             className="flex flex-col gap-3 max-w-sm"
           >
@@ -1935,6 +1943,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
