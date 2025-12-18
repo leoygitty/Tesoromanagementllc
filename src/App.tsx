@@ -1473,44 +1473,50 @@ const handlePromoSubmit = async (email: string) => {
         )}
 
         {/* Mobile: email-gated checklist */}
-        {isMobile && (
-          <div className="flex flex-col gap-3 max-w-sm">
-            <TextInput
-              type="email"
-              placeholder="Enter your email to receive the checklist"
-              value={checklistEmail}
-              onChange={(e) => setChecklistEmail(e.target.value)}
-              required
-            />
+      {isMobile && (
+  <form
+    className="flex flex-col gap-3 max-w-sm"
+    onSubmit={async (e) => {
+      e.preventDefault();
 
-            <Button
-              onClick={async () => {
-                if (!checklistEmail) return;
+      if (!checklistEmail) {
+        alert("Please enter your email");
+        return;
+      }
 
-                const res = await fetch("/api/send-checklist", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    email: checklistEmail,
-                    source: "mobile_checklist",
-                    utm: utmData,
-                  }),
-                });
+      const res = await fetch("/api/send-checklist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: checklistEmail,
+          source: "mobile_checklist",
+          utm: utmData,
+        }),
+      });
 
-                if (!res.ok) {
-                  alert("Email failed to send. Please try again.");
-                  return;
-                }
+      if (!res.ok) {
+        alert("Email failed to send. Please try again.");
+        return;
+      }
 
-                trackChecklistDownload("button");
-                alert("Check your email! We just sent you the checklist.");
-                setChecklistEmail("");
-              }}
-            >
-              Send Me the Checklist
-            </Button>
-          </div>
-        )}
+      trackChecklistDownload("mobile_submit");
+      alert("Check your email! We just sent you the checklist.");
+      setChecklistEmail("");
+    }}
+  >
+    <TextInput
+      type="email"
+      placeholder="Enter your email to receive the checklist"
+      value={checklistEmail}
+      onChange={(e) => setChecklistEmail(e.target.value)}
+      required
+    />
+
+    <Button type="submit">
+      Send Me the Checklist
+    </Button>
+  </form>
+)}
 
       </div> {/* ✅ CLOSE BUTTON WRAPPER */}
     </div>   {/* ✅ CLOSE LEFT COLUMN */}
@@ -1942,6 +1948,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
