@@ -1,8 +1,8 @@
-import { Resend } from "resend";
+const { Resend } = require("resend");
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export default async function handler(req: any, res: any) {
+module.exports = async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -58,13 +58,11 @@ export default async function handler(req: any, res: any) {
       `,
     });
 
-    // ✅ HARD FAIL IF RESEND DID NOT ACCEPT THE EMAIL
     if (!result || result.error) {
       console.error("Resend error:", result?.error);
       return res.status(500).json({ error: "Email failed to send" });
     }
 
-    // ✅ SUCCESS RESPONSE (TYPE-SAFE)
     return res.status(200).json({
       ok: true,
       id: result.data?.id || null,
@@ -73,4 +71,4 @@ export default async function handler(req: any, res: any) {
     console.error("Checklist email failed:", err);
     return res.status(500).json({ error: "Email failed to send" });
   }
-}
+};
