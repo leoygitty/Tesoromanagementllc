@@ -982,6 +982,21 @@ export default function App() {
 
   // Checklist lead magnet (mobile)
   const [checklistEmail, setChecklistEmail] = useState("");
+ 
+  // UTM capture (defined once, safe for mobile + desktop)
+  const utmData = React.useMemo(() => {
+    if (typeof window === "undefined") return {};
+
+    const params = new URLSearchParams(window.location.search);
+
+    return {
+      utm_source: params.get("utm_source"),
+      utm_medium: params.get("utm_medium"),
+      utm_campaign: params.get("utm_campaign"),
+      utm_term: params.get("utm_term"),
+      utm_content: params.get("utm_content"),
+    };
+  }, []);
 
   // Mobile detection (safe + reactive)
   const [isMobile, setIsMobile] = useState(false);
@@ -1943,6 +1958,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
