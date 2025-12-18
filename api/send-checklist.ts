@@ -2,18 +2,17 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export default async function sendChecklist(req: any, res: any) {
-  try {
-    if (req.method !== "POST") {
-      res.statusCode = 405;
-      return res.json({ error: "Method not allowed" });
-    }
+export default async function handler(req: any, res: any) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-    const { email, source } = req.body || {};
+  try {
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    const { email, source } = body || {};
 
     if (!email) {
-      res.statusCode = 400;
-      return res.json({ error: "Missing email" });
+      return res.status(400).json({ error: "Missing email" });
     }
 
     const checklistUrl =
@@ -24,41 +23,19 @@ export default async function sendChecklist(req: any, res: any) {
       to: email,
       subject: "Your Moving Day Checklist 🏠",
       html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-          <h2>Your Moving Day Checklist</h2>
-
-          <p>
-            Thanks for requesting our professional, mover-approved checklist.
-            This guide helps prevent delays, damage, and surprise charges.
-          </p>
-
-          <p>
-            👉 <a href="${checklistUrl}" target="_blank">
-              Click here to download your checklist
-            </a>
-          </p>
-
-          <p style="margin-top:16px; font-size:13px; color:#666;">
-            Source: ${source || "unknown"}
-          </p>
-
-          <hr style="margin:24px 0;" />
-
-          <p style="font-size:13px; color:#666;">
-            Neighborhood Krew Inc<br/>
-            Licensed & Insured Movers
-          </p>
-        </div>
+        <h2>Your Moving Day Checklist</h2>
+        <p>Thanks for requesting our professional checklist.</p>
+        <p><a href="${checklistUrl}" target="_blank">Download your checklist</a></p>
+        <p style="font-size:12px;color:#666">Source: ${source || "unknown"}</p>
       `,
     });
 
-    return res.json({ ok: true });
+    return res.status(200).json({ ok: true });
   } catch (err: any) {
-    console.error("SEND CHECKLIST ERROR:", err);
-    res.statusCode = 500;
-    return res.json({
+    console.error("CHECKLIST ERROR:", err);
+    return res.status(500).json({
       error: "Checklist email failed",
-      message: err?.message || "unknown",
+      message: err?.message,
     });
   }
 }
