@@ -986,6 +986,14 @@ export default function App() {
   // Mobile detection (safe + reactive)
   const [isMobile, setIsMobile] = useState(false);
 
+    // Checklist tracked download link
+  const getChecklistLink = (email?: string) => {
+    const base = "/api/checklist-download";
+    return email
+      ? `${base}?email=${encodeURIComponent(email)}`
+      : base;
+  };
+
   useEffect(() => {
     const updateIsMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -1453,12 +1461,11 @@ const handlePromoSubmit = async (email: string) => {
 
       <div className="mt-8 flex flex-wrap gap-4">
 
-        {/* Desktop: direct download (unchanged behavior) */}
+        {/* Desktop: tracked download */}
         {!isMobile && (
           <a
-            href={CHECKLIST_PDF_URL}
-            download
-            onClick={() => trackChecklistDownload("button")}
+            href={getChecklistLink()}
+            onClick={() => trackChecklistDownload("desktop_button")}
             className="inline-flex items-center justify-center rounded-full bg-lime-400 px-6 py-3 text-black font-semibold hover:bg-lime-300 transition"
           >
             Download Free Checklist
@@ -1478,11 +1485,11 @@ const handlePromoSubmit = async (email: string) => {
                 body: JSON.stringify({
                   email: checklistEmail,
                   source: "mobile_checklist",
-                   utm: utmData,                
+                  utm: utmData,
                 }),
               });
 
-              trackChecklistDownload("button");
+              trackChecklistDownload("mobile_email_submit");
               alert("Check your email! We just sent you the checklist.");
               setChecklistEmail("");
             }}
@@ -1499,8 +1506,6 @@ const handlePromoSubmit = async (email: string) => {
           </form>
         )}
 
-        {/* Secondary CTA stays unchanged */}
-        
       </div>
     </div>
 
@@ -1508,9 +1513,8 @@ const handlePromoSubmit = async (email: string) => {
     <div className="flex justify-center md:justify-end">
       {!isMobile ? (
         <a
-          href={CHECKLIST_PDF_URL}
-          download
-          onClick={() => trackChecklistDownload("image")}
+          href={getChecklistLink()}
+          onClick={() => trackChecklistDownload("desktop_image")}
           className="group block"
           aria-label="Download the Moving Day Checklist PDF"
         >
@@ -1932,6 +1936,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
