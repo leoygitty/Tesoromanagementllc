@@ -1474,47 +1474,43 @@ const handlePromoSubmit = async (email: string) => {
 
         {/* Mobile: email-gated checklist (lead magnet) */}
         {isMobile && (
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              if (!checklistEmail) return;
+  <div className="flex flex-col gap-3 max-w-sm">
+    <TextInput
+      type="email"
+      placeholder="Enter your email to receive the checklist"
+      value={checklistEmail}
+      onChange={(e) => setChecklistEmail(e.target.value)}
+      required
+    />
 
-const res = await fetch("/api/send-checklist", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    email: checklistEmail,
-    source: "mobile_checklist",
-    utm: utmData,
-  }),
-});
+    <Button
+      onClick={async () => {
+        if (!checklistEmail) return;
 
-const data = await res.json();
+        const res = await fetch("/api/send-checklist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: checklistEmail,
+            source: "mobile_checklist",
+            utm: utmData,
+          }),
+        });
 
-if (!res.ok) {
-  alert("Email failed to send. Please try again.");
-  return;
-}
+        if (!res.ok) {
+          alert("Email failed to send. Please try again.");
+          return;
+        }
 
-trackChecklistDownload("button");
-alert("Check your email! We just sent you the checklist.");
-setChecklistEmail("");
-            }}
-            className="flex flex-col gap-3 max-w-sm"
-          >
-            <TextInput
-              type="email"
-              placeholder="Enter your email to receive the checklist"
-              value={checklistEmail}
-              onChange={(e) => setChecklistEmail(e.target.value)}
-              required
-            />
-            <Button type="submit">Send Me the Checklist</Button>
-          </form>
-        )}
-
-      </div>
-    </div>
+        trackChecklistDownload("button");
+        alert("Check your email! We just sent you the checklist.");
+        setChecklistEmail("");
+      }}
+    >
+      Send Me the Checklist
+    </Button>
+  </div>
+)}
 
     {/* Checklist image */}
     <div className="flex justify-center md:justify-end">
@@ -1943,6 +1939,7 @@ setChecklistEmail("");
     </div>
   );
 }
+
 
 
 
