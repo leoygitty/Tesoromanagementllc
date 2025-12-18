@@ -1511,8 +1511,9 @@ const handlePromoSubmit = async (email: string) => {
     </Button>
   </div>
 )}
-
-    {/* Checklist image */}
+</div>
+      
+      {/* Checklist image */}
     <div className="flex justify-center md:justify-end">
       {!isMobile ? (
         <a
@@ -1939,6 +1940,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
