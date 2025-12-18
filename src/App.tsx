@@ -998,9 +998,6 @@ export default function App() {
     };
   }, []);
 
-  // Mobile detection (safe + reactive)
-  const [isMobile, setIsMobile] = useState(false);
-
     // Checklist tracked download link
   const getChecklistLink = (email?: string) => {
     const base = "/api/checklist-download";
@@ -1950,6 +1947,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
