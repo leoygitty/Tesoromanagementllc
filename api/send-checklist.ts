@@ -17,41 +17,30 @@ export default async function handler(req: any, res: any) {
     const checklistUrl =
       "https://neighborhoodkrew.com/NeighborhoodKrewMovingDayChecklist.pdf";
 
-    await resend.emails.send({
-      from: "Neighborhood Krew <no-reply@neighborhoodkrew.com>",
-      to: email,
-      subject: "Your Moving Day Checklist 🏠",
-      html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.5;">
-          <h2>Your Moving Day Checklist</h2>
+   const result = await resend.emails.send({
+  from: "Neighborhood Krew <no-reply@neighborhoodkrew.com>",
+  to: email,
+  subject: "Your Moving Day Checklist 🏠",
+  html: `
+    <h2>Your Moving Day Checklist</h2>
+    <p>
+      👉 <a href="${checklistUrl}" target="_blank">
+        Click here to download your checklist
+      </a>
+    </p>
+    <p style="font-size:12px;color:#666;">
+      Source: ${source || "unknown"}
+    </p>
+  `,
+});
 
-          <p>
-            Thanks for requesting our professional, mover-approved checklist.
-            This guide helps prevent delays, damage, and surprise charges.
-          </p>
+// 🔥 THIS IS THE KEY PART YOU WERE MISSING
+if (!result || result.error) {
+  console.error("Resend error:", result?.error);
+  return res.status(500).json({ error: "Email failed to send" });
+}
 
-          <p>
-            👉 <a href="${checklistUrl}" target="_blank">
-              Click here to download your checklist
-            </a>
-          </p>
-
-          <p style="margin-top:16px; font-size:12px; color:#666;">
-            Source: ${source || "unknown"}<br/>
-            Campaign: ${utm?.campaign || "n/a"}
-          </p>
-
-          <hr style="margin:24px 0;" />
-
-          <p style="font-size:13px; color:#666;">
-            Neighborhood Krew Inc<br/>
-            Licensed & Insured Movers
-          </p>
-        </div>
-      `,
-    });
-
-    return res.status(200).json({ ok: true });
+return res.status(200).json({ ok: true });
   } catch (err) {
     console.error("Checklist email failed:", err);
     return res.status(500).json({ error: "Email failed to send" });
