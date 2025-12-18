@@ -1,24 +1,14 @@
-// api/checklist-download.ts
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-module.exports = async function handler(req, res) {
-  try {
-    const email = req.query?.email || "unknown";
+export default function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
+  const pdfUrl =
+    "https://neighborhoodkrew.com/NeighborhoodKrewMovingDayChecklist.pdf";
 
-    console.log("CHECKLIST_PDF_CLICKED", {
-      email,
-      timestamp: new Date().toISOString(),
-      userAgent: req.headers["user-agent"] || "unknown",
-    });
+  // Optional: log email + timestamp here later
+  const { email } = req.query;
 
-    // Redirect to the actual PDF
-    res.writeHead(302, {
-      Location:
-        "https://neighborhoodkrew.com/NeighborhoodKrewMovingDayChecklist.pdf",
-    });
-    res.end();
-  } catch (err) {
-    console.error("Checklist redirect failed:", err);
-    res.statusCode = 500;
-    res.end("Server error");
-  }
-};
+  return res.redirect(302, pdfUrl);
+}
