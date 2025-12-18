@@ -1459,7 +1459,7 @@ const handlePromoSubmit = async (email: string) => {
         <li>✔ Includes exclusive promo code</li>
       </ul>
 
-      <div className="mt-8 flex flex-wrap gap-4">
+            <div className="mt-8 flex flex-wrap gap-4">
 
         {/* Desktop: tracked download */}
         {!isMobile && (
@@ -1472,48 +1472,50 @@ const handlePromoSubmit = async (email: string) => {
           </a>
         )}
 
-        {/* Mobile: email-gated checklist (lead magnet) */}
+        {/* Mobile: email-gated checklist */}
         {isMobile && (
-  <div className="flex flex-col gap-3 max-w-sm">
-    <TextInput
-      type="email"
-      placeholder="Enter your email to receive the checklist"
-      value={checklistEmail}
-      onChange={(e) => setChecklistEmail(e.target.value)}
-      required
-    />
+          <div className="flex flex-col gap-3 max-w-sm">
+            <TextInput
+              type="email"
+              placeholder="Enter your email to receive the checklist"
+              value={checklistEmail}
+              onChange={(e) => setChecklistEmail(e.target.value)}
+              required
+            />
 
-    <Button
-      onClick={async () => {
-        if (!checklistEmail) return;
+            <Button
+              onClick={async () => {
+                if (!checklistEmail) return;
 
-        const res = await fetch("/api/send-checklist", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: checklistEmail,
-            source: "mobile_checklist",
-            utm: utmData,
-          }),
-        });
+                const res = await fetch("/api/send-checklist", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    email: checklistEmail,
+                    source: "mobile_checklist",
+                    utm: utmData,
+                  }),
+                });
 
-        if (!res.ok) {
-          alert("Email failed to send. Please try again.");
-          return;
-        }
+                if (!res.ok) {
+                  alert("Email failed to send. Please try again.");
+                  return;
+                }
 
-        trackChecklistDownload("button");
-        alert("Check your email! We just sent you the checklist.");
-        setChecklistEmail("");
-      }}
-    >
-      Send Me the Checklist
-    </Button>
-  </div>
-)}
-</div>
-      
-      {/* Checklist image */}
+                trackChecklistDownload("button");
+                alert("Check your email! We just sent you the checklist.");
+                setChecklistEmail("");
+              }}
+            >
+              Send Me the Checklist
+            </Button>
+          </div>
+        )}
+
+      </div> {/* ✅ CLOSE BUTTON WRAPPER */}
+    </div>   {/* ✅ CLOSE LEFT COLUMN */}
+
+    {/* Checklist image — RIGHT COLUMN */}
     <div className="flex justify-center md:justify-end">
       {!isMobile ? (
         <a
@@ -1940,6 +1942,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
