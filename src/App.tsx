@@ -1485,7 +1485,6 @@ const handlePromoSubmit = async (email: string) => {
                 body: JSON.stringify({
                   email: checklistEmail,
                   source: "mobile_checklist",
-                  utm: utmData,
                 }),
               });
 
@@ -1936,6 +1935,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
