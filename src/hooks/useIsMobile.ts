@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 
-export function useIsMobile() {
+export default function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const update = () => {
-      setIsMobile(window.matchMedia("(max-width: 767px)").matches);
+      setIsMobile(
+        window.matchMedia("(pointer: coarse)").matches ||
+        window.innerWidth < 768
+      );
     };
 
     update();
