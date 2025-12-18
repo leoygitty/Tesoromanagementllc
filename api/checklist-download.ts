@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+export default function handler(req: any, res: any) {
   try {
     const email = req.query.email || null;
 
