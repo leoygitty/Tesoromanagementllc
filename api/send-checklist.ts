@@ -1,18 +1,24 @@
-import { Resend } from "resend";
+const { Resend } = require("resend");
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export default async function handler(req: any, res: any) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
+module.exports = async function handler(req, res) {
   try {
-    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-    const { email, source } = body || {};
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+
+    const body = req.body || {};
+    const email = body.email;
+    const source = body.source || "unknown";
 
     if (!email) {
-      return res.status(400).json({ error: "Missing email" });
+      return res.status(400).json({ error: "Email required" });
+    }
+
+    if (!process.env.RESEND_API_KEY) {
+      console.error("RESEND_API_KEY missing");
+      return res.status(500).json({ error: "Email service not configured" });
     }
 
     const checklistUrl =
@@ -21,21 +27,24 @@ export default async function handler(req: any, res: any) {
     await resend.emails.send({
       from: "Neighborhood Krew <no-reply@neighborhoodkrew.com>",
       to: email,
-      subject: "Your Moving Day Checklist 🏠",
+      subject: "Your Moving Day Checklist",
       html: `
         <h2>Your Moving Day Checklist</h2>
-        <p>Thanks for requesting our professional checklist.</p>
-        <p><a href="${checklistUrl}" target="_blank">Download your checklist</a></p>
-        <p style="font-size:12px;color:#666">Source: ${source || "unknown"}</p>
+        <p>Thanks for requesting our professional, mover-approved checklist.</p>
+        <p>
+          <a href="${checklistUrl}" target="_blank">
+            Click here to download your checklist
+          </a>
+        </p>
+        <p style="font-size:12px;color:#666;">
+          Source: ${source}
+        </p>
       `,
     });
 
     return res.status(200).json({ ok: true });
-  } catch (err: any) {
-    console.error("CHECKLIST ERROR:", err);
-    return res.status(500).json({
-      error: "Checklist email failed",
-      message: err?.message,
-    });
+  } catch (err) {
+    console.error("SEND CHECKLIST ERROR:", err);
+    return res.status(500).json({ error: "Failed to send checklist" });
   }
-}
+};
