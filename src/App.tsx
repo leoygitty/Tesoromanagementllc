@@ -994,13 +994,6 @@ export default function App() {
       : base;
   };
 
-  const getChecklistLink = (email?: string) => {
-  const base = "/api/checklist-download";
-  return email
-    ? `${base}?email=${encodeURIComponent(email)}`
-    : base;
-};
-
   useEffect(() => {
     const updateIsMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -1943,6 +1936,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
