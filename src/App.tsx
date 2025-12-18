@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import useIsMobile from "./hooks/useIsMobile";
 
 // Brand + business config
 const BRAND = {
@@ -1947,6 +1948,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
