@@ -1009,15 +1009,7 @@ export default function App() {
       : base;
   };
 
-  useEffect(() => {
-    const updateIsMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    updateIsMobile();
-    window.addEventListener("resize", updateIsMobile);
-    return () => window.removeEventListener("resize", updateIsMobile);
-  }, []);
+  const isMobile = useIsMobile();
   
 // Promo submit helper (newsletter + exit-intent)
 const handlePromoSubmit = async (email: string) => {
@@ -1958,6 +1950,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
