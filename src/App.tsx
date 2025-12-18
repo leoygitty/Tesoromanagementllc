@@ -1483,51 +1483,69 @@ const handlePromoSubmit = async (email: string) => {
           </a>
         )}
 
-        {/* MOBILE */}
-        {isMobile && (
-          <>
-            <TextInput
-              type="email"
-              placeholder="Enter your email to receive the checklist"
-              value={checklistEmail}
-              onChange={(e) => setChecklistEmail(e.target.value)}
-              required
-            />
+      {/* MOBILE */}
+{isMobile && (
+  <div className="flex flex-col gap-3 max-w-sm">
+    <TextInput
+      type="email"
+      placeholder="Enter your email to receive the checklist"
+      value={checklistEmail}
+      onChange={(e) => setChecklistEmail(e.target.value)}
+      disabled={checklistStatus !== "idle"}
+      required
+    />
 
-            <button
-              type="button"
-              onClick={async () => {
-                if (!checklistEmail) return;
+    <Button
+      type="button"
+      disabled={!checklistEmail || checklistStatus !== "idle"}
+      onClick={async () => {
+        // HARD LOCK — prevents iOS double-fire
+        if (checklistStatus !== "idle") return;
 
-                const res = await fetch("/api/send-checklist", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    email: checklistEmail,
-                    source: "mobile_checklist",
-                    utm: utmData,
-                  }),
-                });
+        setChecklistStatus("loading");
 
-                if (!res.ok) {
-                  alert("Email failed to send. Please try again.");
-                  return;
-                }
+        try {
+          const res = await fetch("/api/send-checklist", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: checklistEmail,
+              source: "mobile_checklist",
+              utm: utmData,
+            }),
+          });
 
-                trackChecklistDownload("mobile_button");
-                alert("Check your email! We just sent you the checklist.");
-                setChecklistEmail("");
-              }}
-              className="inline-flex items-center justify-center rounded-full bg-lime-400 px-6 py-3 text-black font-semibold hover:bg-lime-300 transition"
-            >
-              Send Me the Checklist
-            </button>
-          </>
-        )}
-      </div>
-    </div>
+          if (!res.ok) throw new Error("Send failed");
 
-    {/* RIGHT COLUMN */}
+          trackChecklistDownload("mobile_button");
+          setChecklistStatus("success");
+        } catch (err) {
+          console.error(err);
+          setChecklistStatus("error");
+        }
+      }}
+    >
+      {checklistStatus === "idle" && "Send Me the Checklist"}
+      {checklistStatus === "loading" && "Sending…"}
+      {checklistStatus === "success" && "✓ Sent"}
+      {checklistStatus === "error" && "Try Again"}
+    </Button>
+
+    {checklistStatus === "success" && (
+      <p className="text-sm text-green-600">
+        Check your email — we just sent your checklist.
+      </p>
+    )}
+
+    {checklistStatus === "error" && (
+      <p className="text-sm text-red-600">
+        Something went wrong. Please try again.
+      </p>
+    )}
+  </div>
+)}
+
+        {/* RIGHT COLUMN */}
     <div className="flex justify-center md:justify-end">
       {!isMobile ? (
         <a
@@ -1952,6 +1970,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
