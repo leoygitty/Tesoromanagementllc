@@ -1469,83 +1469,82 @@ const handlePromoSubmit = async (email: string) => {
         <li>✔ Includes exclusive promo code</li>
       </ul>
 
-      {/* ACTIONS */}
-<div className="mt-8 flex flex-col gap-4 max-w-sm">
+  {/* ACTIONS */}
+  <div className="mt-8 flex flex-col gap-4 max-w-sm">
 
-  {/* DESKTOP */}
-  {!isMobile && (
-    <a
-      href={getChecklistLink()}
-      onClick={() => trackChecklistDownload("desktop_button")}
-      className="inline-flex items-center justify-center rounded-full bg-lime-400 px-6 py-3 text-black font-semibold hover:bg-lime-300 transition"
-    >
-      Download Free Checklist
-    </a>
-  )}
-
-  {/* MOBILE */}
-  {isMobile && (
-    <div className="flex flex-col gap-3 max-w-sm">
-      <TextInput
-        type="email"
-        placeholder="Enter your email to receive the checklist"
-        value={checklistEmail}
-        onChange={(e) => setChecklistEmail(e.target.value)}
-        disabled={checklistStatus !== "idle"}
-        required
-      />
-
-      <Button
-        type="button"
-        disabled={!checklistEmail || checklistStatus !== "idle"}
-        onClick={async () => {
-          if (checklistStatus !== "idle") return;
-
-          setChecklistStatus("loading");
-
-          try {
-            const res = await fetch("/api/send-checklist", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                email: checklistEmail,
-                source: "mobile_checklist",
-                utm: utmData,
-              }),
-            });
-
-            if (!res.ok) throw new Error("Send failed");
-
-            trackChecklistDownload("mobile_button");
-            setChecklistStatus("success");
-          } catch (err) {
-            console.error(err);
-            setChecklistStatus("error");
-          }
-        }}
+    {/* DESKTOP */}
+    {!isMobile && (
+      <a
+        href={getChecklistLink()}
+        onClick={() => trackChecklistDownload("desktop_button")}
+        className="inline-flex items-center justify-center rounded-full bg-lime-400 px-6 py-3 text-black font-semibold hover:bg-lime-300 transition"
       >
-        {checklistStatus === "idle" && "Send Me the Checklist"}
-        {checklistStatus === "loading" && "Sending…"}
-        {checklistStatus === "success" && "✓ Sent"}
-        {checklistStatus === "error" && "Try Again"}
-      </Button>
+        Download Free Checklist
+      </a>
+    )}
 
-      {checklistStatus === "success" && (
-        <p className="text-sm text-green-600">
-          Check your email — we just sent your checklist.
-        </p>
-      )}
+    {/* MOBILE */}
+    {isMobile && (
+      <div className="flex flex-col gap-3 max-w-sm">
+        <TextInput
+          type="email"
+          placeholder="Enter your email to receive the checklist"
+          value={checklistEmail}
+          onChange={(e) => setChecklistEmail(e.target.value)}
+          disabled={checklistStatus !== "idle"}
+          required
+        />
 
-      {checklistStatus === "error" && (
-        <p className="text-sm text-red-600">
-          Something went wrong. Please try again.
-        </p>
-      )}
-    </div>
-  )}
+        <Button
+          type="button"
+          disabled={!checklistEmail || checklistStatus !== "idle"}
+          onClick={async () => {
+            if (checklistStatus !== "idle") return;
 
-</div> {/* ✅ ACTIONS CLOSED HERE */}
+            setChecklistStatus("loading");
 
+            try {
+              const res = await fetch("/api/send-checklist", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  email: checklistEmail,
+                  source: "mobile_checklist",
+                  utm: utmData,
+                }),
+              });
+
+              if (!res.ok) throw new Error("Send failed");
+
+              trackChecklistDownload("mobile_button");
+              setChecklistStatus("success");
+            } catch {
+              setChecklistStatus("error");
+            }
+          }}
+        >
+          {checklistStatus === "idle" && "Send Me the Checklist"}
+          {checklistStatus === "loading" && "Sending…"}
+          {checklistStatus === "success" && "✓ Sent"}
+          {checklistStatus === "error" && "Try Again"}
+        </Button>
+
+        {checklistStatus === "success" && (
+          <p className="text-sm text-green-600">
+            Check your email — we just sent your checklist.
+          </p>
+        )}
+
+        {checklistStatus === "error" && (
+          <p className="text-sm text-red-600">
+            Something went wrong. Please try again.
+          </p>
+        )}
+      </div>
+    )}
+
+  </div>
+</div>
 
 {/* RIGHT COLUMN */}
 <div className="flex justify-center md:justify-end">
@@ -1972,6 +1971,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
