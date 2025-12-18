@@ -983,6 +983,10 @@ export default function App() {
 
   // Checklist lead magnet (mobile)
   const [checklistEmail, setChecklistEmail] = useState("");
+
+  // Checklist UI state
+const [checklistStatus, setChecklistStatus] =
+  useState<"idle" | "loading" | "success" | "error">("idle");
  
   // UTM capture (defined once, safe for mobile + desktop)
   const utmData = React.useMemo(() => {
@@ -1948,6 +1952,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
