@@ -1441,6 +1441,7 @@ const handlePromoSubmit = async (email: string) => {
 >
   <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
 
+    {/* LEFT COLUMN */}
     <div>
       <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
         Moving Day Checklist To-Go
@@ -1459,9 +1460,10 @@ const handlePromoSubmit = async (email: string) => {
         <li>✔ Includes exclusive promo code</li>
       </ul>
 
-            <div className="mt-8 flex flex-wrap gap-4">
+      {/* ACTIONS */}
+      <div className="mt-8 flex flex-col gap-4 max-w-sm">
 
-        {/* Desktop: tracked download */}
+        {/* DESKTOP */}
         {!isMobile && (
           <a
             href={getChecklistLink()}
@@ -1472,55 +1474,51 @@ const handlePromoSubmit = async (email: string) => {
           </a>
         )}
 
-        {/* Mobile: email-gated checklist */}
-      {isMobile && (
-  <form
-    className="flex flex-col gap-3 max-w-sm"
-    onSubmit={async (e) => {
-      e.preventDefault();
+        {/* MOBILE */}
+        {isMobile && (
+          <>
+            <TextInput
+              type="email"
+              placeholder="Enter your email to receive the checklist"
+              value={checklistEmail}
+              onChange={(e) => setChecklistEmail(e.target.value)}
+              required
+            />
 
-      if (!checklistEmail) {
-        alert("Please enter your email");
-        return;
-      }
+            <button
+              type="button"
+              onClick={async () => {
+                if (!checklistEmail) return;
 
-      const res = await fetch("/api/send-checklist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: checklistEmail,
-          source: "mobile_checklist",
-        }),
-      });
+                const res = await fetch("/api/send-checklist", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    email: checklistEmail,
+                    source: "mobile_checklist",
+                    utm: utmData,
+                  }),
+                });
 
-      if (!res.ok) {
-        alert("Email failed to send. Please try again.");
-        return;
-      }
+                if (!res.ok) {
+                  alert("Email failed to send. Please try again.");
+                  return;
+                }
 
-      trackChecklistDownload("mobile_submit");
-      alert("Check your email! We just sent you the checklist.");
-      setChecklistEmail("");
-    }}
-  >
-    <TextInput
-      type="email"
-      placeholder="Enter your email to receive the checklist"
-      value={checklistEmail}
-      onChange={(e) => setChecklistEmail(e.target.value)}
-      required
-    />
+                trackChecklistDownload("mobile_button");
+                alert("Check your email! We just sent you the checklist.");
+                setChecklistEmail("");
+              }}
+              className="inline-flex items-center justify-center rounded-full bg-lime-400 px-6 py-3 text-black font-semibold hover:bg-lime-300 transition"
+            >
+              Send Me the Checklist
+            </button>
+          </>
+        )}
+      </div>
+    </div>
 
-    <Button type="submit">
-      Send Me the Checklist
-    </Button>
-  </form>
-)}
-
-      </div> {/* ✅ CLOSE BUTTON WRAPPER */}
-    </div>   {/* ✅ CLOSE LEFT COLUMN */}
-
-    {/* Checklist image — RIGHT COLUMN */}
+    {/* RIGHT COLUMN */}
     <div className="flex justify-center md:justify-end">
       {!isMobile ? (
         <a
@@ -1539,14 +1537,12 @@ const handlePromoSubmit = async (email: string) => {
           />
         </a>
       ) : (
-        <div className="group block opacity-90">
-          <img
-            src="/checklist.jpg"
-            alt="Moving Day Checklist preview"
-            className="w-full max-w-md rounded-2xl border shadow-md"
-            loading="lazy"
-          />
-        </div>
+        <img
+          src="/checklist.jpg"
+          alt="Moving Day Checklist preview"
+          className="w-full max-w-md rounded-2xl border shadow-md opacity-90"
+          loading="lazy"
+        />
       )}
     </div>
 
@@ -1947,6 +1943,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
