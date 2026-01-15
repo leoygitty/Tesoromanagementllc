@@ -402,14 +402,6 @@ try {
     });
   }
 
-  setSubmitted(true);
-} catch (err) {
-  console.error(err);
-  setError("Something went wrong submitting your quote. Please try again.");
-} finally {
-  setSubmitting(false);
-}
-
       try {
         const origin =
           typeof window !== "undefined" ? window.location.origin : "";
@@ -1990,6 +1982,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
