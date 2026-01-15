@@ -382,14 +382,33 @@ export function QuoteWizard() {
       photoFiles: photoFilesPayload,
     };
 
-    setSubmitting(true);
+setSubmitting(true);
 
-    try {
-      await fetch("/api/quote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+try {
+  const r = await fetch("/api/quote", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!r.ok) {
+    throw new Error("Quote submission failed");
+  }
+
+  // 🔥 Google Ads conversion (fires ONLY on success)
+  if (typeof window !== "undefined" && typeof (window as any).gtag === "function") {
+    (window as any).gtag("event", "conversion_event_submit_lead_form_2", {
+      event_timeout: 2000,
+    });
+  }
+
+  setSubmitted(true);
+} catch (err) {
+  console.error(err);
+  setError("Something went wrong submitting your quote. Please try again.");
+} finally {
+  setSubmitting(false);
+}
 
       try {
         const origin =
@@ -1971,6 +1990,7 @@ const handlePromoSubmit = async (email: string) => {
     </div>
   );
 }
+
 
 
 
