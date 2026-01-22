@@ -1911,104 +1911,98 @@ const handlePromoSubmit = async (email: string) => {
         Call now
       </a>
       {/* Exit-Intent Promo Modal */}
-      {exitOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+{exitOpen && (
+  <div
+    className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+    // Clicking the backdrop closes + prevents re-open
+    onClick={() => {
+      dismissExit(7);       // keep your existing logic
+      setExitOpen(false);
+    }}
+  >
+    <div
+      className="bg-white rounded-2xl max-w-md w-full p-6 relative"
+      // Prevent backdrop click from closing when clicking inside the modal
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Top-right X close */}
+      <button
+        type="button"
+        aria-label="Close"
+        onClick={() => {
+          dismissExit(7);
+          setExitOpen(false);
+        }}
+        className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+      >
+        ✕
+      </button>
 
-            <h3 className="text-xl font-bold">Wait — take $25 off your move?</h3>
+      <h3 className="text-xl font-bold">Wait — take $25 off your move?</h3>
 
-            <p className="text-sm text-gray-600 mt-2">
-              Join our email list and we’ll send a one-time Neighborhood discount code
-              for your next move.
-            </p>
+      <p className="text-sm text-gray-600 mt-2">
+        Join our email list and we’ll send a one-time Neighborhood discount code
+        for your next move.
+      </p>
 
-            {/* Promo form */}
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                setExitStatus("loading");
+      {/* Promo form */}
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setExitStatus("loading");
 
-                const success = await handlePromoSubmit(exitEmail);
+          const success = await handlePromoSubmit(exitEmail);
 
-                if (success?.ok || success?.code) {
-                  setExitStatus("sent");
-                } else {
-                  setExitStatus("error");
-                }
-              }}
-              className="mt-4 flex gap-2"
-            >
-              <TextInput
-                type="email"
-                placeholder="you@email.com"
-                value={exitEmail}
-                onChange={(e) => setExitEmail(e.target.value)}
-                required
-              />
-              <Button type="submit">
-                {exitStatus === "loading" ? "Sending..." : "Send"}
-              </Button>
-            </form>
+          if (success?.ok || success?.code) {
+            setExitStatus("sent");
+            // IMPORTANT: dismiss so it does not re-appear after closing/success
+            dismissExit(30); // keep hidden longer after a successful submit
+            // Optional: close automatically after success
+            // setExitOpen(false);
+          } else {
+            setExitStatus("error");
+            // Do NOT dismiss on error, so user can retry while modal stays open
+          }
+        }}
+        className="mt-4 flex gap-2"
+      >
+        <TextInput
+          type="email"
+          placeholder="you@email.com"
+          value={exitEmail}
+          onChange={(e) => setExitEmail(e.target.value)}
+          required
+        />
+        <Button type="submit">
+          {exitStatus === "loading" ? "Sending..." : "Send"}
+        </Button>
+      </form>
 
-            {/* Status messages */}
-            {exitStatus === "sent" && (
-              <p className="text-green-600 text-sm mt-2">
-                Promo code sent! Check your inbox.
-              </p>
-            )}
-            {exitStatus === "error" && (
-              <p className="text-red-600 text-sm mt-2">
-                Something went wrong — but we saved your email. You'll still receive promos.
-              </p>
-            )}
-
-            {/* Close button */}
-            <div className="mt-3 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  dismissExit(7);
-                  setExitOpen(false);
-                }}
-                className="text-sm text-gray-500 hover:text-gray-800"
-              >
-                No thanks
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Status messages */}
+      {exitStatus === "sent" && (
+        <p className="text-green-600 text-sm mt-2">
+          Promo code sent! Check your inbox.
+        </p>
+      )}
+      {exitStatus === "error" && (
+        <p className="text-red-600 text-sm mt-2">
+          Something went wrong — but we saved your email. You'll still receive promos.
+        </p>
       )}
 
+      {/* Close button */}
+      <div className="mt-3 flex justify-end gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            dismissExit(7);
+            setExitOpen(false);
+          }}
+          className="text-sm text-gray-500 hover:text-gray-800"
+        >
+          No thanks
+        </button>
+      </div>
     </div>
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  </div>
+)}
